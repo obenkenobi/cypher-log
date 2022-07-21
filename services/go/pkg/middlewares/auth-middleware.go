@@ -29,7 +29,6 @@ type AuthMiddlewareImpl struct {
 	authorizationHandler gin.HandlerFunc
 }
 
-// Todo: fix bug where permissions and scope claims are not set
 func BuildAuthMiddleware(auth0Conf conf.Auth0Conf) AuthMiddleware {
 	issuerURL := auth0Conf.GetIssuerUrl()
 	audience := auth0Conf.GetAudience()

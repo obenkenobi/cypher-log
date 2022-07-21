@@ -55,7 +55,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 
 		userGroup.GET("/me",
 			u.authMiddleware.Authentication(),
-			u.authMiddleware.Authorization(middlewares.AuthorizerMiddlewareParams{RequireAnyAuthorities: []string{"amin"}}),
+			u.authMiddleware.Authorization(middlewares.AuthorizerMiddlewareParams{}),
 			func(c *gin.Context) {
 				identity := security.NewIdentityHolderFromContext(c)
 				log.Info("Identity created", identity)
