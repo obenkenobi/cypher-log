@@ -4,10 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/errormgmt"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -27,14 +26,14 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				userSaveDto := userdtos.UserSaveDto{}
-				if err := c.ShouldBind(&userSaveDto); err != nil {
-					errors.HandleBindError(c, err)
+				userSaveDto := &userdtos.UserSaveDto{}
+				if err := c.ShouldBind(userSaveDto); err != nil {
+					errormgmt.HandleBindError(c, err)
 					return
 				}
-				if userDto, err := u.userService.AddUser(userSaveDto); err != nil {
-					errors.HandleErrorResponse(c, *err)
-					return
+				identity := security.GetIdentityFromContext(c)
+				if userDto, err := u.userService.AddUser(identity, userSaveDto); err != nil {
+					errormgmt.HandleErrorResponse(c, *err)
 				} else {
 					c.JSON(http.StatusOK, userDto)
 				}
@@ -44,15 +43,14 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				userSaveDto := userdtos.UserSaveDto{}
-				if err := c.ShouldBind(&userSaveDto); err != nil {
-					errors.HandleBindError(c, err)
+				userSaveDto := &userdtos.UserSaveDto{}
+				if err := c.ShouldBind(userSaveDto); err != nil {
+					errormgmt.HandleBindError(c, err)
 					return
 				}
-				identityHolder := security.NewIdentityHolderFromContext(c)
-				if userDto, err := u.userService.UpdateUser(identityHolder, userSaveDto); err != nil {
-					errors.HandleErrorResponse(c, *err)
-					return
+				identity := security.GetIdentityFromContext(c)
+				if userDto, err := u.userService.UpdateUser(identity, userSaveDto); err != nil {
+					errormgmt.HandleErrorResponse(c, *err)
 				} else {
 					c.JSON(http.StatusOK, userDto)
 				}
@@ -62,13 +60,11 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				identity := security.NewIdentityHolderFromContext(c)
-				log.Info("Identity created", identity)
-				if userDto, err := u.userService.GetByProviderUserId(identity.GetIdFromProvider()); err != nil {
-					errors.HandleErrorResponse(c, *err)
-					return
+				identity := security.GetIdentityFromContext(c)
+				if dto, err := u.userService.GetUserIdentity(identity); err != nil {
+					errormgmt.HandleErrorResponse(c, *err)
 				} else {
-					c.JSON(http.StatusOK, userDto)
+					c.JSON(http.StatusOK, dto)
 				}
 			})
 
@@ -77,9 +73,8 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 			func(c *gin.Context) {
 				id := c.Param("id")
-				if userDto, err := u.userService.GetByProviderUserId(id); err != nil {
-					errors.HandleErrorResponse(c, *err)
-					return
+				if userDto, err := u.userService.GetByAuthId(id); err != nil {
+					errormgmt.HandleErrorResponse(c, *err)
 				} else {
 					c.JSON(http.StatusOK, userDto)
 				}

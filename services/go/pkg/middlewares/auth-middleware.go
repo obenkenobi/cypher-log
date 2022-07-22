@@ -65,12 +65,12 @@ func (a *AuthMiddlewareImpl) Authentication() gin.HandlerFunc {
 
 func (a *AuthMiddlewareImpl) Authorization(settings AuthorizerSettings) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		identityHolder := security.NewIdentityHolderFromContext(c)
-		if (settings.VerifyAnonymous && !identityHolder.IsAnonymous()) ||
-			(settings.VerifyIsUser && identityHolder.IsSystemClient()) ||
-			(settings.VerifyIsSystemClient && identityHolder.IsUser()) ||
-			!identityHolder.ContainsAnyAuthorities(settings.AnyAuthoritiesToVerify) ||
-			!identityHolder.ContainsAllAuthorities(settings.AllAuthoritiesToVerify) {
+		identity := security.GetIdentityFromContext(c)
+		if (settings.VerifyAnonymous && !identity.IsAnonymous()) ||
+			(settings.VerifyIsUser && identity.IsSystemClient()) ||
+			(settings.VerifyIsSystemClient && identity.IsUser()) ||
+			!identity.ContainsAnyAuthorities(settings.AnyAuthoritiesToVerify) ||
+			!identity.ContainsAllAuthorities(settings.AllAuthoritiesToVerify) {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}

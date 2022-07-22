@@ -3,6 +3,7 @@ package mappers
 import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 )
 
 func MapUserSaveDtoToUser(source *userdtos.UserSaveDto, dest *models.User) {
@@ -14,8 +15,22 @@ func MapUserToUserDto(source *models.User, dest *userdtos.UserDto) {
 	if source == nil {
 		*dest = userdtos.UserDto{}
 	}
-	dest.Id = source.ID.String()
-	dest.Exists = false
+	dest.Id = source.GetIdStr()
+	dest.Exists = true
 	dest.UserName = source.UserName
 	dest.DisplayName = source.DisplayName
+	dest.CreatedAt = source.CreatedAt.UnixMilli()
+	dest.UpdatedAt = source.UpdatedAt.UnixMilli()
+}
+
+func MapToUserDtoAndIdentityToUserIdentityDto(userDto *userdtos.UserDto, identity security.Identity,
+	dest *userdtos.UserIdentityDto) {
+	if userDto == nil {
+		userDto = &userdtos.UserDto{}
+	}
+	*dest = userdtos.UserIdentityDto{
+		AuthId:      identity.GetAuthId(),
+		Authorities: identity.GetAuthorities(),
+		User:        *userDto,
+	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/controllers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
@@ -28,7 +29,8 @@ func main() {
 	var mongoClient = dbaccess.BuildMongoClient(mongoCOnf)
 	var transactionRunner = dbaccess.NewTransactionRunnerMongo(mongoClient)
 	var userRepository = repositories.NewUserMongoRepository(mongoClient)
-	var userService = services.NewUserService(mongoClient, transactionRunner, userRepository)
+	var userBr = businessrules.NewUserBrImpl(mongoClient, userRepository)
+	var userService = services.NewUserService(mongoClient, transactionRunner, userRepository, userBr)
 	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)
 	var userController = controllers.NewUserController(authMiddleware, userService)
 	var server = BuildServer(userController, serverConf, commonConf)

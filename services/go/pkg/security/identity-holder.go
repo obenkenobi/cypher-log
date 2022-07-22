@@ -4,49 +4,50 @@ import (
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/utils"
 	"strings"
 )
 
-type IdentityHolder interface {
+type Identity interface {
 	IsAnonymous() bool
 	IsUser() bool
 	IsSystemClient() bool
 	GetAuthorities() []string
-	GetIdFromProvider() string
+	GetAuthId() string
 	ContainsAnyAuthorities(requiredAuthorities []string) bool
 	ContainsAllAuthorities(requiredAuthorities []string) bool
 }
 
-type identityHolderAuth0Impl struct {
+type identityAuth0Impl struct {
 	isAnonymous     bool
 	validatedClaims *validator.ValidatedClaims
 	customClaims    *Auth0CustomClaims
 }
 
-func (i identityHolderAuth0Impl) IsUser() bool {
-	return strings.Contains(i.GetIdFromProvider(), "|")
+func (i identityAuth0Impl) IsUser() bool {
+	return strings.Contains(i.GetAuthId(), "|")
 }
 
-func (i identityHolderAuth0Impl) IsSystemClient() bool {
+func (i identityAuth0Impl) IsSystemClient() bool {
 	return !i.isAnonymous && !i.IsUser()
 }
 
-func (i identityHolderAuth0Impl) IsAnonymous() bool {
+func (i identityAuth0Impl) IsAnonymous() bool {
 	return i.isAnonymous
 }
 
-func (i identityHolderAuth0Impl) GetAuthorities() []string {
+func (i identityAuth0Impl) GetAuthorities() []string {
 	if i.customClaims == nil {
 		return []string{}
 	}
 	return i.customClaims.Permissions
 }
 
-func (i identityHolderAuth0Impl) GetIdFromProvider() string {
+func (i identityAuth0Impl) GetAuthId() string {
 	return i.validatedClaims.RegisteredClaims.Subject
 }
 
-func (i identityHolderAuth0Impl) ContainsAnyAuthorities(requiredAuthorities []string) bool {
+func (i identityAuth0Impl) ContainsAnyAuthorities(requiredAuthorities []string) bool {
 	if len(requiredAuthorities) == 0 {
 		return true
 	}
@@ -62,7 +63,7 @@ func (i identityHolderAuth0Impl) ContainsAnyAuthorities(requiredAuthorities []st
 	return false
 }
 
-func (i identityHolderAuth0Impl) ContainsAllAuthorities(requiredAuthorities []string) bool {
+func (i identityAuth0Impl) ContainsAllAuthorities(requiredAuthorities []string) bool {
 	if len(requiredAuthorities) == 0 {
 		return true
 	}
@@ -78,9 +79,9 @@ func (i identityHolderAuth0Impl) ContainsAllAuthorities(requiredAuthorities []st
 	return true
 }
 
-func NewIdentityHolderFromContext(c *gin.Context) IdentityHolder {
+func GetIdentityFromContext(c *gin.Context) Identity {
 	contextValue := c.Request.Context().Value(jwtmiddleware.ContextKey{})
-	isAnonymous := strings.TrimSpace(c.GetHeader("Authorization")) == ""
+	isAnonymous := utils.StringIsBlank(c.GetHeader("Authorization"))
 	validatedClaims, ok := contextValue.(*validator.ValidatedClaims)
 	if !ok {
 		validatedClaims = &validator.ValidatedClaims{
@@ -92,7 +93,7 @@ func NewIdentityHolderFromContext(c *gin.Context) IdentityHolder {
 	if !ok {
 		customClaims = defaultAuth0CustomClaims()
 	}
-	return &identityHolderAuth0Impl{
+	return &identityAuth0Impl{
 		isAnonymous:     isAnonymous,
 		validatedClaims: validatedClaims,
 		customClaims:    customClaims,

@@ -1,103 +1,98 @@
 package services
 
 import (
-	"context"
+	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/mappers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/errormgmt"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	log "github.com/sirupsen/logrus"
 )
 
 type UserService interface {
-	AddUser(userSaveDto userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto)
-	UpdateUser(identityHolder security.IdentityHolder, userSaveDto userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto)
-	GetByProviderUserId(tokenId string) (*userdtos.UserDto, *errordtos.ErrorResponseDto)
+	AddUser(identity security.Identity,
+		userSaveDto *userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto)
+	UpdateUser(identity security.Identity,
+		userSaveDto *userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto)
+	GetByAuthId(tokenId string) (*userdtos.UserDto, *errordtos.ErrorResponseDto)
+	GetUserIdentity(identity security.Identity) (*userdtos.UserIdentityDto, *errordtos.ErrorResponseDto)
 }
 
 type userServiceImpl struct {
 	dbClient          dbaccess.DBClient
 	transactionRunner dbaccess.TransactionRunner
 	userRepository    repositories.UserRepository
+	userBr            businessrules.UserBr
 }
 
-func (u userServiceImpl) AddUser(userSaveDto userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
+func (u userServiceImpl) AddUser(identity security.Identity, userSaveDto *userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
 	user := &models.User{}
-	savedUser := &models.User{}
 	userDto := &userdtos.UserDto{}
-	var errorResponse *errordtos.ErrorResponseDto = nil
 
-	if err := u.transactionRunner.ExecTransaction(func(session dbaccess.Session, ctx context.Context) error {
-		mappers.MapUserSaveDtoToUser(&userSaveDto, user)
-
-		if err := u.userRepository.Create(ctx, user); err != nil {
-			errorResponse = errors.CreateInternalErrResponseWithLog(err)
-			return session.AbortTransaction(ctx)
-		}
-
-		if err := u.userRepository.FindByProviderUserId(
-			u.dbClient.GetContext(), user.ID.String(), savedUser); err != nil {
-			errorResponse = errors.CreateInternalErrResponseWithLog(err)
-			return session.AbortTransaction(ctx)
-		}
-
-		mappers.MapUserToUserDto(savedUser, userDto)
-
-		log.Info("Created user", userDto)
-
-		return session.CommitTransaction(ctx)
-	}); err != nil {
-		errorResponse = errors.CreateInternalErrResponseWithLog(err)
+	if errRes := u.userBr.ValidateUserCreate(u.dbClient.GetCtx(), identity, userSaveDto); errRes != nil {
+		return nil, errRes
 	}
-	return userDto, errorResponse
-}
+	mappers.MapUserSaveDtoToUser(userSaveDto, user)
+	user.AuthId = identity.GetAuthId()
 
-func (u userServiceImpl) UpdateUser(identityHolder security.IdentityHolder, userSaveDto userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
-	user := &models.User{}
-	savedUser := &models.User{}
-	userDto := &userdtos.UserDto{}
-	var errorResponse *errordtos.ErrorResponseDto = nil
-
-	if err := u.transactionRunner.ExecTransaction(func(session dbaccess.Session, ctx context.Context) error {
-
-		if err := u.userRepository.FindByProviderUserId(
-			u.dbClient.GetContext(), identityHolder.GetIdFromProvider(), user); err != nil {
-			errorResponse = errors.CreateInternalErrResponseWithLog(err)
-			return session.AbortTransaction(ctx)
-		}
-
-		mappers.MapUserSaveDtoToUser(&userSaveDto, user)
-
-		if err := u.userRepository.Update(ctx, user); err != nil {
-			errorResponse = errors.CreateInternalErrResponseWithLog(err)
-			return session.AbortTransaction(ctx)
-		}
-
-		if err := u.userRepository.FindByProviderUserId(
-			u.dbClient.GetContext(), user.ID.String(), savedUser); err != nil {
-			errorResponse = errors.CreateInternalErrResponseWithLog(err)
-			return session.AbortTransaction(ctx)
-		}
-
-		mappers.MapUserToUserDto(savedUser, userDto)
-
-		return session.CommitTransaction(ctx)
-	}); err != nil {
-		errorResponse = errors.CreateInternalErrResponseWithLog(err)
+	if err := u.userRepository.Create(u.dbClient.GetCtx(), user); err != nil {
+		return nil, errormgmt.CreateInternalErrResponseWithErrLog(err)
 	}
-	return userDto, errorResponse
+
+	mappers.MapUserToUserDto(user, userDto)
+	log.Info("Created user ", userDto)
+
+	return userDto, nil
 }
 
-func (u userServiceImpl) GetByProviderUserId(providerUserId string) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
+func (u userServiceImpl) UpdateUser(identity security.Identity, userSaveDto *userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
 	user := &models.User{}
 	userDto := &userdtos.UserDto{}
 
-	if err := u.userRepository.FindByProviderUserId(u.dbClient.GetContext(), providerUserId, user); err != nil {
-		return nil, errors.CreateInternalErrResponseWithLog(err)
+	if err := u.userRepository.FindByAuthId(
+		u.dbClient.GetCtx(), identity.GetAuthId(), user); err != nil {
+		return nil, u.dbClient.NotFoundOrElseInternalErrResponse(err)
+	}
+
+	if errRes := u.userBr.ValidateUserUpdate(u.dbClient.GetCtx(), userSaveDto, user); errRes != nil {
+		return nil, errRes
+	}
+
+	mappers.MapUserSaveDtoToUser(userSaveDto, user)
+
+	if err := u.userRepository.Update(u.dbClient.GetCtx(), user); err != nil {
+		return nil, errormgmt.CreateInternalErrResponseWithErrLog(err)
+	}
+
+	mappers.MapUserToUserDto(user, userDto)
+	return userDto, nil
+}
+
+func (u userServiceImpl) GetUserIdentity(
+	identity security.Identity) (*userdtos.UserIdentityDto, *errordtos.ErrorResponseDto) {
+	userDto, errResponse := u.GetByAuthId(identity.GetAuthId())
+	if errResponse != nil {
+		return nil, errResponse
+	}
+	userIdentityDto := &userdtos.UserIdentityDto{}
+	mappers.MapToUserDtoAndIdentityToUserIdentityDto(userDto, identity, userIdentityDto)
+	return userIdentityDto, nil
+
+}
+
+func (u userServiceImpl) GetByAuthId(authId string) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
+	user := &models.User{}
+	userDto := &userdtos.UserDto{}
+
+	if err := u.userRepository.FindByAuthId(u.dbClient.GetCtx(), authId, user); err != nil {
+		if u.dbClient.IsNotFoundError(err) {
+			return userDto, nil
+		}
+		return nil, u.dbClient.NotFoundOrElseInternalErrResponse(err)
 	}
 
 	mappers.MapUserToUserDto(user, userDto)
@@ -106,10 +101,11 @@ func (u userServiceImpl) GetByProviderUserId(providerUserId string) (*userdtos.U
 }
 
 func NewUserService(dbClient dbaccess.DBClient, transactionRunner dbaccess.TransactionRunner,
-	userRepository repositories.UserRepository) UserService {
+	userRepository repositories.UserRepository, userBr businessrules.UserBr) UserService {
 	return &userServiceImpl{
 		dbClient:          dbClient,
 		transactionRunner: transactionRunner,
 		userRepository:    userRepository,
+		userBr:            userBr,
 	}
 }

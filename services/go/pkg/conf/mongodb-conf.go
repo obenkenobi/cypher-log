@@ -29,10 +29,10 @@ func (m MongoConfImpl) GetConnectionTimeout() time.Duration {
 	return m.connectionTimeout
 }
 
-func NewMongoConf(envVarReader EnvVarReader, envVarKeyMongoUri string, envVarMongoDBName string,
-	envVarMongoConnTimeoutMS string) MongoConf {
+func NewMongoConf(envVarReader EnvVarReader, envVarKeyMongoUri string, envVarKeyMongoDBName string,
+	envVarKeyMongoConnTimeoutMS string) MongoConf {
 	connTimeout := 12 * time.Second
-	if connTimeoutStr := envVarReader.GetEnvVariable(envVarMongoConnTimeoutMS); connTimeoutStr != "" {
+	if connTimeoutStr := envVarReader.GetEnvVariable(envVarKeyMongoConnTimeoutMS); connTimeoutStr != "" {
 		if connectionTimeoutInt, err := strconv.ParseInt(connTimeoutStr, 10, 64); err == nil {
 			connTimeout = time.Duration(connectionTimeoutInt)
 		}
@@ -40,7 +40,7 @@ func NewMongoConf(envVarReader EnvVarReader, envVarKeyMongoUri string, envVarMon
 
 	return &MongoConfImpl{
 		mongoUri:          envVarReader.GetEnvVariable(envVarKeyMongoUri),
-		mongoDBName:       envVarReader.GetEnvVariable(envVarMongoDBName),
+		mongoDBName:       envVarReader.GetEnvVariable(envVarKeyMongoDBName),
 		connectionTimeout: connTimeout,
 	}
 }

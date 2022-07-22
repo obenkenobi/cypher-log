@@ -5,54 +5,58 @@ type ValidationErrDto struct {
 	Message string `json:"message"`
 }
 
-type BrViolationDto struct {
+type AppErrorDto struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
+func (v AppErrorDto) Error() string {
+	return v.Message
+}
+
 type ErrorResponseDto struct {
 	IsInternalError  bool               `json:"isSystemError"`
-	BrViolations     []BrViolationDto   `json:"brViolations"`
+	AppErrors        []AppErrorDto      `json:"brViolations"`
 	ValidationErrors []ValidationErrDto `json:"validationErrors"`
-	Message          string             `json:"message"`
 }
 
-func NewInternalErrorResponse() *ErrorResponseDto {
-	return NewErrorResponse("Internal Error", true)
+func (e ErrorResponseDto) ContainsAppErrorCode(code string) bool {
+	for _, appError := range e.AppErrors {
+		if appError.Code == code {
+			return true
+		}
+	}
+	return false
 }
 
-func NewErrorResponse(msg string, isInternalError bool) *ErrorResponseDto {
+func NewInternalErrResponse() *ErrorResponseDto {
 	return &ErrorResponseDto{
-		IsInternalError:  isInternalError,
-		BrViolations:     []BrViolationDto{},
+		IsInternalError:  true,
+		AppErrors:        []AppErrorDto{},
 		ValidationErrors: []ValidationErrDto{},
-		Message:          msg,
 	}
 }
 
-func NewSingleBRViolationErrorResponse(code string, msg string) *ErrorResponseDto {
+func NewSingleAppErrorResponse(appErrorDto AppErrorDto) *ErrorResponseDto {
 	return &ErrorResponseDto{
 		IsInternalError:  false,
-		BrViolations:     []BrViolationDto{{Code: code, Message: msg}},
+		AppErrors:        []AppErrorDto{appErrorDto},
 		ValidationErrors: []ValidationErrDto{},
-		Message:          "",
 	}
 }
 
-func NewBRViolationErrorResponse(brViolations []BrViolationDto) *ErrorResponseDto {
+func NewAppErrorsResponse(appErrors []AppErrorDto) *ErrorResponseDto {
 	return &ErrorResponseDto{
 		IsInternalError:  false,
-		BrViolations:     brViolations,
+		AppErrors:        appErrors,
 		ValidationErrors: []ValidationErrDto{},
-		Message:          "",
 	}
 }
 
 func NewValidationErrorResponse(validationErrors []ValidationErrDto) *ErrorResponseDto {
 	return &ErrorResponseDto{
 		IsInternalError:  false,
-		BrViolations:     []BrViolationDto{},
+		AppErrors:        []AppErrorDto{},
 		ValidationErrors: validationErrors,
-		Message:          "",
 	}
 }

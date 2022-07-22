@@ -1,4 +1,4 @@
-package errors
+package errormgmt
 
 import (
 	"net/http"
@@ -30,7 +30,8 @@ func HandleBindError(c *gin.Context, err error) {
 	// We now know that this error is not a validation error
 	// probably a malformed JSON
 	log.WithError(err).Info("Unable to bind")
-	HandleErrorResponse(c, *errordtos.NewErrorResponse("Invalid input", false))
+
+	HandleErrorResponse(c, *CreateErrorResponseFromErrorCodes(ErrCodeCannotBindJson))
 }
 
 func HandleErrorResponse(c *gin.Context, errorResponse errordtos.ErrorResponseDto) {
@@ -41,9 +42,4 @@ func HandleErrorResponse(c *gin.Context, errorResponse errordtos.ErrorResponseDt
 		httpStatus = http.StatusBadRequest
 	}
 	c.JSON(httpStatus, errorResponse)
-}
-
-func CreateInternalErrResponseWithLog(err error) *errordtos.ErrorResponseDto {
-	log.WithError(err).Error()
-	return errordtos.NewInternalErrorResponse()
 }
