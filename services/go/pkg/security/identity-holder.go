@@ -4,20 +4,31 @@ import (
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
+	"strings"
 )
 
 type IdentityHolder interface {
 	IsAnonymous() bool
+	IsUser() bool
+	IsSystemClient() bool
 	GetAuthorities() []string
-	GetSubject() string
-	ValidateAuthoritiesAny(requiredAuthorities []string) bool
-	ValidateAuthoritiesAll(requiredAuthorities []string) bool
+	GetIdFromProvider() string
+	ContainsAnyAuthorities(requiredAuthorities []string) bool
+	ContainsAllAuthorities(requiredAuthorities []string) bool
 }
 
 type identityHolderAuth0Impl struct {
 	isAnonymous     bool
 	validatedClaims *validator.ValidatedClaims
 	customClaims    *Auth0CustomClaims
+}
+
+func (i identityHolderAuth0Impl) IsUser() bool {
+	return strings.Contains(i.GetIdFromProvider(), "|")
+}
+
+func (i identityHolderAuth0Impl) IsSystemClient() bool {
+	return !i.isAnonymous && !i.IsUser()
 }
 
 func (i identityHolderAuth0Impl) IsAnonymous() bool {
@@ -31,11 +42,11 @@ func (i identityHolderAuth0Impl) GetAuthorities() []string {
 	return i.customClaims.Permissions
 }
 
-func (i identityHolderAuth0Impl) GetSubject() string {
+func (i identityHolderAuth0Impl) GetIdFromProvider() string {
 	return i.validatedClaims.RegisteredClaims.Subject
 }
 
-func (i identityHolderAuth0Impl) ValidateAuthoritiesAny(requiredAuthorities []string) bool {
+func (i identityHolderAuth0Impl) ContainsAnyAuthorities(requiredAuthorities []string) bool {
 	if len(requiredAuthorities) == 0 {
 		return true
 	}
@@ -51,7 +62,7 @@ func (i identityHolderAuth0Impl) ValidateAuthoritiesAny(requiredAuthorities []st
 	return false
 }
 
-func (i identityHolderAuth0Impl) ValidateAuthoritiesAll(requiredAuthorities []string) bool {
+func (i identityHolderAuth0Impl) ContainsAllAuthorities(requiredAuthorities []string) bool {
 	if len(requiredAuthorities) == 0 {
 		return true
 	}
@@ -69,10 +80,9 @@ func (i identityHolderAuth0Impl) ValidateAuthoritiesAll(requiredAuthorities []st
 
 func NewIdentityHolderFromContext(c *gin.Context) IdentityHolder {
 	contextValue := c.Request.Context().Value(jwtmiddleware.ContextKey{})
+	isAnonymous := strings.TrimSpace(c.GetHeader("Authorization")) == ""
 	validatedClaims, ok := contextValue.(*validator.ValidatedClaims)
-	isAnonymous := !ok
-	if isAnonymous {
-		isAnonymous = true
+	if !ok {
 		validatedClaims = &validator.ValidatedClaims{
 			RegisteredClaims: validator.RegisteredClaims{},
 			CustomClaims:     defaultAuth0CustomClaims(),

@@ -21,7 +21,7 @@ type appserverImpl struct {
 func (s appserverImpl) Run() {
 	err := s.router.Run(fmt.Sprintf(":%s", s.serverConf.GetPort()))
 	if err != nil {
-		log.Fatal("Server failed to run")
+		log.WithError(err).Fatal("Server failed to run")
 		return
 	}
 }

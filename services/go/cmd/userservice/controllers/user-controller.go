@@ -24,6 +24,8 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroup := r.Group("/user")
 	{
 		userGroup.POST("",
+			u.authMiddleware.Authentication(),
+			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
 				var userCreateDto userdtos.UserSaveDto
 				if err := c.ShouldBind(&userCreateDto); err != nil {
@@ -39,6 +41,8 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			})
 
 		userGroup.PUT("",
+			u.authMiddleware.Authentication(),
+			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
 				var userCreateDto userdtos.UserSaveDto
 				if err := c.ShouldBind(&userCreateDto); err != nil {
@@ -55,15 +59,17 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 
 		userGroup.GET("/me",
 			u.authMiddleware.Authentication(),
-			u.authMiddleware.Authorization(middlewares.AuthorizerMiddlewareParams{}),
+			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
 				identity := security.NewIdentityHolderFromContext(c)
 				log.Info("Identity created", identity)
-				userDto := u.userService.GetByProviderUserId(identity.GetSubject())
+				userDto := u.userService.GetByProviderUserId(identity.GetIdFromProvider())
 				c.JSON(http.StatusOK, userDto)
 			})
 
 		userGroup.GET("/byProviderUserId/:id",
+			u.authMiddleware.Authentication(),
+			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 			func(c *gin.Context) {
 				id := c.Param("id")
 				userDto := u.userService.GetByProviderUserId(id)

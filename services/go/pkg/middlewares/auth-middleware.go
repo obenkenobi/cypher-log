@@ -12,14 +12,17 @@ import (
 	"time"
 )
 
-type AuthorizerMiddlewareParams struct {
-	RequireAnyAuthorities []string // List of authorities of which at least one needs to be in the user's identity
-	RequireAllAuthorities []string // List of authorities of which all of them need to be in the user's identity
+type AuthorizerSettings struct {
+	VerifyAnonymous        bool     // Verifies if the identity is anonymous
+	VerifyIsUser           bool     // Verifies if the identity is a user
+	VerifyIsSystemClient   bool     // Verifies if the identity is a system client
+	AnyAuthoritiesToVerify []string // List of authorities of which at least one needs to be in the user's identity
+	AllAuthoritiesToVerify []string // List of authorities of which all of them need to be in the user's identity
 }
 
 type AuthMiddleware interface {
 	Authentication() gin.HandlerFunc
-	Authorization(params AuthorizerMiddlewareParams) gin.HandlerFunc
+	Authorization(settings AuthorizerSettings) gin.HandlerFunc
 }
 
 type AuthMiddlewareImpl struct {
@@ -60,13 +63,14 @@ func (a *AuthMiddlewareImpl) Authentication() gin.HandlerFunc {
 	return a.authorizationHandler
 }
 
-func (a *AuthMiddlewareImpl) Authorization(params AuthorizerMiddlewareParams) gin.HandlerFunc {
+func (a *AuthMiddlewareImpl) Authorization(settings AuthorizerSettings) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		identityHolder := security.NewIdentityHolderFromContext(c)
-		if !identityHolder.ValidateAuthoritiesAny(params.RequireAnyAuthorities) {
-			c.AbortWithStatus(http.StatusForbidden)
-			return
-		} else if !identityHolder.ValidateAuthoritiesAll(params.RequireAllAuthorities) {
+		if (settings.VerifyAnonymous && !identityHolder.IsAnonymous()) ||
+			(settings.VerifyIsUser && identityHolder.IsSystemClient()) ||
+			(settings.VerifyIsSystemClient && identityHolder.IsUser()) ||
+			!identityHolder.ContainsAnyAuthorities(settings.AnyAuthoritiesToVerify) ||
+			!identityHolder.ContainsAllAuthorities(settings.AllAuthoritiesToVerify) {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}

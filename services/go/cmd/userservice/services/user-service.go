@@ -2,6 +2,8 @@ package services
 
 import (
 	"fmt"
+	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
 	log "github.com/sirupsen/logrus"
@@ -15,6 +17,9 @@ type UserService interface {
 }
 
 type userServiceImpl struct {
+	dbClient          dbaccess.DBClient
+	transactionRunner dbaccess.TransactionRunner
+	userRepository    repositories.UserRepository
 }
 
 func (u userServiceImpl) AddUser(userSaveDto userdtos.UserSaveDto) (userdtos.UserDto, *errordtos.ErrorResponseDto) {
@@ -54,6 +59,11 @@ func (u userServiceImpl) GetByProviderUserId(tokenId string) userdtos.UserDto {
 	}
 }
 
-func NewUserService() UserService {
-	return &userServiceImpl{}
+func NewUserService(dbClient dbaccess.DBClient, transactionRunner dbaccess.TransactionRunner,
+	userRepository repositories.UserRepository) UserService {
+	return &userServiceImpl{
+		dbClient:          dbClient,
+		transactionRunner: transactionRunner,
+		userRepository:    userRepository,
+	}
 }
