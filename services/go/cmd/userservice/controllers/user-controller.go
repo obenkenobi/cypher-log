@@ -27,34 +27,35 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				var userCreateDto userdtos.UserSaveDto
-				if err := c.ShouldBind(&userCreateDto); err != nil {
+				userSaveDto := userdtos.UserSaveDto{}
+				if err := c.ShouldBind(&userSaveDto); err != nil {
 					errors.HandleBindError(c, err)
 					return
 				}
-				userDto, err := u.userService.AddUser(userCreateDto)
-				if err != nil {
+				if userDto, err := u.userService.AddUser(userSaveDto); err != nil {
 					errors.HandleErrorResponse(c, *err)
 					return
+				} else {
+					c.JSON(http.StatusOK, userDto)
 				}
-				c.JSON(http.StatusOK, userDto)
 			})
 
 		userGroup.PUT("",
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				var userCreateDto userdtos.UserSaveDto
-				if err := c.ShouldBind(&userCreateDto); err != nil {
+				userSaveDto := userdtos.UserSaveDto{}
+				if err := c.ShouldBind(&userSaveDto); err != nil {
 					errors.HandleBindError(c, err)
 					return
 				}
-				userDto, err := u.userService.UpdateUser(userCreateDto)
-				if err != nil {
+				identityHolder := security.NewIdentityHolderFromContext(c)
+				if userDto, err := u.userService.UpdateUser(identityHolder, userSaveDto); err != nil {
 					errors.HandleErrorResponse(c, *err)
 					return
+				} else {
+					c.JSON(http.StatusOK, userDto)
 				}
-				c.JSON(http.StatusOK, userDto)
 			})
 
 		userGroup.GET("/me",
@@ -63,8 +64,12 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			func(c *gin.Context) {
 				identity := security.NewIdentityHolderFromContext(c)
 				log.Info("Identity created", identity)
-				userDto := u.userService.GetByProviderUserId(identity.GetIdFromProvider())
-				c.JSON(http.StatusOK, userDto)
+				if userDto, err := u.userService.GetByProviderUserId(identity.GetIdFromProvider()); err != nil {
+					errors.HandleErrorResponse(c, *err)
+					return
+				} else {
+					c.JSON(http.StatusOK, userDto)
+				}
 			})
 
 		userGroup.GET("/byProviderUserId/:id",
@@ -72,8 +77,12 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 			func(c *gin.Context) {
 				id := c.Param("id")
-				userDto := u.userService.GetByProviderUserId(id)
-				c.JSON(http.StatusOK, userDto)
+				if userDto, err := u.userService.GetByProviderUserId(id); err != nil {
+					errors.HandleErrorResponse(c, *err)
+					return
+				} else {
+					c.JSON(http.StatusOK, userDto)
+				}
 			})
 	}
 }

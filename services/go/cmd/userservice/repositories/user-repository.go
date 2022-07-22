@@ -1,13 +1,40 @@
 package repositories
 
-import "github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
+import (
+	"context"
+	"github.com/kamva/mgm/v3"
+	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
+	"go.mongodb.org/mongo-driver/bson"
+)
 
 type UserRepository interface {
+	Create(ctx context.Context, user *models.User) error
+	Update(ctx context.Context, user *models.User) error
+	FindById(ctx context.Context, id string, user *models.User) error
+	FindByProviderUserId(ctx context.Context, providerUserId string, user *models.User) error
 }
 
 type UserRepositoryImpl struct {
+	UserColl *models.User
 }
 
-func NewUserRepositoryImpl(mongoClient dbaccess.DBMongoClient) *UserRepositoryImpl {
-	return &UserRepositoryImpl{}
+func NewUserMongoRepository(mongoClient dbaccess.DBMongoClient) UserRepository {
+	return &UserRepositoryImpl{UserColl: &models.User{}}
+}
+
+func (u UserRepositoryImpl) Create(ctx context.Context, user *models.User) error {
+	return mgm.Coll(u.UserColl).CreateWithCtx(ctx, user)
+}
+
+func (u UserRepositoryImpl) Update(ctx context.Context, user *models.User) error {
+	return mgm.Coll(u.UserColl).UpdateWithCtx(ctx, user)
+}
+
+func (u UserRepositoryImpl) FindById(ctx context.Context, id string, user *models.User) error {
+	return mgm.Coll(u.UserColl).FindByIDWithCtx(ctx, id, user)
+}
+
+func (u UserRepositoryImpl) FindByProviderUserId(ctx context.Context, providerUserId string, user *models.User) error {
+	return mgm.Coll(u.UserColl).FirstWithCtx(ctx, bson.M{"providerUserId": providerUserId}, user)
 }

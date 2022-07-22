@@ -27,7 +27,7 @@ func main() {
 	var mongoCOnf = conf.NewMongoConf(envVarReader, envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
 	var mongoClient = dbaccess.BuildMongoClient(mongoCOnf)
 	var transactionRunner = dbaccess.NewTransactionRunnerMongo(mongoClient)
-	var userRepository = repositories.NewUserRepositoryImpl(mongoClient)
+	var userRepository = repositories.NewUserMongoRepository(mongoClient)
 	var userService = services.NewUserService(mongoClient, transactionRunner, userRepository)
 	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)
 	var userController = controllers.NewUserController(authMiddleware, userService)

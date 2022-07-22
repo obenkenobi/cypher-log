@@ -2,8 +2,7 @@ package userdtos
 
 type UserDto struct {
 	Id          string `json:"id"`
-	IsSystem    bool   `json:"isSystem"`
-	UserAdded   bool   `json:"userAdded"`
+	Exists      bool   `json:"exists"`
 	UserName    string `json:"userName"`
 	DisplayName string `json:"displayName"`
 }

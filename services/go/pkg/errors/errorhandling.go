@@ -42,3 +42,8 @@ func HandleErrorResponse(c *gin.Context, errorResponse errordtos.ErrorResponseDt
 	}
 	c.JSON(httpStatus, errorResponse)
 }
+
+func CreateInternalErrResponseWithLog(err error) *errordtos.ErrorResponseDto {
+	log.WithError(err).Error()
+	return errordtos.NewInternalErrorResponse()
+}
