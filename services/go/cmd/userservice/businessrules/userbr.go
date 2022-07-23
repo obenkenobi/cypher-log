@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errormgmt"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 )
 
@@ -19,7 +19,7 @@ type UserBr interface {
 }
 
 type UserBrImpl struct {
-	dbClient       dbaccess.DBClient
+	dbHandler      database.DBHandler
 	userRepository repositories.UserRepository
 }
 
@@ -29,13 +29,13 @@ func (u UserBrImpl) ValidateUserCreate(dbctx context.Context, identity security.
 
 	authId := identity.GetAuthId()
 	if err := u.userRepository.FindByAuthId(dbctx, authId, &models.User{}); err == nil {
-		errCodes = append(errCodes, errormgmt.ErrCodeUserAlreadyCreated)
-	} else if !u.dbClient.IsNotFoundError(err) {
-		return errormgmt.CreateInternalErrResponseWithErrLog(err)
+		errCodes = append(errCodes, apperrors.ErrCodeUserAlreadyCreated)
+	} else if !u.dbHandler.IsNotFoundError(err) {
+		return apperrors.CreateInternalErrResponse(err)
 	}
 
 	if returnCodes, err := u.validateUserNameNotTaken(dbctx, dto); err != nil {
-		return errormgmt.CreateInternalErrResponseWithErrLog(err)
+		return apperrors.CreateInternalErrResponse(err)
 	} else {
 		errCodes = append(errCodes, returnCodes...)
 	}
@@ -43,7 +43,7 @@ func (u UserBrImpl) ValidateUserCreate(dbctx context.Context, identity security.
 	if len(errCodes) == 0 {
 		return nil
 	}
-	return errormgmt.CreateErrorResponseFromErrorCodes(errCodes...)
+	return apperrors.CreateErrorResponseFromErrorCodes(errCodes...)
 }
 
 func (u UserBrImpl) ValidateUserUpdate(dbctx context.Context, dto *userdtos.UserSaveDto,
@@ -52,7 +52,7 @@ func (u UserBrImpl) ValidateUserUpdate(dbctx context.Context, dto *userdtos.User
 
 	if dto.UserName != existing.UserName { // If username has changed, ensure the user is not taken
 		if returnCodes, err := u.validateUserNameNotTaken(dbctx, dto); err != nil {
-			return errormgmt.CreateInternalErrResponseWithErrLog(err)
+			return apperrors.CreateInternalErrResponse(err)
 		} else {
 			errCodes = append(errCodes, returnCodes...)
 		}
@@ -61,19 +61,19 @@ func (u UserBrImpl) ValidateUserUpdate(dbctx context.Context, dto *userdtos.User
 	if len(errCodes) == 0 {
 		return nil
 	}
-	return errormgmt.CreateErrorResponseFromErrorCodesList(errCodes)
+	return apperrors.CreateErrorResponseFromErrorCodes(errCodes...)
 }
 
 func (u UserBrImpl) validateUserNameNotTaken(dbctx context.Context, dto *userdtos.UserSaveDto) ([]string, error) {
 	var errCodes []string
 	if err := u.userRepository.FindByUsername(dbctx, dto.UserName, &models.User{}); err == nil {
-		errCodes = append(errCodes, errormgmt.ErrCodeUsernameTaken)
-	} else if !u.dbClient.IsNotFoundError(err) {
+		errCodes = append(errCodes, apperrors.ErrCodeUsernameTaken)
+	} else if !u.dbHandler.IsNotFoundError(err) {
 		return errCodes, err
 	}
 	return errCodes, nil
 }
 
-func NewUserBrImpl(dbClient dbaccess.DBClient, userRepository repositories.UserRepository) *UserBrImpl {
-	return &UserBrImpl{dbClient: dbClient, userRepository: userRepository}
+func NewUserBrImpl(dbHandler database.DBHandler, userRepository repositories.UserRepository) *UserBrImpl {
+	return &UserBrImpl{dbHandler: dbHandler, userRepository: userRepository}
 }

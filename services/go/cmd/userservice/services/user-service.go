@@ -5,10 +5,10 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/mappers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errormgmt"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	log "github.com/sirupsen/logrus"
 )
@@ -23,24 +23,23 @@ type UserService interface {
 }
 
 type userServiceImpl struct {
-	dbClient          dbaccess.DBClient
-	transactionRunner dbaccess.TransactionRunner
-	userRepository    repositories.UserRepository
-	userBr            businessrules.UserBr
+	dbHandler      database.DBHandler
+	userRepository repositories.UserRepository
+	userBr         businessrules.UserBr
 }
 
 func (u userServiceImpl) AddUser(identity security.Identity, userSaveDto *userdtos.UserSaveDto) (*userdtos.UserDto, *errordtos.ErrorResponseDto) {
 	user := &models.User{}
 	userDto := &userdtos.UserDto{}
 
-	if errRes := u.userBr.ValidateUserCreate(u.dbClient.GetCtx(), identity, userSaveDto); errRes != nil {
+	if errRes := u.userBr.ValidateUserCreate(u.dbHandler.GetCtx(), identity, userSaveDto); errRes != nil {
 		return nil, errRes
 	}
 	mappers.MapUserSaveDtoToUser(userSaveDto, user)
 	user.AuthId = identity.GetAuthId()
 
-	if err := u.userRepository.Create(u.dbClient.GetCtx(), user); err != nil {
-		return nil, errormgmt.CreateInternalErrResponseWithErrLog(err)
+	if err := u.userRepository.Create(u.dbHandler.GetCtx(), user); err != nil {
+		return nil, apperrors.CreateInternalErrResponse(err)
 	}
 
 	mappers.MapUserToUserDto(user, userDto)
@@ -54,18 +53,18 @@ func (u userServiceImpl) UpdateUser(identity security.Identity, userSaveDto *use
 	userDto := &userdtos.UserDto{}
 
 	if err := u.userRepository.FindByAuthId(
-		u.dbClient.GetCtx(), identity.GetAuthId(), user); err != nil {
-		return nil, u.dbClient.NotFoundOrElseInternalErrResponse(err)
+		u.dbHandler.GetCtx(), identity.GetAuthId(), user); err != nil {
+		return nil, u.dbHandler.NotFoundOrElseInternalErrResponse(err)
 	}
 
-	if errRes := u.userBr.ValidateUserUpdate(u.dbClient.GetCtx(), userSaveDto, user); errRes != nil {
+	if errRes := u.userBr.ValidateUserUpdate(u.dbHandler.GetCtx(), userSaveDto, user); errRes != nil {
 		return nil, errRes
 	}
 
 	mappers.MapUserSaveDtoToUser(userSaveDto, user)
 
-	if err := u.userRepository.Update(u.dbClient.GetCtx(), user); err != nil {
-		return nil, errormgmt.CreateInternalErrResponseWithErrLog(err)
+	if err := u.userRepository.Update(u.dbHandler.GetCtx(), user); err != nil {
+		return nil, apperrors.CreateInternalErrResponse(err)
 	}
 
 	mappers.MapUserToUserDto(user, userDto)
@@ -88,11 +87,11 @@ func (u userServiceImpl) GetByAuthId(authId string) (*userdtos.UserDto, *errordt
 	user := &models.User{}
 	userDto := &userdtos.UserDto{}
 
-	if err := u.userRepository.FindByAuthId(u.dbClient.GetCtx(), authId, user); err != nil {
-		if u.dbClient.IsNotFoundError(err) {
+	if err := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), authId, user); err != nil {
+		if u.dbHandler.IsNotFoundError(err) {
 			return userDto, nil
 		}
-		return nil, u.dbClient.NotFoundOrElseInternalErrResponse(err)
+		return nil, u.dbHandler.NotFoundOrElseInternalErrResponse(err)
 	}
 
 	mappers.MapUserToUserDto(user, userDto)
@@ -100,12 +99,11 @@ func (u userServiceImpl) GetByAuthId(authId string) (*userdtos.UserDto, *errordt
 	return userDto, nil
 }
 
-func NewUserService(dbClient dbaccess.DBClient, transactionRunner dbaccess.TransactionRunner,
-	userRepository repositories.UserRepository, userBr businessrules.UserBr) UserService {
+func NewUserService(dbHandler database.DBHandler, userRepository repositories.UserRepository,
+	userBr businessrules.UserBr) UserService {
 	return &userServiceImpl{
-		dbClient:          dbClient,
-		transactionRunner: transactionRunner,
-		userRepository:    userRepository,
-		userBr:            userBr,
+		dbHandler:      dbHandler,
+		userRepository: userRepository,
+		userBr:         userBr,
 	}
 }

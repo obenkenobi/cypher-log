@@ -34,32 +34,32 @@ BIN_WINDOWS_AMD64 := $(BIN_DIR)/$(service).$(GOARCH_AMD64).$(EXTENSION_BIN_WINDO
 BIN_WINDOWS_ARM64 := $(BIN_DIR)/$(service).$(GOARCH_ARM).$(EXTENSION_BIN_WINDOWS)
 
 define go_build_platform
-	env GOOS=$(1) GOARCH=$(2) go build -o $(3) $(4)	
+	env GOOS=$(1) GOARCH=$(2) go build -o $(3) $(SELECTED_SERVICE_DIR)
 endef
 
 list-microservices:
 	ls $(CMD_DIR)
 
 run:
-	go run $(SELECTED_SERVICE_DIR_MAIN)
+	go run $(SELECTED_SERVICE_DIR)
 
 build-linux-amd64:
-	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_AMD64),$(BIN_LINUX_AMD64),$(SELECTED_SERVICE_DIR_MAIN))
+	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_AMD64),$(BIN_LINUX_AMD64))
 
 build-linux-arm64:
-	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_ARM),$(BIN_LINUX_ARM64),$(SELECTED_SERVICE_DIR_MAIN))
+	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_ARM),$(BIN_LINUX_ARM64))
 
 build-darwin-amd64:
-	$(call go_build_platform,$(GOOS_DARWIN),$(GOARCH_AMD64),$(BIN_DARWIN_AMD64),$(SELECTED_SERVICE_DIR_MAIN))
+	$(call go_build_platform,$(GOOS_DARWIN),$(GOARCH_AMD64),$(BIN_DARWIN_AMD64))
 
 build-darwin-arm64:
-	$(call go_build_platform,$(GOOS_DARWIN),$(GOARCH_ARM),$(BIN_DARWIN_ARM64),$(SELECTED_SERVICE_DIR_MAIN))
+	$(call go_build_platform,$(GOOS_DARWIN),$(GOARCH_ARM),$(BIN_DARWIN_ARM64))
 
 build-windows-amd64:
-	$(call go_build_platform,$(GOOS_WINDOWS),$(GOOS_WINDOWS),$(BIN_WINDOWS_AMD64),$(SELECTED_SERVICE_DIR_MAIN))
+	$(call go_build_platform,$(GOOS_WINDOWS),$(GOOS_WINDOWS),$(BIN_WINDOWS_AMD64))
 
 build-windows-arm64:
-	$(call go_build_platform,$(GOOS_WINDOWS),$(GOOS_WINDOWS),$(BIN_WINDOWS_ARM64),$(SELECTED_SERVICE_DIR_MAIN))
+	$(call go_build_platform,$(GOOS_WINDOWS),$(GOOS_WINDOWS),$(BIN_WINDOWS_ARM64))
 
 build-all-platforms: build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 build-windows-amd64 build-windows-arm64
 

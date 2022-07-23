@@ -6,7 +6,8 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 )
 
@@ -20,17 +21,18 @@ const envVarMongoDBName = "MONGO_DB_NAME"
 const envVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 func main() {
+	logging.ConfigTextLogging()
+	
 	// Dependency graph
 	var envVarReader = conf.NewEnvVariableAccessor([]string{"userservice.env"})
 	var serverConf = conf.NewServerConf(envVarReader, envVarKeyPort)
 	var commonConf = conf.NewCommonConf(envVarReader, envVarKeyEnvironment)
 	var auth0Conf = conf.NewAuth0Conf(envVarReader, envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience)
 	var mongoCOnf = conf.NewMongoConf(envVarReader, envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
-	var mongoClient = dbaccess.BuildMongoClient(mongoCOnf)
-	var transactionRunner = dbaccess.NewTransactionRunnerMongo(mongoClient)
-	var userRepository = repositories.NewUserMongoRepository(mongoClient)
-	var userBr = businessrules.NewUserBrImpl(mongoClient, userRepository)
-	var userService = services.NewUserService(mongoClient, transactionRunner, userRepository, userBr)
+	var mongoHandler = database.BuildMongoHandler(mongoCOnf)
+	var userRepository = repositories.NewUserMongoRepository(mongoHandler)
+	var userBr = businessrules.NewUserBrImpl(mongoHandler, userRepository)
+	var userService = services.NewUserService(mongoHandler, userRepository, userBr)
 	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)
 	var userController = controllers.NewUserController(authMiddleware, userService)
 	var server = BuildServer(userController, serverConf, commonConf)

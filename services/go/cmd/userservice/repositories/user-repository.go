@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dbaccess"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -20,7 +20,7 @@ type UserRepositoryImpl struct {
 	UserColl *models.User
 }
 
-func NewUserMongoRepository(mongoClient dbaccess.DBMongoClient) UserRepository {
+func NewUserMongoRepository(mongoDBHandler database.MongoDBHandler) UserRepository {
 	return &UserRepositoryImpl{UserColl: &models.User{}}
 }
 

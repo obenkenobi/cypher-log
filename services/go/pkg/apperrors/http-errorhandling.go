@@ -1,4 +1,4 @@
-package errormgmt
+package apperrors
 
 import (
 	"net/http"
@@ -11,20 +11,9 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
 )
 
-func parseValidationError(verrors validator.ValidationErrors) *errordtos.ErrorResponseDto {
-	var validationErrorDtos []errordtos.ValidationErrDto
-	for _, validationErr := range verrors {
-		validationErrorDtos = append(validationErrorDtos, errordtos.ValidationErrDto{
-			Field:   validationErr.Field(),
-			Message: validationErr.ActualTag(),
-		})
-	}
-	return errordtos.NewValidationErrorResponse(validationErrorDtos)
-}
-
 func HandleBindError(c *gin.Context, err error) {
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
-		HandleErrorResponse(c, *parseValidationError(validationErrors))
+		HandleErrorResponse(c, *CreateErrorResponseFromValidationErrors(validationErrors))
 		return
 	}
 	// We now know that this error is not a validation error
