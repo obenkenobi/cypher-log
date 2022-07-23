@@ -1,9 +1,10 @@
 package conf
 
 import (
+	"os"
+
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // EnvVarReader Reads environment variables
@@ -31,7 +32,7 @@ func NewEnvVariableAccessor(envFilesNames []string) EnvVarReader {
 	for _, envFileName := range envFilesNames {
 		err := godotenv.Load(envFileName)
 		if err != nil {
-			log.Info("Failed to load env file %v", envFileName)
+			log.Infof("Failed to load env file %v", envFileName)
 		}
 	}
 	return EnvVarReaderImpl{}
