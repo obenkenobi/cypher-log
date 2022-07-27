@@ -6,9 +6,9 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/mappers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +25,7 @@ type userServiceImpl struct {
 	dbHandler      database.DBHandler
 	userRepository repositories.UserRepository
 	userBr         businessrules.UserBr
-	errorService   errors.ErrorService
+	errorService   apperrors.ErrorService
 }
 
 func (u userServiceImpl) AddUser(
@@ -33,7 +33,7 @@ func (u userServiceImpl) AddUser(
 	userSaveDto *userdtos.UserSaveDto,
 ) stream.Observable[*userdtos.UserDto] {
 	userCreateValidationX := u.userBr.ValidateUserCreate(u.dbHandler.GetCtx(), identity, userSaveDto)
-	userCreateX := stream.FlatMap(userCreateValidationX, func([]errors.RuleError) stream.Observable[*models.User] {
+	userCreateX := stream.FlatMap(userCreateValidationX, func([]apperrors.RuleError) stream.Observable[*models.User] {
 		user := &models.User{}
 		mappers.MapUserSaveDtoToUser(userSaveDto, user)
 		user.AuthId = identity.GetAuthId()
@@ -58,15 +58,15 @@ func (u userServiceImpl) UpdateUser(
 			return option.Map(userMaybe, func(user *models.User) stream.Observable[*models.User] {
 				return stream.Just(user)
 			}).OrElseGet(func() stream.Observable[*models.User] {
-				err := errors.NewBadReqErrorFromRuleError(
-					u.errorService.RuleErrorFromCode(errors.ErrCodeReqItemsNotFound))
+				err := apperrors.NewBadReqErrorFromRuleError(
+					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqItemsNotFound))
 				return stream.Error[*models.User](err)
 			})
 		},
 	)
 	userValidatedX := stream.FlatMap(userExistsX, func(existingUser *models.User) stream.Observable[*models.User] {
 		validationX := u.userBr.ValidateUserUpdate(u.dbHandler.GetCtx(), userSaveDto, existingUser)
-		return stream.Map(validationX, func([]errors.RuleError) *models.User {
+		return stream.Map(validationX, func([]apperrors.RuleError) *models.User {
 			return existingUser
 		})
 	})
@@ -106,7 +106,7 @@ func NewUserService(
 	dbHandler database.DBHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
-	errorService errors.ErrorService,
+	errorService apperrors.ErrorService,
 ) UserService {
 	return &userServiceImpl{
 		dbHandler:      dbHandler,

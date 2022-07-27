@@ -18,7 +18,7 @@ type Session interface {
 }
 
 // DBHandler Handles database related tasks such as setting up database connection(s),
-// providing contexts for database operations, managing transactions, and handling database errors.
+// providing contexts for database operations, managing transactions, and handling database apperrors.
 type DBHandler interface {
 	GetCtx() context.Context
 	IsNotFoundError(err error) bool

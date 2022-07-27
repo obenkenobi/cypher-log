@@ -1,4 +1,4 @@
-package errors
+package apperrors
 
 const ErrCodeReqItemsNotFound = "ReqItemsNotFound"
 const ErrCodeCannotBindJson = "CannotBindJson"

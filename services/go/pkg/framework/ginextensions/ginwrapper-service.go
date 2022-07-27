@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/joamaki/goreactive/stream"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -12,33 +12,33 @@ import (
 type GinWrapperService interface {
 	readPathStr(c *gin.Context, name string) string
 	HandleErrorResponse(c *gin.Context, err error)
-	ProcessBindError(err error) errors.BadRequestError
+	ProcessBindError(err error) apperrors.BadRequestError
 	RespondJsonOk(c *gin.Context, model any, err error)
 }
 
 type GinWrapperServiceImpl struct {
-	errorMessageService errors.ErrorService
+	errorMessageService apperrors.ErrorService
 }
 
 func (h GinWrapperServiceImpl) readPathStr(c *gin.Context, key string) string {
 	return c.Param(key)
 }
 
-func (h GinWrapperServiceImpl) ProcessBindError(err error) errors.BadRequestError {
+func (h GinWrapperServiceImpl) ProcessBindError(err error) apperrors.BadRequestError {
 	if verrors, ok := err.(validator.ValidationErrors); ok {
-		var validationErrors []errors.ValidationError
+		var validationErrors []apperrors.ValidationError
 		for _, verr := range verrors {
-			validationError := errors.ValidationError{Field: verr.Field(), Message: verr.ActualTag()}
+			validationError := apperrors.ValidationError{Field: verr.Field(), Message: verr.ActualTag()}
 			validationErrors = append(validationErrors, validationError)
 		}
-		return errors.NewBadReqErrorFromValidationErrors(validationErrors)
+		return apperrors.NewBadReqErrorFromValidationErrors(validationErrors)
 	}
 	log.WithError(err).Info("Unable to bind json")
-	return errors.NewBadReqErrorFromRuleError(h.errorMessageService.RuleErrorFromCode(errors.ErrCodeCannotBindJson))
+	return apperrors.NewBadReqErrorFromRuleError(h.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson))
 }
 
 func (h GinWrapperServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
-	if badReqErr, ok := err.(errors.BadRequestError); ok {
+	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		c.JSON(http.StatusBadRequest, badReqErr)
 	} else {
 		log.Error(err)
@@ -54,7 +54,7 @@ func (h GinWrapperServiceImpl) RespondJsonOk(c *gin.Context, model any, err erro
 	c.JSON(http.StatusOK, model)
 }
 
-func NewGinWrapperService(errorService errors.ErrorService) GinWrapperService {
+func NewGinWrapperService(errorService apperrors.ErrorService) GinWrapperService {
 	return &GinWrapperServiceImpl{errorMessageService: errorService}
 }
 

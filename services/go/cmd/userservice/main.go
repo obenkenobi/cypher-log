@@ -5,9 +5,9 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/controllers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/errors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginextensions"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
@@ -33,7 +33,7 @@ func main() {
 	var mongoCOnf = conf.NewMongoConf(envVarReader, envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
 	var mongoHandler = database.BuildMongoHandler(mongoCOnf)
 	var userRepository = repositories.NewUserMongoRepository(mongoHandler)
-	var errorService = errors.NewErrorServiceImpl()
+	var errorService = apperrors.NewErrorServiceImpl()
 	var ginWrapperService = ginextensions.NewGinWrapperService(errorService)
 	var userBr = businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	var userService = services.NewUserService(mongoHandler, userRepository, userBr, errorService)

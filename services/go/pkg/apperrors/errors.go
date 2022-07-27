@@ -1,4 +1,4 @@
-package errors
+package apperrors
 
 type ValidationError struct {
 	Field   string `json:"field"`
