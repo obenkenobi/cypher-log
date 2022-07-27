@@ -2,78 +2,122 @@ package businessrules
 
 import (
 	"context"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/errors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
 type UserBr interface {
-	ValidateUserCreate(dbctx context.Context, identity security.Identity,
-		dto *userdtos.UserSaveDto) *errordtos.ErrorResponseDto
-	ValidateUserUpdate(dbctx context.Context, dto *userdtos.UserSaveDto,
-		existing *models.User) *errordtos.ErrorResponseDto
+	ValidateUserCreate(
+		ctx context.Context,
+		identity security.Identity,
+		dto *userdtos.UserSaveDto,
+	) stream.Observable[[]errors.RuleError]
+
+	ValidateUserUpdate(
+		ctx context.Context,
+		dto *userdtos.UserSaveDto,
+		existing *models.User,
+	) stream.Observable[[]errors.RuleError]
 }
 
 type UserBrImpl struct {
 	dbHandler      database.DBHandler
 	userRepository repositories.UserRepository
+	errorService   errors.ErrorService
 }
 
-func (u UserBrImpl) ValidateUserCreate(dbctx context.Context, identity security.Identity,
-	dto *userdtos.UserSaveDto) *errordtos.ErrorResponseDto {
-	var errCodes []string
+func (u UserBrImpl) ValidateUserCreate(
+	ctx context.Context,
+	identity security.Identity,
+	dto *userdtos.UserSaveDto,
+) stream.Observable[[]errors.RuleError] {
+	ruleErrorsX := stream.Just([]errors.RuleError{})
 
-	authId := identity.GetAuthId()
-	if err := u.userRepository.FindByAuthId(dbctx, authId, &models.User{}); err == nil {
-		errCodes = append(errCodes, apperrors.ErrCodeUserAlreadyCreated)
-	} else if !u.dbHandler.IsNotFoundError(err) {
-		return apperrors.CreateInternalErrResponse(err)
-	}
+	ruleErrorsX = stream.FlatMap(
+		ruleErrorsX,
+		func(ruleErrors []errors.RuleError) stream.Observable[[]errors.RuleError] {
+			userFind := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
+			return stream.Map(userFind, func(userMaybe option.Maybe[*models.User]) []errors.RuleError {
+				if userMaybe.IsPresent() {
+					return append(ruleErrors, u.errorService.RuleErrorFromCode(errors.ErrCodeUserAlreadyCreated))
+				}
+				return ruleErrors
+			})
+		},
+	)
+	ruleErrorsX = stream.FlatMap(
+		ruleErrorsX,
+		func(ruleErrors []errors.RuleError) stream.Observable[[]errors.RuleError] {
+			userNameValidation := u.validateUserNameNotTaken(ctx, dto)
+			return stream.Map(userNameValidation, func(unameruleErrors []errors.RuleError) []errors.RuleError {
+				return append(ruleErrors, unameruleErrors...)
+			})
+		},
+	)
 
-	if returnCodes, err := u.validateUserNameNotTaken(dbctx, dto); err != nil {
-		return apperrors.CreateInternalErrResponse(err)
-	} else {
-		errCodes = append(errCodes, returnCodes...)
-	}
-
-	if len(errCodes) == 0 {
-		return nil
-	}
-	return apperrors.CreateErrorResponseFromErrorCodes(errCodes...)
-}
-
-func (u UserBrImpl) ValidateUserUpdate(dbctx context.Context, dto *userdtos.UserSaveDto,
-	existing *models.User) *errordtos.ErrorResponseDto {
-	var errCodes []string
-
-	if dto.UserName != existing.UserName { // If username has changed, ensure the user is not taken
-		if returnCodes, err := u.validateUserNameNotTaken(dbctx, dto); err != nil {
-			return apperrors.CreateInternalErrResponse(err)
-		} else {
-			errCodes = append(errCodes, returnCodes...)
+	return stream.FlatMap(ruleErrorsX, func(ruleErrors []errors.RuleError) stream.Observable[[]errors.RuleError] {
+		if len(ruleErrors) == 0 {
+			return stream.Just(ruleErrors)
 		}
-	}
-
-	if len(errCodes) == 0 {
-		return nil
-	}
-	return apperrors.CreateErrorResponseFromErrorCodes(errCodes...)
+		return stream.Error[[]errors.RuleError](errors.NewBadReqErrorFromRuleErrors(ruleErrors...))
+	})
 }
 
-func (u UserBrImpl) validateUserNameNotTaken(dbctx context.Context, dto *userdtos.UserSaveDto) ([]string, error) {
-	var errCodes []string
-	if err := u.userRepository.FindByUsername(dbctx, dto.UserName, &models.User{}); err == nil {
-		errCodes = append(errCodes, apperrors.ErrCodeUsernameTaken)
-	} else if !u.dbHandler.IsNotFoundError(err) {
-		return errCodes, err
+func (u UserBrImpl) ValidateUserUpdate(
+	ctx context.Context,
+	dto *userdtos.UserSaveDto,
+	existing *models.User,
+) stream.Observable[[]errors.RuleError] {
+	ruleErrorsX := stream.Just([]errors.RuleError{})
+	if dto.UserName != existing.UserName {
+		ruleErrorsX = stream.FlatMap(
+			ruleErrorsX,
+			func(ruleErrors []errors.RuleError) stream.Observable[[]errors.RuleError] {
+				userNameValidation := u.validateUserNameNotTaken(ctx, dto)
+				return stream.Map(userNameValidation, func(unameruleErrors []errors.RuleError) []errors.RuleError {
+					return append(ruleErrors, unameruleErrors...)
+				})
+			},
+		)
 	}
-	return errCodes, nil
+	return stream.FlatMap(ruleErrorsX, func(ruleErrors []errors.RuleError) stream.Observable[[]errors.RuleError] {
+		if len(ruleErrors) == 0 {
+			return stream.Just(ruleErrors)
+		}
+		return stream.Error[[]errors.RuleError](errors.NewBadReqErrorFromRuleErrors(ruleErrors...))
+	})
 }
 
-func NewUserBrImpl(dbHandler database.DBHandler, userRepository repositories.UserRepository) *UserBrImpl {
-	return &UserBrImpl{dbHandler: dbHandler, userRepository: userRepository}
+func (u UserBrImpl) validateUserNameNotTaken(
+	ctx context.Context,
+	dto *userdtos.UserSaveDto,
+) stream.Observable[[]errors.RuleError] {
+	ruleErrorsX := stream.Just([]errors.RuleError{})
+	ruleErrorsX = stream.FlatMap(
+		ruleErrorsX,
+		func(ruleErrors []errors.RuleError) stream.Observable[[]errors.RuleError] {
+			userFind := u.userRepository.FindByUsername(ctx, dto.UserName)
+			return stream.Map(userFind, func(userMaybe option.Maybe[*models.User]) []errors.RuleError {
+				if userMaybe.IsPresent() {
+					return append(ruleErrors, u.errorService.RuleErrorFromCode(errors.ErrCodeUsernameTaken))
+				}
+				return ruleErrors
+			})
+		},
+	)
+	return ruleErrorsX
+}
+
+func NewUserBrImpl(
+	dbHandler database.DBHandler,
+	userRepository repositories.UserRepository,
+	errorMessageService errors.ErrorService,
+) UserBr {
+	return &UserBrImpl{dbHandler: dbHandler, userRepository: userRepository, errorService: errorMessageService}
 }

@@ -16,7 +16,7 @@ func MapUserToUserDto(source *models.User, dest *userdtos.UserDto) {
 		*dest = userdtos.UserDto{}
 	}
 	dest.Id = source.GetIdStr()
-	dest.Exists = true
+	dest.Exists = !source.IsIdEmpty()
 	dest.UserName = source.UserName
 	dest.DisplayName = source.DisplayName
 	dest.CreatedAt = source.CreatedAt.UnixMilli()

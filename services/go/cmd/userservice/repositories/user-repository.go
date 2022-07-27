@@ -2,44 +2,48 @@ package repositories
 
 import (
 	"context"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user *models.User) error
-	Update(ctx context.Context, user *models.User) error
-	FindById(ctx context.Context, id string, user *models.User) error
-	FindByAuthId(ctx context.Context, authId string, user *models.User) error
-	FindByUsername(ctx context.Context, username string, user *models.User) error
+	database.Repository[*models.User, string]
+	FindByAuthId(ctx context.Context, authId string) stream.Observable[option.Maybe[*models.User]]
+	FindByUsername(ctx context.Context, username string) stream.Observable[option.Maybe[*models.User]]
 }
 
 type UserRepositoryImpl struct {
-	UserColl *models.User
+	database.RepositoryMongoImpl[*models.User, string]
 }
 
-func NewUserMongoRepository(mongoDBHandler database.MongoDBHandler) UserRepository {
-	return &UserRepositoryImpl{UserColl: &models.User{}}
+func (u UserRepositoryImpl) FindByAuthId(
+	ctx context.Context,
+	authId string,
+) stream.Observable[option.Maybe[*models.User]] {
+	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (*models.User, error) {
+		user := &models.User{}
+		err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"authId": authId}, user)
+		return user, err
+	})
 }
 
-func (u UserRepositoryImpl) Create(ctx context.Context, user *models.User) error {
-	return mgm.Coll(u.UserColl).CreateWithCtx(ctx, user)
+func (u UserRepositoryImpl) FindByUsername(
+	ctx context.Context,
+	username string,
+) stream.Observable[option.Maybe[*models.User]] {
+	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (*models.User, error) {
+		user := &models.User{}
+		err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"userName": username}, user)
+		return user, err
+	})
 }
 
-func (u UserRepositoryImpl) Update(ctx context.Context, user *models.User) error {
-	return mgm.Coll(u.UserColl).UpdateWithCtx(ctx, user)
-}
-
-func (u UserRepositoryImpl) FindById(ctx context.Context, id string, user *models.User) error {
-	return mgm.Coll(u.UserColl).FindByIDWithCtx(ctx, id, user)
-}
-
-func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string, user *models.User) error {
-	return mgm.Coll(u.UserColl).FirstWithCtx(ctx, bson.M{"authId": authId}, user)
-}
-
-func (u UserRepositoryImpl) FindByUsername(ctx context.Context, username string, user *models.User) error {
-	return mgm.Coll(u.UserColl).FirstWithCtx(ctx, bson.M{"userName": username}, user)
+func NewUserMongoRepository(mongoDBHandler *database.MongoDBHandler) UserRepository {
+	return &UserRepositoryImpl{
+		RepositoryMongoImpl: *database.NewRepositoryMongoImpl[*models.User, string](&models.User{}, mongoDBHandler),
+	}
 }

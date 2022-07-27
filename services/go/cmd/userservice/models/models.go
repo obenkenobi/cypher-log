@@ -14,6 +14,10 @@ func (u User) GetIdStr() string {
 	return u.ID.Hex()
 }
 
+func (u User) IsIdEmpty() bool {
+	return u.ID.IsZero()
+}
+
 func (u *User) CollectionName() string {
 	return "users"
 }

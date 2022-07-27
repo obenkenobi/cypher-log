@@ -28,7 +28,7 @@ func (e EnvVarReaderImpl) GetEnvVariableOrDefault(key string, defaultValue strin
 	return val
 }
 
-func NewEnvVariableAccessor(envFilesNames []string) EnvVarReader {
+func NewEnvVariableReader(envFilesNames []string) EnvVarReader {
 	for _, envFileName := range envFilesNames {
 		err := godotenv.Load(envFileName)
 		if err != nil {

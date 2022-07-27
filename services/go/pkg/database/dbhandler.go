@@ -2,10 +2,11 @@ package database
 
 import (
 	"context"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/kamva/mgm/v3"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/errordtos"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/reactorextensions"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -21,18 +22,10 @@ type Session interface {
 type DBHandler interface {
 	GetCtx() context.Context
 	IsNotFoundError(err error) bool
-	NotFoundOrElseInternalErrResponse(err error) *errordtos.ErrorResponseDto
 	ExecTransaction(runner func(Session, context.Context) error) error
 }
 
 type MongoDBHandler struct {
-}
-
-func (d MongoDBHandler) NotFoundOrElseInternalErrResponse(err error) *errordtos.ErrorResponseDto {
-	if d.IsNotFoundError(err) {
-		return apperrors.CreateErrorResponseFromErrorCodes(apperrors.ErrCodeReqItemsNotFound)
-	}
-	return apperrors.CreateInternalErrResponse(err)
 }
 
 func (d MongoDBHandler) IsNotFoundError(err error) bool {
@@ -49,12 +42,28 @@ func (d MongoDBHandler) ExecTransaction(transactionFunc func(Session, context.Co
 	})
 }
 
-func BuildMongoHandler(mongoConf conf.MongoConf) MongoDBHandler {
+func BuildMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 	if err := mgm.SetDefaultConfig(
 		&mgm.Config{CtxTimeout: mongoConf.GetConnectionTimeout()},
 		mongoConf.GetDBName(),
 		options.Client().ApplyURI(mongoConf.GetUri())); err != nil {
 		log.WithError(err).Fatal("Failed to set mongodb config")
 	}
-	return MongoDBHandler{}
+	return &MongoDBHandler{}
+}
+
+func ObserveOptionalSingleQuery[TModel any](
+	mongoDBHandler *MongoDBHandler,
+	producer func() (TModel, error),
+) stream.Observable[option.Maybe[TModel]] {
+	return reactorextensions.ObserveProducer(func() (option.Maybe[TModel], error) {
+		if result, err := producer(); err != nil {
+			if mongoDBHandler.IsNotFoundError(err) {
+				return option.None[TModel](), nil
+			}
+			return nil, err
+		} else {
+			return option.Perhaps(result), nil
+		}
+	})
 }

@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginextensions"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"net/http"
@@ -15,8 +16,9 @@ type UserController interface {
 }
 
 type userControllerImpl struct {
-	userService    services.UserService
-	authMiddleware middlewares.AuthMiddleware
+	userService       services.UserService
+	authMiddleware    middlewares.AuthMiddleware
+	ginWrapperService ginextensions.GinWrapperService
 }
 
 func (u userControllerImpl) AddRoutes(r *gin.Engine) {
@@ -26,14 +28,14 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				userSaveDto := &userdtos.UserSaveDto{}
-				if err := c.ShouldBind(userSaveDto); err != nil {
-					apperrors.HandleBindError(c, err)
-					return
-				}
-				identity := security.GetIdentityFromContext(c)
-				if userDto, err := u.userService.AddUser(identity, userSaveDto); err != nil {
-					apperrors.HandleErrorResponse(c, *err)
+				bindBodyX := ginextensions.BindBody[*userdtos.UserSaveDto](
+					u.ginWrapperService, c, &userdtos.UserSaveDto{})
+				addUserX := stream.FlatMap(bindBodyX,
+					func(userSaveDto *userdtos.UserSaveDto) stream.Observable[*userdtos.UserDto] {
+						return u.userService.AddUser(security.GetIdentityFromContext(c), userSaveDto)
+					})
+				if userDto, err := stream.First(c, addUserX); err != nil {
+					u.ginWrapperService.HandleErrorResponse(c, err)
 				} else {
 					c.JSON(http.StatusOK, userDto)
 				}
@@ -43,48 +45,45 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				userSaveDto := &userdtos.UserSaveDto{}
-				if err := c.ShouldBind(userSaveDto); err != nil {
-					apperrors.HandleBindError(c, err)
-					return
-				}
-				identity := security.GetIdentityFromContext(c)
-				if userDto, err := u.userService.UpdateUser(identity, userSaveDto); err != nil {
-					apperrors.HandleErrorResponse(c, *err)
-				} else {
-					c.JSON(http.StatusOK, userDto)
-				}
+				bindBodyX := ginextensions.BindBody[*userdtos.UserSaveDto](
+					u.ginWrapperService, c, &userdtos.UserSaveDto{})
+				updateUserX := stream.FlatMap(bindBodyX,
+					func(userSaveDto *userdtos.UserSaveDto) stream.Observable[*userdtos.UserDto] {
+						return u.userService.UpdateUser(security.GetIdentityFromContext(c), userSaveDto)
+					})
+				userDto, err := stream.First(c, updateUserX)
+				u.ginWrapperService.RespondJsonOk(c, userDto, err)
 			})
 
 		userGroup.GET("/me",
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				identity := security.GetIdentityFromContext(c)
-				if dto, err := u.userService.GetUserIdentity(identity); err != nil {
-					apperrors.HandleErrorResponse(c, *err)
-				} else {
-					c.JSON(http.StatusOK, dto)
-				}
+				getUserIdentityX := u.userService.GetUserIdentity(security.GetIdentityFromContext(c))
+				userDto, err := stream.First(c, getUserIdentityX)
+				u.ginWrapperService.RespondJsonOk(c, userDto, err)
 			})
 
-		userGroup.GET("/byProviderUserId/:id",
+		userGroup.GET("/byAuthId/:id",
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 			func(c *gin.Context) {
-				id := c.Param("id")
-				if userDto, err := u.userService.GetByAuthId(id); err != nil {
-					apperrors.HandleErrorResponse(c, *err)
-				} else {
-					c.JSON(http.StatusOK, userDto)
-				}
+				authId := c.Param("id")
+				getUserX := u.userService.GetByAuthId(authId)
+				userDto, err := stream.First(c, getUserX)
+				u.ginWrapperService.RespondJsonOk(c, userDto, err)
 			})
 	}
 }
 
-func NewUserController(authMiddleware middlewares.AuthMiddleware, userService services.UserService) UserController {
+func NewUserController(
+	authMiddleware middlewares.AuthMiddleware,
+	userService services.UserService,
+	ginWrapperService ginextensions.GinWrapperService,
+) UserController {
 	return &userControllerImpl{
-		authMiddleware: authMiddleware,
-		userService:    userService,
+		authMiddleware:    authMiddleware,
+		userService:       userService,
+		ginWrapperService: ginWrapperService,
 	}
 }
