@@ -6,11 +6,11 @@ import (
 	"github.com/joamaki/goreactive/stream"
 )
 
-// ObserveProducer creates an observable out of a supplier function that may
+// ObserveSupplier creates an observable out of a supplier function that may
 // return a value or an error. If the supplier is sucessful, an observable
 // of that value will be created. Otherwise, if an error is returned,
 // an error observable is created.
-func ObserveProducer[V any](supplier func() (V, error)) stream.Observable[V] {
+func ObserveSupplier[V any](supplier func() (V, error)) stream.Observable[V] {
 	return stream.FuncObservable[V](func(ctx context.Context, next func(V) error) error {
 		if ctx.Err() != nil {
 			// Context already cancelled, stop before emitting items.
@@ -24,7 +24,7 @@ func ObserveProducer[V any](supplier func() (V, error)) stream.Observable[V] {
 	})
 }
 
-// MapDerefPtr takes an observable of a pointer and maps it to an observable of a de-referenced value
+// MapDerefPtr takes an observable of a pointer and maps it to an observable of a de-referenced value of that pointer
 func MapDerefPtr[V any](pointerX stream.Observable[*V]) stream.Observable[V] {
 	return stream.FlatMap(pointerX, func(ptr *V) stream.Observable[V] {
 		if ptr == nil {

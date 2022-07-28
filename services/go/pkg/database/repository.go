@@ -21,21 +21,21 @@ type RepositoryMongoImpl[VModel MongoModel, VID any] struct {
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, model VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveProducer(func() (VModel, error) {
+	return reactorextensions.ObserveSupplier(func() (VModel, error) {
 		err := mgm.Coll(r.ModelColumn).CreateWithCtx(ctx, model)
 		return model, err
 	})
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) Update(ctx context.Context, model VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveProducer(func() (VModel, error) {
+	return reactorextensions.ObserveSupplier(func() (VModel, error) {
 		err := mgm.Coll(r.ModelColumn).UpdateWithCtx(ctx, model)
 		return model, err
 	})
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) Delete(ctx context.Context, model VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveProducer(func() (VModel, error) {
+	return reactorextensions.ObserveSupplier(func() (VModel, error) {
 		err := mgm.Coll(r.ModelColumn).DeleteWithCtx(ctx, model)
 		return model, err
 	})

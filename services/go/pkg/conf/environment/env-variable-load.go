@@ -19,7 +19,7 @@ func GetEnvVariableOrDefault(key string, defaultValue string) string {
 	return val
 }
 
-func ReadEnvFiles(envFilesNames []string) {
+func ReadEnvFiles(envFilesNames ...string) {
 	for _, envFileName := range envFilesNames {
 		err := godotenv.Load(envFileName)
 		if err != nil {

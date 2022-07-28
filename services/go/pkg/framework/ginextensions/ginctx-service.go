@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-type GinWrapperService interface {
+type GinCtxService interface {
 	readPathStr(c *gin.Context, name string) string
 	HandleErrorResponse(c *gin.Context, err error)
 	ProcessBindError(err error) apperrors.BadRequestError
@@ -54,18 +54,18 @@ func (h GinWrapperServiceImpl) RespondJsonOk(c *gin.Context, model any, err erro
 	c.JSON(http.StatusOK, model)
 }
 
-func NewGinWrapperService(errorService apperrors.ErrorService) GinWrapperService {
+func NewGinWrapperService(errorService apperrors.ErrorService) GinCtxService {
 	return &GinWrapperServiceImpl{errorMessageService: errorService}
 }
 
-func BindValueToBody[V any](ginWrapperService GinWrapperService, c *gin.Context, value V) stream.Observable[V] {
+func BindValueToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value V) stream.Observable[V] {
 	if err := c.ShouldBind(&value); err != nil {
 		return stream.Error[V](ginWrapperService.ProcessBindError(err))
 	}
 	return stream.Just(value)
 }
 
-func BindPointerToBody[V any](ginWrapperService GinWrapperService, c *gin.Context, value *V) stream.Observable[*V] {
+func BindPointerToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value *V) stream.Observable[*V] {
 	if err := c.ShouldBind(value); err != nil {
 		return stream.Error[*V](ginWrapperService.ProcessBindError(err))
 	}

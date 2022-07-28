@@ -1,9 +1,8 @@
-package main
+package server
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/controllers"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
@@ -27,13 +26,15 @@ func (s appserverImpl) Run() {
 	}
 }
 
-func BuildServer(userController controllers.UserController, serverConf conf.ServerConf) AppServer {
+func BuildServer(serverConf conf.ServerConf, controllers ...Controller) AppServer {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	server := appserverImpl{serverConf: serverConf, router: gin.New()}
 	// Bind middlewares and routes
 	middlewares.AddGlobalMiddleWares(server.router)
-	userController.AddRoutes(server.router)
+	for _, controller := range controllers {
+		controller.AddRoutes(server.router)
+	}
 	return server
 }

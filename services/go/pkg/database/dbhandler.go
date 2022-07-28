@@ -56,7 +56,7 @@ func ObserveOptionalSingleQuery[TModel any](
 	mongoDBHandler *MongoDBHandler,
 	producer func() (TModel, error),
 ) stream.Observable[option.Maybe[TModel]] {
-	return reactorextensions.ObserveProducer(func() (option.Maybe[TModel], error) {
+	return reactorextensions.ObserveSupplier(func() (option.Maybe[TModel], error) {
 		if result, err := producer(); err != nil {
 			if mongoDBHandler.IsNotFoundError(err) {
 				return option.None[TModel](), nil

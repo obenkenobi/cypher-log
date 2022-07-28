@@ -13,6 +13,7 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginextensions"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/server"
 )
 
 // Environment variable names
@@ -25,7 +26,7 @@ const envVarMongoDBName = "MONGO_DB_NAME"
 const envVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 func main() {
-	environment.ReadEnvFiles([]string{"userservice.env"})              // Load env files
+	environment.ReadEnvFiles("userservice.env")                        // Load env files
 	environment.SetEnvVarKeyForAppEnvironment(envVarKeyAppEnvironment) // Set app environment
 	logging.ConfigureGlobalLogging()                                   // Configure logging
 	// Dependency graph
@@ -35,13 +36,13 @@ func main() {
 	var mongoHandler = database.BuildMongoHandler(mongoCOnf)
 	var userRepository = repositories.NewUserMongoRepository(mongoHandler)
 	var errorService = apperrors.NewErrorServiceImpl()
-	var ginWrapperService = ginextensions.NewGinWrapperService(errorService)
+	var ginCtxService = ginextensions.NewGinWrapperService(errorService)
 	var userBr = businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	var userService = services.NewUserService(mongoHandler, userRepository, userBr, errorService)
 	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)
-	var userController = controllers.NewUserController(authMiddleware, userService, ginWrapperService)
-	var server = BuildServer(userController, serverConf)
+	var userController = controllers.NewUserController(authMiddleware, userService, ginCtxService)
+	var appServer = server.BuildServer(serverConf, userController)
 
 	// Run server
-	server.Run()
+	appServer.Run()
 }
