@@ -28,10 +28,9 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				bindBodyX := ginextensions.BindBody[*userdtos.UserSaveDto](
-					u.ginWrapperService, c, &userdtos.UserSaveDto{})
+				bindBodyX := ginextensions.BindValueToBody(u.ginWrapperService, c, userdtos.UserSaveDto{})
 				addUserX := stream.FlatMap(bindBodyX,
-					func(userSaveDto *userdtos.UserSaveDto) stream.Observable[*userdtos.UserDto] {
+					func(userSaveDto userdtos.UserSaveDto) stream.Observable[userdtos.UserDto] {
 						return u.userService.AddUser(security.GetIdentityFromContext(c), userSaveDto)
 					})
 				if userDto, err := stream.First(c, addUserX); err != nil {
@@ -45,10 +44,9 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.authMiddleware.Authentication(),
 			u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 			func(c *gin.Context) {
-				bindBodyX := ginextensions.BindBody[*userdtos.UserSaveDto](
-					u.ginWrapperService, c, &userdtos.UserSaveDto{})
+				bindBodyX := ginextensions.BindValueToBody(u.ginWrapperService, c, userdtos.UserSaveDto{})
 				updateUserX := stream.FlatMap(bindBodyX,
-					func(userSaveDto *userdtos.UserSaveDto) stream.Observable[*userdtos.UserDto] {
+					func(userSaveDto userdtos.UserSaveDto) stream.Observable[userdtos.UserDto] {
 						return u.userService.UpdateUser(security.GetIdentityFromContext(c), userSaveDto)
 					})
 				userDto, err := stream.First(c, updateUserX)

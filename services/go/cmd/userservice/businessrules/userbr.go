@@ -16,13 +16,13 @@ type UserBr interface {
 	ValidateUserCreate(
 		ctx context.Context,
 		identity security.Identity,
-		dto *userdtos.UserSaveDto,
+		dto userdtos.UserSaveDto,
 	) stream.Observable[[]apperrors.RuleError]
 
 	ValidateUserUpdate(
 		ctx context.Context,
-		dto *userdtos.UserSaveDto,
-		existing *models.User,
+		dto userdtos.UserSaveDto,
+		existing models.User,
 	) stream.Observable[[]apperrors.RuleError]
 }
 
@@ -35,7 +35,7 @@ type UserBrImpl struct {
 func (u UserBrImpl) ValidateUserCreate(
 	ctx context.Context,
 	identity security.Identity,
-	dto *userdtos.UserSaveDto,
+	dto userdtos.UserSaveDto,
 ) stream.Observable[[]apperrors.RuleError] {
 	ruleErrorsX := stream.Just([]apperrors.RuleError{})
 
@@ -43,7 +43,7 @@ func (u UserBrImpl) ValidateUserCreate(
 		ruleErrorsX,
 		func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
 			userFind := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
-			return stream.Map(userFind, func(userMaybe option.Maybe[*models.User]) []apperrors.RuleError {
+			return stream.Map(userFind, func(userMaybe option.Maybe[models.User]) []apperrors.RuleError {
 				if userMaybe.IsPresent() {
 					return append(ruleErrors, u.errorService.RuleErrorFromCode(apperrors.ErrCodeUserAlreadyCreated))
 				}
@@ -55,8 +55,8 @@ func (u UserBrImpl) ValidateUserCreate(
 		ruleErrorsX,
 		func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
 			userNameValidation := u.validateUserNameNotTaken(ctx, dto)
-			return stream.Map(userNameValidation, func(unameruleErrors []apperrors.RuleError) []apperrors.RuleError {
-				return append(ruleErrors, unameruleErrors...)
+			return stream.Map(userNameValidation, func(userNameErrors []apperrors.RuleError) []apperrors.RuleError {
+				return append(ruleErrors, userNameErrors...)
 			})
 		},
 	)
@@ -71,8 +71,8 @@ func (u UserBrImpl) ValidateUserCreate(
 
 func (u UserBrImpl) ValidateUserUpdate(
 	ctx context.Context,
-	dto *userdtos.UserSaveDto,
-	existing *models.User,
+	dto userdtos.UserSaveDto,
+	existing models.User,
 ) stream.Observable[[]apperrors.RuleError] {
 	ruleErrorsX := stream.Just([]apperrors.RuleError{})
 	if dto.UserName != existing.UserName {
@@ -80,8 +80,8 @@ func (u UserBrImpl) ValidateUserUpdate(
 			ruleErrorsX,
 			func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
 				userNameValidation := u.validateUserNameNotTaken(ctx, dto)
-				return stream.Map(userNameValidation, func(unameruleErrors []apperrors.RuleError) []apperrors.RuleError {
-					return append(ruleErrors, unameruleErrors...)
+				return stream.Map(userNameValidation, func(userNameErrors []apperrors.RuleError) []apperrors.RuleError {
+					return append(ruleErrors, userNameErrors...)
 				})
 			},
 		)
@@ -96,14 +96,14 @@ func (u UserBrImpl) ValidateUserUpdate(
 
 func (u UserBrImpl) validateUserNameNotTaken(
 	ctx context.Context,
-	dto *userdtos.UserSaveDto,
+	dto userdtos.UserSaveDto,
 ) stream.Observable[[]apperrors.RuleError] {
 	ruleErrorsX := stream.Just([]apperrors.RuleError{})
 	ruleErrorsX = stream.FlatMap(
 		ruleErrorsX,
 		func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
 			userFind := u.userRepository.FindByUsername(ctx, dto.UserName)
-			return stream.Map(userFind, func(userMaybe option.Maybe[*models.User]) []apperrors.RuleError {
+			return stream.Map(userFind, func(userMaybe option.Maybe[models.User]) []apperrors.RuleError {
 				if userMaybe.IsPresent() {
 					return append(ruleErrors, u.errorService.RuleErrorFromCode(apperrors.ErrCodeUsernameTaken))
 				}

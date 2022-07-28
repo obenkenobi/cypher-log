@@ -7,6 +7,8 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginextensions"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
@@ -15,7 +17,7 @@ import (
 
 // Environment variable names
 const envVarKeyPort = "PORT"
-const envVarKeyEnvironment = "ENVIRONMENT"
+const envVarKeyAppEnvironment = "ENVIRONMENT"
 const envVarKeyAuth0IssuerUrl = "AUTH0_ISSUER_URL"
 const envVarKeyAuth0Audience = "AUTH0_AUDIENCE"
 const envVarKeyMongoUri = "MONGO_URI"
@@ -23,14 +25,13 @@ const envVarMongoDBName = "MONGO_DB_NAME"
 const envVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 func main() {
-	logging.ConfigTextLogging()
-
+	environment.ReadEnvFiles([]string{"userservice.env"})              // Load env files
+	environment.SetEnvVarKeyForAppEnvironment(envVarKeyAppEnvironment) // Set app environment
+	logging.ConfigureGlobalLogging()                                   // Configure logging
 	// Dependency graph
-	var envVarReader = conf.NewEnvVariableReader([]string{"userservice.env"})
-	var serverConf = conf.NewServerConf(envVarReader, envVarKeyPort)
-	var commonConf = conf.NewCommonConf(envVarReader, envVarKeyEnvironment)
-	var auth0Conf = conf.NewAuth0Conf(envVarReader, envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience)
-	var mongoCOnf = conf.NewMongoConf(envVarReader, envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
+	var serverConf = conf.NewServerConf(envVarKeyPort)
+	var auth0Conf = authconf.NewAuth0Conf(envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience)
+	var mongoCOnf = conf.NewMongoConf(envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
 	var mongoHandler = database.BuildMongoHandler(mongoCOnf)
 	var userRepository = repositories.NewUserMongoRepository(mongoHandler)
 	var errorService = apperrors.NewErrorServiceImpl()
@@ -39,7 +40,7 @@ func main() {
 	var userService = services.NewUserService(mongoHandler, userRepository, userBr, errorService)
 	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)
 	var userController = controllers.NewUserController(authMiddleware, userService, ginWrapperService)
-	var server = BuildServer(userController, serverConf, commonConf)
+	var server = BuildServer(userController, serverConf)
 
 	// Run server
 	server.Run()

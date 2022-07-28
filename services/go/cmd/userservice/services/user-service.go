@@ -9,16 +9,17 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/reactorextensions"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
 )
 
 type UserService interface {
-	AddUser(identity security.Identity, userSaveDto *userdtos.UserSaveDto) stream.Observable[*userdtos.UserDto]
-	UpdateUser(identity security.Identity, userSaveDto *userdtos.UserSaveDto) stream.Observable[*userdtos.UserDto]
-	GetByAuthId(tokenId string) stream.Observable[*userdtos.UserDto]
-	GetUserIdentity(identity security.Identity) stream.Observable[*userdtos.UserIdentityDto]
+	AddUser(identity security.Identity, userSaveDto userdtos.UserSaveDto) stream.Observable[userdtos.UserDto]
+	UpdateUser(identity security.Identity, userSaveDto userdtos.UserSaveDto) stream.Observable[userdtos.UserDto]
+	GetByAuthId(tokenId string) stream.Observable[userdtos.UserDto]
+	GetUserIdentity(identity security.Identity) stream.Observable[userdtos.UserIdentityDto]
 }
 
 type userServiceImpl struct {
@@ -30,74 +31,74 @@ type userServiceImpl struct {
 
 func (u userServiceImpl) AddUser(
 	identity security.Identity,
-	userSaveDto *userdtos.UserSaveDto,
-) stream.Observable[*userdtos.UserDto] {
+	userSaveDto userdtos.UserSaveDto,
+) stream.Observable[userdtos.UserDto] {
 	userCreateValidationX := u.userBr.ValidateUserCreate(u.dbHandler.GetCtx(), identity, userSaveDto)
-	userCreateX := stream.FlatMap(userCreateValidationX, func([]apperrors.RuleError) stream.Observable[*models.User] {
-		user := &models.User{}
-		mappers.MapUserSaveDtoToUser(userSaveDto, user)
+	userCreateX := stream.FlatMap(userCreateValidationX, func([]apperrors.RuleError) stream.Observable[models.User] {
+		user := models.User{}
+		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
 		user.AuthId = identity.GetAuthId()
-		return u.userRepository.Create(u.dbHandler.GetCtx(), user)
+		return reactorextensions.MapDerefPtr(u.userRepository.Create(u.dbHandler.GetCtx(), &user))
 	})
-	return stream.Map(userCreateX, func(user *models.User) *userdtos.UserDto {
-		userDto := &userdtos.UserDto{}
-		mappers.MapUserToUserDto(user, userDto)
-		log.Info("Created user ", userDto)
+	return stream.Map(userCreateX, func(user models.User) userdtos.UserDto {
+		userDto := userdtos.UserDto{}
+		mappers.MapUserToUserDto(user, &userDto)
+		log.Debug("Created user ", userDto)
 		return userDto
 	})
 }
 
 func (u userServiceImpl) UpdateUser(
 	identity security.Identity,
-	userSaveDto *userdtos.UserSaveDto,
-) stream.Observable[*userdtos.UserDto] {
+	userSaveDto userdtos.UserSaveDto,
+) stream.Observable[userdtos.UserDto] {
 	userSearchX := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), identity.GetAuthId())
 	userExistsX := stream.FlatMap(
 		userSearchX,
-		func(userMaybe option.Maybe[*models.User]) stream.Observable[*models.User] {
-			return option.Map(userMaybe, func(user *models.User) stream.Observable[*models.User] {
+		func(userMaybe option.Maybe[models.User]) stream.Observable[models.User] {
+			return option.Map(userMaybe, func(user models.User) stream.Observable[models.User] {
 				return stream.Just(user)
-			}).OrElseGet(func() stream.Observable[*models.User] {
+			}).OrElseGet(func() stream.Observable[models.User] {
 				err := apperrors.NewBadReqErrorFromRuleError(
 					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqItemsNotFound))
-				return stream.Error[*models.User](err)
+				return stream.Error[models.User](err)
 			})
 		},
 	)
-	userValidatedX := stream.FlatMap(userExistsX, func(existingUser *models.User) stream.Observable[*models.User] {
+	userValidatedX := stream.FlatMap(userExistsX, func(existingUser models.User) stream.Observable[models.User] {
 		validationX := u.userBr.ValidateUserUpdate(u.dbHandler.GetCtx(), userSaveDto, existingUser)
-		return stream.Map(validationX, func([]apperrors.RuleError) *models.User {
+		return stream.Map(validationX, func([]apperrors.RuleError) models.User {
 			return existingUser
 		})
 	})
-	userSavedX := stream.FlatMap(userValidatedX, func(user *models.User) stream.Observable[*models.User] {
-		mappers.MapUserSaveDtoToUser(userSaveDto, user)
-		return u.userRepository.Update(u.dbHandler.GetCtx(), user)
+	userSavedX := stream.FlatMap(userValidatedX, func(user models.User) stream.Observable[models.User] {
+		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
+		return reactorextensions.MapDerefPtr(u.userRepository.Update(u.dbHandler.GetCtx(), &user))
 	})
-	return stream.Map(userSavedX, func(user *models.User) *userdtos.UserDto {
-		userDto := &userdtos.UserDto{}
-		mappers.MapUserToUserDto(user, userDto)
-		log.Info("Created user ", userDto)
+	return stream.Map(userSavedX, func(user models.User) userdtos.UserDto {
+		userDto := userdtos.UserDto{}
+		mappers.MapUserToUserDto(user, &userDto)
+		log.Debug("Saved user ", userDto)
 		return userDto
 	})
 }
 
-func (u userServiceImpl) GetUserIdentity(identity security.Identity) stream.Observable[*userdtos.UserIdentityDto] {
+func (u userServiceImpl) GetUserIdentity(identity security.Identity) stream.Observable[userdtos.UserIdentityDto] {
 	userX := u.GetByAuthId(identity.GetAuthId())
-	return stream.Map(userX, func(userDto *userdtos.UserDto) *userdtos.UserIdentityDto {
-		userIdentityDto := &userdtos.UserIdentityDto{}
-		mappers.MapToUserDtoAndIdentityToUserIdentityDto(userDto, identity, userIdentityDto)
+	return stream.Map(userX, func(userDto userdtos.UserDto) userdtos.UserIdentityDto {
+		userIdentityDto := userdtos.UserIdentityDto{}
+		mappers.MapToUserDtoAndIdentityToUserIdentityDto(userDto, identity, &userIdentityDto)
 		return userIdentityDto
 	})
 
 }
 
-func (u userServiceImpl) GetByAuthId(authId string) stream.Observable[*userdtos.UserDto] {
+func (u userServiceImpl) GetByAuthId(authId string) stream.Observable[userdtos.UserDto] {
 	userSearchX := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), authId)
-	return stream.Map(userSearchX, func(userMaybe option.Maybe[*models.User]) *userdtos.UserDto {
-		user := userMaybe.OrElse(&models.User{})
-		userDto := &userdtos.UserDto{}
-		mappers.MapUserToUserDto(user, userDto)
+	return stream.Map(userSearchX, func(userMaybe option.Maybe[models.User]) userdtos.UserDto {
+		user := userMaybe.OrElse(models.User{})
+		userDto := userdtos.UserDto{}
+		mappers.MapUserToUserDto(user, &userDto)
 		return userDto
 	})
 }

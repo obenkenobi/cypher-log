@@ -6,7 +6,7 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 	adapter "github.com/gwatts/gin-adapter"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"net/http"
 	"time"
@@ -32,7 +32,7 @@ type AuthMiddlewareImpl struct {
 	authorizationHandler gin.HandlerFunc
 }
 
-func BuildAuthMiddleware(auth0Conf conf.Auth0Conf) AuthMiddleware {
+func BuildAuthMiddleware(auth0Conf authconf.Auth0Conf) AuthMiddleware {
 	issuerURL := auth0Conf.GetIssuerUrl()
 	audience := auth0Conf.GetAudience()
 

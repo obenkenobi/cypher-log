@@ -25,13 +25,13 @@ func (h GinWrapperServiceImpl) readPathStr(c *gin.Context, key string) string {
 }
 
 func (h GinWrapperServiceImpl) ProcessBindError(err error) apperrors.BadRequestError {
-	if verrors, ok := err.(validator.ValidationErrors); ok {
-		var validationErrors []apperrors.ValidationError
-		for _, verr := range verrors {
-			validationError := apperrors.ValidationError{Field: verr.Field(), Message: verr.ActualTag()}
-			validationErrors = append(validationErrors, validationError)
+	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
+		var appValErrors []apperrors.ValidationError
+		for _, fieldError := range fieldErrors {
+			appValError := apperrors.ValidationError{Field: fieldError.Field(), Message: fieldError.ActualTag()}
+			appValErrors = append(appValErrors, appValError)
 		}
-		return apperrors.NewBadReqErrorFromValidationErrors(validationErrors)
+		return apperrors.NewBadReqErrorFromValidationErrors(appValErrors)
 	}
 	log.WithError(err).Info("Unable to bind json")
 	return apperrors.NewBadReqErrorFromRuleError(h.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson))
@@ -58,9 +58,16 @@ func NewGinWrapperService(errorService apperrors.ErrorService) GinWrapperService
 	return &GinWrapperServiceImpl{errorMessageService: errorService}
 }
 
-func BindBody[V any](ginWrapperService GinWrapperService, c *gin.Context, obj V) stream.Observable[V] {
-	if err := c.ShouldBind(obj); err != nil {
+func BindValueToBody[V any](ginWrapperService GinWrapperService, c *gin.Context, value V) stream.Observable[V] {
+	if err := c.ShouldBind(&value); err != nil {
 		return stream.Error[V](ginWrapperService.ProcessBindError(err))
 	}
-	return stream.Just(obj)
+	return stream.Just(value)
+}
+
+func BindPointerToBody[V any](ginWrapperService GinWrapperService, c *gin.Context, value *V) stream.Observable[*V] {
+	if err := c.ShouldBind(value); err != nil {
+		return stream.Error[*V](ginWrapperService.ProcessBindError(err))
+	}
+	return stream.Just(value)
 }

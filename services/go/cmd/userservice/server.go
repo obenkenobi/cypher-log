@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/controllers"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 	log "github.com/sirupsen/logrus"
 )
@@ -26,9 +27,8 @@ func (s appserverImpl) Run() {
 	}
 }
 
-func BuildServer(userController controllers.UserController, serverConf conf.ServerConf,
-	commonConf conf.CommonConf) AppServer {
-	if commonConf.IsProduction() {
+func BuildServer(userController controllers.UserController, serverConf conf.ServerConf) AppServer {
+	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	server := appserverImpl{serverConf: serverConf, router: gin.New()}

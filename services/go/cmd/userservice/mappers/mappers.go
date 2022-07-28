@@ -6,15 +6,12 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 )
 
-func MapUserSaveDtoToUser(source *userdtos.UserSaveDto, dest *models.User) {
+func MapUserSaveDtoToUser(source userdtos.UserSaveDto, dest *models.User) {
 	dest.UserName = source.UserName
 	dest.DisplayName = source.DisplayName
 }
 
-func MapUserToUserDto(source *models.User, dest *userdtos.UserDto) {
-	if source == nil {
-		*dest = userdtos.UserDto{}
-	}
+func MapUserToUserDto(source models.User, dest *userdtos.UserDto) {
 	dest.Id = source.GetIdStr()
 	dest.Exists = !source.IsIdEmpty()
 	dest.UserName = source.UserName
@@ -23,14 +20,11 @@ func MapUserToUserDto(source *models.User, dest *userdtos.UserDto) {
 	dest.UpdatedAt = source.UpdatedAt.UnixMilli()
 }
 
-func MapToUserDtoAndIdentityToUserIdentityDto(userDto *userdtos.UserDto, identity security.Identity,
+func MapToUserDtoAndIdentityToUserIdentityDto(userDto userdtos.UserDto, identity security.Identity,
 	dest *userdtos.UserIdentityDto) {
-	if userDto == nil {
-		userDto = &userdtos.UserDto{}
-	}
 	*dest = userdtos.UserIdentityDto{
 		AuthId:      identity.GetAuthId(),
 		Authorities: identity.GetAuthorities(),
-		User:        *userDto,
+		User:        userDto,
 	}
 }

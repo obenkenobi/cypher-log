@@ -12,8 +12,8 @@ import (
 
 type UserRepository interface {
 	database.Repository[*models.User, string]
-	FindByAuthId(ctx context.Context, authId string) stream.Observable[option.Maybe[*models.User]]
-	FindByUsername(ctx context.Context, username string) stream.Observable[option.Maybe[*models.User]]
+	FindByAuthId(ctx context.Context, authId string) stream.Observable[option.Maybe[models.User]]
+	FindByUsername(ctx context.Context, username string) stream.Observable[option.Maybe[models.User]]
 }
 
 type UserRepositoryImpl struct {
@@ -23,10 +23,10 @@ type UserRepositoryImpl struct {
 func (u UserRepositoryImpl) FindByAuthId(
 	ctx context.Context,
 	authId string,
-) stream.Observable[option.Maybe[*models.User]] {
-	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (*models.User, error) {
-		user := &models.User{}
-		err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"authId": authId}, user)
+) stream.Observable[option.Maybe[models.User]] {
+	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
+		user := models.User{}
+		err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"authId": authId}, &user)
 		return user, err
 	})
 }
@@ -34,10 +34,10 @@ func (u UserRepositoryImpl) FindByAuthId(
 func (u UserRepositoryImpl) FindByUsername(
 	ctx context.Context,
 	username string,
-) stream.Observable[option.Maybe[*models.User]] {
-	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (*models.User, error) {
-		user := &models.User{}
-		err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"userName": username}, user)
+) stream.Observable[option.Maybe[models.User]] {
+	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
+		user := models.User{}
+		err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"userName": username}, &user)
 		return user, err
 	})
 }

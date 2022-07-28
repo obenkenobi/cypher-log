@@ -1,5 +1,7 @@
 package conf
 
+import "github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
+
 type ServerConf interface {
 	GetPort() string
 }
@@ -12,8 +14,8 @@ func (s serverConfImpl) GetPort() string {
 	return s.port
 }
 
-func NewServerConf(envVarReader EnvVarReader, envVarKeyPort string) ServerConf {
+func NewServerConf(envVarKeyPort string) ServerConf {
 	return &serverConfImpl{
-		port: envVarReader.GetEnvVariableOrDefault(envVarKeyPort, "8080"),
+		port: environment.GetEnvVariableOrDefault(envVarKeyPort, "8080"),
 	}
 }
