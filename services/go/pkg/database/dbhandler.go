@@ -52,18 +52,34 @@ func BuildMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 	return &MongoDBHandler{}
 }
 
+func ObserveOptionalSingleQueryAsync[TModel any](
+	mongoDBHandler *MongoDBHandler,
+	producer func() (TModel, error),
+) stream.Observable[option.Maybe[TModel]] {
+	return reactorextensions.ObserveSupplierAsync(func() (option.Maybe[TModel], error) {
+		return runOptionalSingleQuery(mongoDBHandler, producer)
+	})
+}
+
 func ObserveOptionalSingleQuery[TModel any](
 	mongoDBHandler *MongoDBHandler,
 	producer func() (TModel, error),
 ) stream.Observable[option.Maybe[TModel]] {
 	return reactorextensions.ObserveSupplier(func() (option.Maybe[TModel], error) {
-		if result, err := producer(); err != nil {
-			if mongoDBHandler.IsNotFoundError(err) {
-				return option.None[TModel](), nil
-			}
-			return nil, err
-		} else {
-			return option.Perhaps(result), nil
-		}
+		return runOptionalSingleQuery(mongoDBHandler, producer)
 	})
+}
+
+func runOptionalSingleQuery[TModel any](
+	mongoDBHandler *MongoDBHandler,
+	producer func() (TModel, error),
+) (option.Maybe[TModel], error) {
+	if result, err := producer(); err != nil {
+		if mongoDBHandler.IsNotFoundError(err) {
+			return option.None[TModel](), nil
+		}
+		return nil, err
+	} else {
+		return option.Perhaps(result), nil
+	}
 }

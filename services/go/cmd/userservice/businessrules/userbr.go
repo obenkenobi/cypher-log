@@ -6,10 +6,10 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
 type UserBr interface {
@@ -37,36 +37,14 @@ func (u UserBrImpl) ValidateUserCreate(
 	identity security.Identity,
 	dto userdtos.UserSaveDto,
 ) stream.Observable[[]apperrors.RuleError] {
-	ruleErrorsX := stream.Just([]apperrors.RuleError{})
-
-	ruleErrorsX = stream.FlatMap(
-		ruleErrorsX,
-		func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-			userFind := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
-			return stream.Map(userFind, func(userMaybe option.Maybe[models.User]) []apperrors.RuleError {
-				if userMaybe.IsPresent() {
-					return append(ruleErrors, u.errorService.RuleErrorFromCode(apperrors.ErrCodeUserAlreadyCreated))
-				}
-				return ruleErrors
-			})
-		},
+	userNameNotTakenValidationX := u.validateUserNameNotTakenAsync(ctx, dto)
+	userNotCreatedValidationX := validationutils.ValidateValueIsNotPresent(
+		u.errorService,
+		u.userRepository.FindByAuthIdAsync(ctx, identity.GetAuthId()),
+		apperrors.ErrCodeUserAlreadyCreated,
 	)
-	ruleErrorsX = stream.FlatMap(
-		ruleErrorsX,
-		func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-			userNameValidation := u.validateUserNameNotTaken(ctx, dto)
-			return stream.Map(userNameValidation, func(userNameErrors []apperrors.RuleError) []apperrors.RuleError {
-				return append(ruleErrors, userNameErrors...)
-			})
-		},
-	)
-
-	return stream.FlatMap(ruleErrorsX, func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-		if len(ruleErrors) == 0 {
-			return stream.Just(ruleErrors)
-		}
-		return stream.Error[[]apperrors.RuleError](apperrors.NewBadReqErrorFromRuleErrors(ruleErrors...))
-	})
+	ruleErrorsX := validationutils.ConcatRuleErrorObservables(userNameNotTakenValidationX, userNotCreatedValidationX)
+	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrorsX)
 }
 
 func (u UserBrImpl) ValidateUserUpdate(
@@ -76,42 +54,32 @@ func (u UserBrImpl) ValidateUserUpdate(
 ) stream.Observable[[]apperrors.RuleError] {
 	ruleErrorsX := stream.Just([]apperrors.RuleError{})
 	if dto.UserName != existing.UserName {
-		ruleErrorsX = stream.FlatMap(
-			ruleErrorsX,
-			func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-				userNameValidation := u.validateUserNameNotTaken(ctx, dto)
-				return stream.Map(userNameValidation, func(userNameErrors []apperrors.RuleError) []apperrors.RuleError {
-					return append(ruleErrors, userNameErrors...)
-				})
-			},
-		)
+		serNameNotTakenValidationX := u.validateUserNameNotTaken(ctx, dto)
+		ruleErrorsX = validationutils.ConcatRuleErrorObservables(ruleErrorsX, serNameNotTakenValidationX)
 	}
-	return stream.FlatMap(ruleErrorsX, func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-		if len(ruleErrors) == 0 {
-			return stream.Just(ruleErrors)
-		}
-		return stream.Error[[]apperrors.RuleError](apperrors.NewBadReqErrorFromRuleErrors(ruleErrors...))
-	})
+	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrorsX)
+}
+
+func (u UserBrImpl) validateUserNameNotTakenAsync(
+	ctx context.Context,
+	dto userdtos.UserSaveDto,
+) stream.Observable[[]apperrors.RuleError] {
+	return validationutils.ValidateValueIsNotPresent(
+		u.errorService,
+		u.userRepository.FindByUsernameAsync(ctx, dto.UserName),
+		apperrors.ErrCodeUsernameTaken,
+	)
 }
 
 func (u UserBrImpl) validateUserNameNotTaken(
 	ctx context.Context,
 	dto userdtos.UserSaveDto,
 ) stream.Observable[[]apperrors.RuleError] {
-	ruleErrorsX := stream.Just([]apperrors.RuleError{})
-	ruleErrorsX = stream.FlatMap(
-		ruleErrorsX,
-		func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-			userFind := u.userRepository.FindByUsername(ctx, dto.UserName)
-			return stream.Map(userFind, func(userMaybe option.Maybe[models.User]) []apperrors.RuleError {
-				if userMaybe.IsPresent() {
-					return append(ruleErrors, u.errorService.RuleErrorFromCode(apperrors.ErrCodeUsernameTaken))
-				}
-				return ruleErrors
-			})
-		},
+	return validationutils.ValidateValueIsNotPresent(
+		u.errorService,
+		u.userRepository.FindByUsername(ctx, dto.UserName),
+		apperrors.ErrCodeUsernameTaken,
 	)
-	return ruleErrorsX
 }
 
 func NewUserBrImpl(
