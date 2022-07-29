@@ -9,25 +9,25 @@ const Staging = "STAGING"
 const Production = "PRODUCTION"
 
 var environmentVarKeyAppEnvironment = DefaultEnvVarKeyAppEnv
-var CachedEnvironment = ""
+var cachedAppEnvironment = ""
 
-func GetEnvironment() string {
-	if utils.StringIsBlank(CachedEnvironment) {
+func GetAppEnvironment() string {
+	if utils.StringIsBlank(cachedAppEnvironment) {
 		return GetEnvVariableOrDefault(environmentVarKeyAppEnvironment, Development)
 	}
-	return CachedEnvironment
+	return cachedAppEnvironment
 }
 
 func IsStaging() bool {
-	return GetEnvironment() == Staging
+	return GetAppEnvironment() == Staging
 }
 
 func IsDevelopment() bool {
-	return GetEnvironment() == Development
+	return GetAppEnvironment() == Development
 }
 
 func IsProduction() bool {
-	return GetEnvironment() == Production
+	return GetAppEnvironment() == Production
 }
 
 func SetEnvVarKeyForAppEnvironment(key string) {

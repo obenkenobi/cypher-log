@@ -17,15 +17,17 @@ import (
 type UserService interface {
 	AddUser(identity security.Identity, userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto]
 	UpdateUser(identity security.Identity, userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto]
+	DeleteUser(identity security.Identity) single.Single[userdtos.UserDto]
 	GetByAuthId(tokenId string) single.Single[userdtos.UserDto]
 	GetUserIdentity(identity security.Identity) single.Single[userdtos.UserIdentityDto]
 }
 
 type userServiceImpl struct {
-	dbHandler      database.DBHandler
-	userRepository repositories.UserRepository
-	userBr         businessrules.UserBr
-	errorService   apperrors.ErrorService
+	dbHandler             database.DBHandler
+	userRepository        repositories.UserRepository
+	userBr                businessrules.UserBr
+	errorService          apperrors.ErrorService
+	authServerMgmtService AuthServerMgmtService
 }
 
 func (u userServiceImpl) AddUser(
@@ -80,6 +82,35 @@ func (u userServiceImpl) UpdateUser(
 	})
 }
 
+func (u userServiceImpl) DeleteUser(identity security.Identity) single.Single[userdtos.UserDto] {
+	userSearchSrc := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), identity.GetAuthId())
+	userExistsSrc := single.MapWithError(
+		userSearchSrc,
+		func(userMaybe option.Maybe[models.User]) (models.User, error) {
+			if user, ok := userMaybe.Get(); ok {
+				return user, nil
+			} else {
+				err := apperrors.NewBadReqErrorFromRuleError(
+					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqItemsNotFound))
+				return user, err
+			}
+		},
+	)
+	userDeletedLocalDBSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
+		return single.MapDerefPtr(u.userRepository.Delete(u.dbHandler.GetCtx(), &user))
+	})
+	userDeletedAuthServerSrc := single.FlatMap(userDeletedLocalDBSrc, func(user models.User) single.Single[models.User] {
+		return single.Map(u.authServerMgmtService.DeleteUser(identity.GetAuthId()),
+			func(_ bool) models.User { return user })
+	})
+	return single.Map(userDeletedAuthServerSrc, func(user models.User) userdtos.UserDto {
+		userDto := userdtos.UserDto{}
+		mappers.MapUserToUserDto(user, &userDto)
+		log.Debug("Deleted user ", userDto)
+		return userDto
+	})
+}
+
 func (u userServiceImpl) GetUserIdentity(identity security.Identity) single.Single[userdtos.UserIdentityDto] {
 	userSrc := u.GetByAuthId(identity.GetAuthId())
 	return single.Map(userSrc, func(userDto userdtos.UserDto) userdtos.UserIdentityDto {
@@ -105,11 +136,13 @@ func NewUserService(
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
 	errorService apperrors.ErrorService,
+	authServerMgmtService AuthServerMgmtService,
 ) UserService {
 	return &userServiceImpl{
-		dbHandler:      dbHandler,
-		userRepository: userRepository,
-		userBr:         userBr,
-		errorService:   errorService,
+		dbHandler:             dbHandler,
+		userRepository:        userRepository,
+		userBr:                userBr,
+		errorService:          errorService,
+		authServerMgmtService: authServerMgmtService,
 	}
 }

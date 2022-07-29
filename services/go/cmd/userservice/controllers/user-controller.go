@@ -54,6 +54,15 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
 
+	userGroup.DELETE("",
+		u.authMiddleware.Authentication(),
+		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
+		func(c *gin.Context) {
+			updateUserSrc := u.userService.DeleteUser(security.GetIdentityFromContext(c))
+			userDto, err := single.AwaitItem(c, updateUserSrc)
+			u.ginCtxService.RespondJsonOk(c, userDto, err)
+		})
+
 	userGroup.GET("/me",
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),

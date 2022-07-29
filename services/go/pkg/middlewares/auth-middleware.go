@@ -32,9 +32,9 @@ type AuthMiddlewareImpl struct {
 	authorizationHandler gin.HandlerFunc
 }
 
-func BuildAuthMiddleware(auth0Conf authconf.Auth0Conf) AuthMiddleware {
-	issuerURL := auth0Conf.GetIssuerUrl()
-	audience := auth0Conf.GetAudience()
+func BuildAuthMiddleware(auth0RouteSecurityConf authconf.Auth0RouteSecurityConf) AuthMiddleware {
+	issuerURL := auth0RouteSecurityConf.GetIssuerUrl()
+	audience := auth0RouteSecurityConf.GetAudience()
 
 	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
 	jwtValidator, _ := validator.New(provider.KeyFunc,

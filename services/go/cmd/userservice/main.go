@@ -21,6 +21,9 @@ const envVarKeyPort = "PORT"
 const envVarKeyAppEnvironment = "ENVIRONMENT"
 const envVarKeyAuth0IssuerUrl = "AUTH0_ISSUER_URL"
 const envVarKeyAuth0Audience = "AUTH0_AUDIENCE"
+const envVarKeyAuth0Domain = "AUTH0_DOMAIN"
+const envVarKeyAuth0ClientId = "AUTH0_CLIENT_ID"
+const envVarKeyAuth0ClientSecret = "AUTH0_CLIENT_SECRET"
 const envVarKeyMongoUri = "MONGO_URI"
 const envVarMongoDBName = "MONGO_DB_NAME"
 const envVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
@@ -30,18 +33,25 @@ func main() {
 	environment.SetEnvVarKeyForAppEnvironment(envVarKeyAppEnvironment) // Set app environment
 	logging.ConfigureGlobalLogging()                                   // Configure logging
 	// Dependency graph
-	var serverConf = conf.NewServerConf(envVarKeyPort)
-	var auth0Conf = authconf.NewAuth0Conf(envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience)
-	var mongoCOnf = conf.NewMongoConf(envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
-	var mongoHandler = database.BuildMongoHandler(mongoCOnf)
-	var userRepository = repositories.NewUserMongoRepository(mongoHandler)
-	var errorService = apperrors.NewErrorServiceImpl()
-	var ginCtxService = ginx.NewGinWrapperService(errorService)
-	var userBr = businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
-	var userService = services.NewUserService(mongoHandler, userRepository, userBr, errorService)
-	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)
-	var userController = controllers.NewUserController(authMiddleware, userService, ginCtxService)
-	var appServer = server.BuildServer(serverConf, userController)
+	serverConf := conf.NewServerConf(envVarKeyPort)
+	auth0Conf := authconf.NewAuth0RouteSecurityConf(envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience)
+	auth0ClientCredentialsConf := authconf.NewAuth0ClientCredentialsConf(
+		envVarKeyAuth0Domain,
+		envVarKeyAuth0ClientId,
+		envVarKeyAuth0ClientSecret,
+		envVarKeyAuth0Audience,
+	)
+	mongoCOnf := conf.NewMongoConf(envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
+	mongoHandler := database.BuildMongoHandler(mongoCOnf)
+	userRepository := repositories.NewUserMongoRepository(mongoHandler)
+	errorService := apperrors.NewErrorService()
+	ginCtxService := ginx.NewGinWrapperService(errorService)
+	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
+	authServerMgmtService := services.NewAuthServerMgmtService(auth0ClientCredentialsConf)
+	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
+	authMiddleware := middlewares.BuildAuthMiddleware(auth0Conf)
+	userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
+	appServer := server.BuildServer(serverConf, userController)
 
 	// Run server
 	appServer.Run()

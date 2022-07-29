@@ -89,16 +89,16 @@ func Zip[A any, B any](src1 Single[A], src2 Single[B]) Single[tuple.T2[A, B]] {
 	})
 }
 
-func AwaitItem[T any](ctx context.Context, src Single[T]) (T, error) {
-	return stream.First(ctx, src.ToObservable())
-}
-
 // FlatMap applies a function that returns a single of B to the source single of A.
 // The Single from the function is flattened (hence FlatMap).
 func FlatMap[A any, B any](src Single[A], apply func(A) Single[B]) Single[B] {
 	return Single[B]{
 		stream.FlatMap(src.ToObservable(), func(a A) stream.Observable[B] { return apply(a).ToObservable() }),
 	}
+}
+
+func AwaitItem[T any](ctx context.Context, src Single[T]) (T, error) {
+	return stream.First(ctx, src.ToObservable())
 }
 
 // MapDerefPtr takes a single of a pointer and maps it to a single of a de-referenced value of that pointer

@@ -26,7 +26,7 @@ func (e errorMessageServiceImpl) RuleErrorFromCode(code string, args ...any) Rul
 	}
 }
 
-func NewErrorServiceImpl() ErrorService {
+func NewErrorService() ErrorService {
 	errorCodeToMsgMap := map[string]string{
 		ErrCodeReqItemsNotFound:   "Requested item(s) not found",
 		ErrCodeCannotBindJson:     "Unable to bind json",
