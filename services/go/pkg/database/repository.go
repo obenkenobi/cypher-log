@@ -2,21 +2,20 @@ package database
 
 import (
 	"context"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/kamva/mgm/v3"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/reactorextensions"
+	single "github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
 type Repository[VModel MongoModel, VID any] interface {
-	Create(ctx context.Context, modelRef VModel) stream.Observable[VModel]
-	CreateAsync(ctx context.Context, modelRef VModel) stream.Observable[VModel]
-	Update(ctx context.Context, modelRef VModel) stream.Observable[VModel]
-	UpdateAsync(ctx context.Context, modelRef VModel) stream.Observable[VModel]
-	Delete(ctx context.Context, modelRef VModel) stream.Observable[VModel]
-	DeleteAsync(ctx context.Context, modelRef VModel) stream.Observable[VModel]
-	FindById(ctx context.Context, modelRef VModel, id string) stream.Observable[option.Maybe[VModel]]
-	FindByIdAsync(ctx context.Context, modelRef VModel, id string) stream.Observable[option.Maybe[VModel]]
+	Create(ctx context.Context, modelRef VModel) single.Single[VModel]
+	CreateAsync(ctx context.Context, modelRef VModel) single.Single[VModel]
+	Update(ctx context.Context, modelRef VModel) single.Single[VModel]
+	UpdateAsync(ctx context.Context, modelRef VModel) single.Single[VModel]
+	Delete(ctx context.Context, modelRef VModel) single.Single[VModel]
+	DeleteAsync(ctx context.Context, modelRef VModel) single.Single[VModel]
+	FindById(ctx context.Context, modelRef VModel, id string) single.Single[option.Maybe[VModel]]
+	FindByIdAsync(ctx context.Context, modelRef VModel, id string) single.Single[option.Maybe[VModel]]
 }
 
 type RepositoryMongoImpl[VModel MongoModel, VID any] struct {
@@ -24,16 +23,12 @@ type RepositoryMongoImpl[VModel MongoModel, VID any] struct {
 	MongoDBHandler *MongoDBHandler
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, modelRef VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveSupplier(func() (VModel, error) {
-		return r.runCreate(ctx, modelRef)
-	})
+func (r RepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, modelRef VModel) single.Single[VModel] {
+	return single.FromSupplier(func() (VModel, error) { return r.runCreate(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) CreateAsync(ctx context.Context, modelRef VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveSupplierAsync(func() (VModel, error) {
-		return r.runCreate(ctx, modelRef)
-	})
+func (r RepositoryMongoImpl[VModel, VID]) CreateAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
+	return single.FromSupplierAsync(func() (VModel, error) { return r.runCreate(ctx, modelRef) })
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) runCreate(ctx context.Context, modelRef VModel) (VModel, error) {
@@ -41,16 +36,12 @@ func (r RepositoryMongoImpl[VModel, VID]) runCreate(ctx context.Context, modelRe
 	return modelRef, err
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) Update(ctx context.Context, modelRef VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveSupplier(func() (VModel, error) {
-		return r.runUpdate(ctx, modelRef)
-	})
+func (r RepositoryMongoImpl[VModel, VID]) Update(ctx context.Context, modelRef VModel) single.Single[VModel] {
+	return single.FromSupplier(func() (VModel, error) { return r.runUpdate(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) UpdateAsync(ctx context.Context, modelRef VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveSupplierAsync(func() (VModel, error) {
-		return r.runUpdate(ctx, modelRef)
-	})
+func (r RepositoryMongoImpl[VModel, VID]) UpdateAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
+	return single.FromSupplierAsync(func() (VModel, error) { return r.runUpdate(ctx, modelRef) })
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) runUpdate(ctx context.Context, modelRef VModel) (VModel, error) {
@@ -58,16 +49,12 @@ func (r RepositoryMongoImpl[VModel, VID]) runUpdate(ctx context.Context, modelRe
 	return modelRef, err
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) Delete(ctx context.Context, modelRef VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveSupplier(func() (VModel, error) {
-		return r.runDelete(ctx, modelRef)
-	})
+func (r RepositoryMongoImpl[VModel, VID]) Delete(ctx context.Context, modelRef VModel) single.Single[VModel] {
+	return single.FromSupplier(func() (VModel, error) { return r.runDelete(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) DeleteAsync(ctx context.Context, modelRef VModel) stream.Observable[VModel] {
-	return reactorextensions.ObserveSupplierAsync(func() (VModel, error) {
-		return r.runDelete(ctx, modelRef)
-	})
+func (r RepositoryMongoImpl[VModel, VID]) DeleteAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
+	return single.FromSupplierAsync(func() (VModel, error) { return r.runDelete(ctx, modelRef) })
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) runDelete(ctx context.Context, modelRef VModel) (VModel, error) {
@@ -79,7 +66,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindById(
 	ctx context.Context,
 	modelRef VModel,
 	id string,
-) stream.Observable[option.Maybe[VModel]] {
+) single.Single[option.Maybe[VModel]] {
 	return ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
 		return r.runFindByIdAsync(ctx, modelRef, id)
 	})
@@ -89,7 +76,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindByIdAsync(
 	ctx context.Context,
 	modelRef VModel,
 	id string,
-) stream.Observable[option.Maybe[VModel]] {
+) single.Single[option.Maybe[VModel]] {
 	return ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
 		return r.runFindByIdAsync(ctx, modelRef, id)
 	})

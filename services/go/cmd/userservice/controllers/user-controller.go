@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginextensions"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginx"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/server"
@@ -19,7 +19,7 @@ type UserController interface {
 type userControllerImpl struct {
 	userService    services.UserService
 	authMiddleware middlewares.AuthMiddleware
-	ginCtxService  ginextensions.GinCtxService
+	ginCtxService  ginx.GinCtxService
 }
 
 func (u userControllerImpl) AddRoutes(r *gin.Engine) {
@@ -29,12 +29,12 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bindBodyX := ginextensions.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
-			addUserX := stream.FlatMap(bindBodyX,
-				func(userSaveDto userdtos.UserSaveDto) stream.Observable[userdtos.UserDto] {
+			bindBodySrc := ginx.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
+			addUserSrc := single.FlatMap(bindBodySrc,
+				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.AddUser(security.GetIdentityFromContext(c), userSaveDto)
 				})
-			if userDto, err := stream.First(c, addUserX); err != nil {
+			if userDto, err := single.AwaitItem(c, addUserSrc); err != nil {
 				u.ginCtxService.HandleErrorResponse(c, err)
 			} else {
 				c.JSON(http.StatusOK, userDto)
@@ -45,12 +45,12 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bindBodyX := ginextensions.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
-			updateUserX := stream.FlatMap(bindBodyX,
-				func(userSaveDto userdtos.UserSaveDto) stream.Observable[userdtos.UserDto] {
+			bindBodySrc := ginx.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
+			updateUserSrc := single.FlatMap(bindBodySrc,
+				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.UpdateUser(security.GetIdentityFromContext(c), userSaveDto)
 				})
-			userDto, err := stream.First(c, updateUserX)
+			userDto, err := single.AwaitItem(c, updateUserSrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
 
@@ -58,8 +58,8 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			getUserIdentityX := u.userService.GetUserIdentity(security.GetIdentityFromContext(c))
-			userDto, err := stream.First(c, getUserIdentityX)
+			getUserIdentitySrc := u.userService.GetUserIdentity(security.GetIdentityFromContext(c))
+			userDto, err := single.AwaitItem(c, getUserIdentitySrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
 
@@ -68,8 +68,8 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
 			authId := c.Param("id")
-			getUserX := u.userService.GetByAuthId(authId)
-			userDto, err := stream.First(c, getUserX)
+			getUserSrc := u.userService.GetByAuthId(authId)
+			userDto, err := single.AwaitItem(c, getUserSrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
 
@@ -78,7 +78,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 func NewUserController(
 	authMiddleware middlewares.AuthMiddleware,
 	userService services.UserService,
-	ginCtxService ginextensions.GinCtxService,
+	ginCtxService ginx.GinCtxService,
 ) UserController {
 	return &userControllerImpl{
 		authMiddleware: authMiddleware,

@@ -1,10 +1,10 @@
-package ginextensions
+package ginx
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -58,16 +58,16 @@ func NewGinWrapperService(errorService apperrors.ErrorService) GinCtxService {
 	return &GinWrapperServiceImpl{errorMessageService: errorService}
 }
 
-func BindValueToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value V) stream.Observable[V] {
+func BindValueToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value V) single.Single[V] {
 	if err := c.ShouldBind(&value); err != nil {
-		return stream.Error[V](ginWrapperService.ProcessBindError(err))
+		return single.Error[V](ginWrapperService.ProcessBindError(err))
 	}
-	return stream.Just(value)
+	return single.Just(value)
 }
 
-func BindPointerToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value *V) stream.Observable[*V] {
+func BindPointerToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value *V) single.Single[*V] {
 	if err := c.ShouldBind(value); err != nil {
-		return stream.Error[*V](ginWrapperService.ProcessBindError(err))
+		return single.Error[*V](ginWrapperService.ProcessBindError(err))
 	}
-	return stream.Just(value)
+	return single.Just(value)
 }

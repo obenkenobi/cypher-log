@@ -10,7 +10,7 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginextensions"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginx"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/server"
@@ -36,7 +36,7 @@ func main() {
 	var mongoHandler = database.BuildMongoHandler(mongoCOnf)
 	var userRepository = repositories.NewUserMongoRepository(mongoHandler)
 	var errorService = apperrors.NewErrorServiceImpl()
-	var ginCtxService = ginextensions.NewGinWrapperService(errorService)
+	var ginCtxService = ginx.NewGinWrapperService(errorService)
 	var userBr = businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	var userService = services.NewUserService(mongoHandler, userRepository, userBr, errorService)
 	var authMiddleware = middlewares.BuildAuthMiddleware(auth0Conf)

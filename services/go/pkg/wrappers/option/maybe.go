@@ -1,7 +1,6 @@
 package option
 
 import (
-	"errors"
 	"reflect"
 )
 
@@ -9,10 +8,11 @@ type (
 	Maybe[V any] interface {
 		IsPresent() bool
 		IsEmpty() bool
+		IfPresent(func(V))
 		Filter(func(V) bool) Maybe[V]
 		OrElse(other V) V
 		OrElseGet(func() V) V
-		get() (V, error)
+		Get() (V, bool)
 	}
 )
 
@@ -22,6 +22,12 @@ type some[V any] struct {
 
 func (s some[V]) IsPresent() bool {
 	return !s.IsEmpty()
+}
+
+func (s some[V]) IfPresent(action func(V)) {
+	if s.IsPresent() {
+		action(s.value)
+	}
 }
 
 func (s some[V]) IsEmpty() bool {
@@ -49,11 +55,12 @@ func (s some[V]) OrElse(other V) V {
 	return s.value
 }
 
-func (s some[V]) get() (V, error) {
+func (s some[V]) Get() (V, bool) {
 	if s.IsEmpty() {
-		return None[V]().get()
+		var s V
+		return s, false
 	}
-	return s.value, nil
+	return s.value, true
 }
 
 type none[V any] struct {
@@ -67,7 +74,10 @@ func (n none[V]) IsEmpty() bool {
 	return true
 }
 
-func (n none[V]) Filter(f func(V) bool) Maybe[V] {
+func (n none[V]) IfPresent(_ func(V)) {
+}
+
+func (n none[V]) Filter(_ func(V) bool) Maybe[V] {
 	return n
 }
 
@@ -79,9 +89,9 @@ func (n none[V]) OrElse(other V) V {
 	return other
 }
 
-func (n none[V]) get() (V, error) {
+func (n none[V]) Get() (V, bool) {
 	var val V
-	return val, errors.New("no value")
+	return val, false
 }
 
 func Perhaps[V any](value V) Maybe[V] {
@@ -99,7 +109,7 @@ func FlatMap[V1 any, V2 any](m Maybe[V1], mapper func(V1) Maybe[V2]) Maybe[V2] {
 	if m.IsEmpty() {
 		return None[V2]()
 	}
-	if res, err := m.get(); err != nil || isNilPtr(res) {
+	if res, ok := m.Get(); !ok || isNilPtr(res) {
 		return None[V2]()
 	} else {
 		return mapper(res)

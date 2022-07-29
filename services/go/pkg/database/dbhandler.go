@@ -2,10 +2,9 @@ package database
 
 import (
 	"context"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/reactorextensions"
+	stx "github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -55,8 +54,8 @@ func BuildMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 func ObserveOptionalSingleQueryAsync[TModel any](
 	mongoDBHandler *MongoDBHandler,
 	producer func() (TModel, error),
-) stream.Observable[option.Maybe[TModel]] {
-	return reactorextensions.ObserveSupplierAsync(func() (option.Maybe[TModel], error) {
+) stx.Single[option.Maybe[TModel]] {
+	return stx.FromSupplierAsync(func() (option.Maybe[TModel], error) {
 		return runOptionalSingleQuery(mongoDBHandler, producer)
 	})
 }
@@ -64,8 +63,8 @@ func ObserveOptionalSingleQueryAsync[TModel any](
 func ObserveOptionalSingleQuery[TModel any](
 	mongoDBHandler *MongoDBHandler,
 	producer func() (TModel, error),
-) stream.Observable[option.Maybe[TModel]] {
-	return reactorextensions.ObserveSupplier(func() (option.Maybe[TModel], error) {
+) stx.Single[option.Maybe[TModel]] {
+	return stx.FromSupplier(func() (option.Maybe[TModel], error) {
 		return runOptionalSingleQuery(mongoDBHandler, producer)
 	})
 }

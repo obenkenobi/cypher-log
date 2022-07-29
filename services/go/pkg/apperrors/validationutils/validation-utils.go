@@ -1,17 +1,18 @@
 package validationutils
 
 import (
-	"github.com/joamaki/goreactive/stream"
+	"github.com/barweiss/go-tuple"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
 func ValidateValueIsNotPresent[V any](
 	errorService apperrors.ErrorService,
-	observableX stream.Observable[option.Maybe[V]],
+	valSrc single.Single[option.Maybe[V]],
 	notPresentErrorCode string,
-) stream.Observable[[]apperrors.RuleError] {
-	return stream.Map(observableX, func(maybe option.Maybe[V]) []apperrors.RuleError {
+) single.Single[[]apperrors.RuleError] {
+	return single.Map(valSrc, func(maybe option.Maybe[V]) []apperrors.RuleError {
 		if maybe.IsPresent() {
 			return []apperrors.RuleError{errorService.RuleErrorFromCode(notPresentErrorCode)}
 		}
@@ -21,10 +22,10 @@ func ValidateValueIsNotPresent[V any](
 
 func ValidateValueIsPresent[V any](
 	errorService apperrors.ErrorService,
-	observableX stream.Observable[option.Maybe[V]],
+	valSrc single.Single[option.Maybe[V]],
 	notPresentErrorCode string,
-) stream.Observable[[]apperrors.RuleError] {
-	return stream.Map(observableX, func(maybe option.Maybe[V]) []apperrors.RuleError {
+) single.Single[[]apperrors.RuleError] {
+	return single.Map(valSrc, func(maybe option.Maybe[V]) []apperrors.RuleError {
 		if maybe.IsEmpty() {
 			return []apperrors.RuleError{errorService.RuleErrorFromCode(notPresentErrorCode)}
 		}
@@ -32,32 +33,30 @@ func ValidateValueIsPresent[V any](
 	})
 }
 
-func ConcatRuleErrorObservables(
-	src1 stream.Observable[[]apperrors.RuleError],
-	src2 stream.Observable[[]apperrors.RuleError],
-) stream.Observable[[]apperrors.RuleError] {
-	return stream.FlatMap(src1, func(srcErrs []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
-		return stream.Map(src2, func(ruleErrs []apperrors.RuleError) []apperrors.RuleError {
+func ConcatSinglesOfRuleErrs(
+	src1 single.Single[[]apperrors.RuleError],
+	src2 single.Single[[]apperrors.RuleError],
+) single.Single[[]apperrors.RuleError] {
+	single.Map(
+		single.Zip(src1, src2),
+		func(rulErrsTuple tuple.T2[[]apperrors.RuleError, []apperrors.RuleError]) []apperrors.RuleError {
+			return append(rulErrsTuple.V1, rulErrsTuple.V2...)
+		},
+	)
+	return single.FlatMap(src1, func(srcErrs []apperrors.RuleError) single.Single[[]apperrors.RuleError] {
+		return single.Map(src2, func(ruleErrs []apperrors.RuleError) []apperrors.RuleError {
 			return append(ruleErrs, srcErrs...)
 		})
 	})
-	//errorsX := stream.Reduce(
-	//	stream.Concat(ruleErrorObservables...),
-	//	[]apperrors.RuleError{},
-	//	func(ruleErrors1, ruleErrors2 []apperrors.RuleError) []apperrors.RuleError {
-	//		return append(ruleErrors1, ruleErrors2...)
-	//	},
-	//)
-	//return stream.Take(1, errorsX)
 }
 
 func PassRuleErrorsIfEmptyElsePassBadReqError(
-	ruleErrorsX stream.Observable[[]apperrors.RuleError],
-) stream.Observable[[]apperrors.RuleError] {
-	return stream.FlatMap(ruleErrorsX, func(ruleErrors []apperrors.RuleError) stream.Observable[[]apperrors.RuleError] {
+	ruleErrsSrc single.Single[[]apperrors.RuleError],
+) single.Single[[]apperrors.RuleError] {
+	return single.FlatMap(ruleErrsSrc, func(ruleErrors []apperrors.RuleError) single.Single[[]apperrors.RuleError] {
 		if len(ruleErrors) == 0 {
-			return stream.Just(ruleErrors)
+			return single.Just(ruleErrors)
 		}
-		return stream.Error[[]apperrors.RuleError](apperrors.NewBadReqErrorFromRuleErrors(ruleErrors...))
+		return single.Error[[]apperrors.RuleError](apperrors.NewBadReqErrorFromRuleErrors(ruleErrors...))
 	})
 }
