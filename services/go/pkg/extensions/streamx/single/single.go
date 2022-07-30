@@ -13,19 +13,17 @@ type Single[T any] struct {
 	src stream.Observable[T]
 }
 
-func (s Single[T]) ToObservable() stream.Observable[T] {
-	return s.src
-}
+func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
 
 // Thread safe Observable that reads from a channel, used for ensuring when a
 // single is made from a channel, it will always emit the same value even when
 // observed multiple times. This is done by caching the channel result in a
 // thread safe manner.
 type channelObservable[T any] struct {
-	channelRead bool
-	ch          <-chan T
-	value       T
-	valueRWLock sync.RWMutex
+	_channelRead bool
+	_ch          <-chan T
+	_value       T
+	_valueRWLock sync.RWMutex
 }
 
 func (a *channelObservable[T]) Observe(ctx context.Context, next func(T) error) error {
@@ -33,21 +31,21 @@ func (a *channelObservable[T]) Observe(ctx context.Context, next func(T) error) 
 		// Context already cancelled, stop before emitting items.
 		return ctx.Err()
 	}
-	a.valueRWLock.RLock()
-	shouldAttemptWriteValue := !a.channelRead
-	a.valueRWLock.RUnlock()
+	a._valueRWLock.RLock()
+	shouldAttemptWriteValue := !a._channelRead
+	a._valueRWLock.RUnlock()
 
 	if shouldAttemptWriteValue {
-		a.valueRWLock.Lock()
-		if !a.channelRead {
-			a.value = <-a.ch
-			a.channelRead = true
+		a._valueRWLock.Lock()
+		if !a._channelRead {
+			a._value = <-a._ch
+			a._channelRead = true
 		}
-		a.valueRWLock.Unlock()
+		a._valueRWLock.Unlock()
 	}
-	a.valueRWLock.RLock()
-	value := a.value
-	a.valueRWLock.RUnlock()
+	a._valueRWLock.RLock()
+	value := a._value
+	a._valueRWLock.RUnlock()
 	return next(value)
 }
 
@@ -76,11 +74,7 @@ func FromSupplier[T any](supplier func() (result T, err error)) Single[T] {
 	return fromObservable(src)
 }
 
-func FromChannel[T any](ch <-chan T) Single[T] {
-	return Single[T]{
-		src: &channelObservable[T]{channelRead: false, ch: ch},
-	}
-}
+func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelObservable[T]{_ch: ch}} }
 
 // FromSupplierAsync
 //creates a single out of a supplier function that returns a value or an
