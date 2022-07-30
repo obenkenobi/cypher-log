@@ -1,4 +1,4 @@
-package server
+package webservices
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/web"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,7 +27,7 @@ func (s appserverImpl) Run() {
 	}
 }
 
-func BuildServer(serverConf conf.ServerConf, controllers ...Controller) AppServer {
+func BuildServer(serverConf conf.ServerConf, controllers ...web.Controller) AppServer {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}

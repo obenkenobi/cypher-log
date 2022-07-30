@@ -1,4 +1,4 @@
-package streamx
+package reactive
 
 import (
 	"fmt"

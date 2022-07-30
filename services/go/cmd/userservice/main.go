@@ -10,10 +10,9 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/ginx/ginxservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/server"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/web/webservices"
 )
 
 // Environment variable names
@@ -45,14 +44,14 @@ func main() {
 	mongoHandler := database.BuildMongoHandler(mongoCOnf)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
-	ginCtxService := ginxservices.NewGinWrapperService(errorService)
+	ginCtxService := webservices.NewGinWrapperService(errorService)
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0ClientCredentialsConf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
 	authMiddleware := middlewares.BuildAuthMiddleware(auth0Conf)
 	userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
-	appServer := server.BuildServer(serverConf, userController)
+	appServer := webservices.BuildServer(serverConf, userController)
 
-	// Run server
+	// Run webservices
 	appServer.Run()
 }

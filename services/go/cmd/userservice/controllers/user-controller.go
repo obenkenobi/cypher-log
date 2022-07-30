@@ -4,22 +4,22 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/ginx/ginxservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/server"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/web"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/web/webservices"
 	"net/http"
 )
 
 type UserController interface {
-	server.Controller
+	web.Controller
 }
 
 type userControllerImpl struct {
 	userService    services.UserService
 	authMiddleware middlewares.AuthMiddleware
-	ginCtxService  ginxservices.GinCtxService
+	ginCtxService  webservices.GinCtxService
 }
 
 func (u userControllerImpl) AddRoutes(r *gin.Engine) {
@@ -29,7 +29,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bindBodySrc := ginxservices.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
+			bindBodySrc := webservices.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
 			addUserSrc := single.FlatMap(bindBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.AddUser(security.GetIdentityFromContext(c), userSaveDto)
@@ -45,7 +45,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bindBodySrc := ginxservices.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
+			bindBodySrc := webservices.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
 			updateUserSrc := single.FlatMap(bindBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.UpdateUser(security.GetIdentityFromContext(c), userSaveDto)
@@ -87,7 +87,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 func NewUserController(
 	authMiddleware middlewares.AuthMiddleware,
 	userService services.UserService,
-	ginCtxService ginxservices.GinCtxService,
+	ginCtxService webservices.GinCtxService,
 ) UserController {
 	return &userControllerImpl{
 		authMiddleware: authMiddleware,

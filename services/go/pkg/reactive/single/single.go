@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/barweiss/go-tuple"
 	"github.com/joamaki/goreactive/stream"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive"
 	"sync"
 )
 
@@ -78,10 +78,8 @@ func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelO
 
 // FromSupplierAsync
 //creates a single out of a supplier function that returns a value or an
-//error to be emitted asynchronously. If the supplier is successful, the result
-//value is emitted. Otherwise, if an error is returned, an error id emitted. The
-//supplier function is able to emit its return value(s) asynchronously by
-//running it in a separate goroutine.
+//error to be emitted asynchronously. The supplier function is run on a
+//separate goroutine
 func FromSupplierAsync[T any](supplier func() (result T, err error)) Single[T] {
 	ch := make(chan tuple.T2[T, error])
 	go func() {
@@ -142,7 +140,7 @@ func RetrieveValue[T any](ctx context.Context, src Single[T]) (T, error) {
 
 // MapDerefPtr takes a single of a pointer and maps it to a single of a de-referenced value of that pointer
 func MapDerefPtr[T any](src Single[*T]) Single[T] {
-	return fromObservable(streamx.MapDerefPtr(src.ToObservable()))
+	return fromObservable(reactive.MapDerefPtr(src.ToObservable()))
 }
 
 func fromObservable[T any](src stream.Observable[T]) Single[T] {

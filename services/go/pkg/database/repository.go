@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"github.com/kamva/mgm/v3"
-	single "github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
