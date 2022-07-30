@@ -5,12 +5,12 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/controllers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/ginx"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/ginx/ginxservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/server"
@@ -44,8 +44,8 @@ func main() {
 	mongoCOnf := conf.NewMongoConf(envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
 	mongoHandler := database.BuildMongoHandler(mongoCOnf)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
-	errorService := apperrors.NewErrorService()
-	ginCtxService := ginx.NewGinWrapperService(errorService)
+	errorService := errorservices.NewErrorService()
+	ginCtxService := ginxservices.NewGinWrapperService(errorService)
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0ClientCredentialsConf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)

@@ -6,9 +6,10 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ type userServiceImpl struct {
 	dbHandler             database.DBHandler
 	userRepository        repositories.UserRepository
 	userBr                businessrules.UserBr
-	errorService          apperrors.ErrorService
+	errorService          errorservices.ErrorService
 	authServerMgmtService AuthServerMgmtService
 }
 
@@ -135,7 +136,7 @@ func NewUserService(
 	dbHandler database.DBHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
-	errorService apperrors.ErrorService,
+	errorService errorservices.ErrorService,
 	authServerMgmtService AuthServerMgmtService,
 ) UserService {
 	return &userServiceImpl{

@@ -1,11 +1,12 @@
-package apperrors
+package errorservices
 
 import (
 	"fmt"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 )
 
 type ErrorService interface {
-	RuleErrorFromCode(code string, args ...any) RuleError
+	RuleErrorFromCode(code string, args ...any) apperrors.RuleError
 }
 
 type errorMessageServiceImpl struct {
@@ -19,8 +20,8 @@ func (e errorMessageServiceImpl) getMsgStrFromCode(code string, args ...any) str
 	return code
 }
 
-func (e errorMessageServiceImpl) RuleErrorFromCode(code string, args ...any) RuleError {
-	return RuleError{
+func (e errorMessageServiceImpl) RuleErrorFromCode(code string, args ...any) apperrors.RuleError {
+	return apperrors.RuleError{
 		Code:    code,
 		Message: e.getMsgStrFromCode(code, args...),
 	}
@@ -28,10 +29,10 @@ func (e errorMessageServiceImpl) RuleErrorFromCode(code string, args ...any) Rul
 
 func NewErrorService() ErrorService {
 	errorCodeToMsgMap := map[string]string{
-		ErrCodeReqItemsNotFound:   "Requested item(s) not found",
-		ErrCodeCannotBindJson:     "Unable to bind json",
-		ErrCodeUserAlreadyCreated: "User already created",
-		ErrCodeUsernameTaken:      "Username is taken",
+		apperrors.ErrCodeReqItemsNotFound:   "Requested item(s) not found",
+		apperrors.ErrCodeCannotBindJson:     "Unable to bind json",
+		apperrors.ErrCodeUserAlreadyCreated: "User already created",
+		apperrors.ErrCodeUsernameTaken:      "Username is taken",
 	}
 	return &errorMessageServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

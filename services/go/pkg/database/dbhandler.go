@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	stx "github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
+	stx "github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"

@@ -5,7 +5,7 @@ import (
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
 )

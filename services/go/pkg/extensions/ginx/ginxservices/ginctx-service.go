@@ -1,10 +1,11 @@
-package ginx
+package ginxservices
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -16,15 +17,15 @@ type GinCtxService interface {
 	RespondJsonOk(c *gin.Context, model any, err error)
 }
 
-type GinWrapperServiceImpl struct {
-	errorMessageService apperrors.ErrorService
+type GinCtxServiceImpl struct {
+	errorMessageService errorservices.ErrorService
 }
 
-func (h GinWrapperServiceImpl) readPathStr(c *gin.Context, key string) string {
+func (h GinCtxServiceImpl) readPathStr(c *gin.Context, key string) string {
 	return c.Param(key)
 }
 
-func (h GinWrapperServiceImpl) ProcessBindError(err error) apperrors.BadRequestError {
+func (h GinCtxServiceImpl) ProcessBindError(err error) apperrors.BadRequestError {
 	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
 		var appValErrors []apperrors.ValidationError
 		for _, fieldError := range fieldErrors {
@@ -37,7 +38,7 @@ func (h GinWrapperServiceImpl) ProcessBindError(err error) apperrors.BadRequestE
 	return apperrors.NewBadReqErrorFromRuleError(h.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson))
 }
 
-func (h GinWrapperServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
+func (h GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		c.JSON(http.StatusBadRequest, badReqErr)
 	} else {
@@ -46,7 +47,7 @@ func (h GinWrapperServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 	}
 }
 
-func (h GinWrapperServiceImpl) RespondJsonOk(c *gin.Context, model any, err error) {
+func (h GinCtxServiceImpl) RespondJsonOk(c *gin.Context, model any, err error) {
 	if err != nil {
 		h.HandleErrorResponse(c, err)
 		return
@@ -54,20 +55,20 @@ func (h GinWrapperServiceImpl) RespondJsonOk(c *gin.Context, model any, err erro
 	c.JSON(http.StatusOK, model)
 }
 
-func NewGinWrapperService(errorService apperrors.ErrorService) GinCtxService {
-	return &GinWrapperServiceImpl{errorMessageService: errorService}
+func NewGinWrapperService(errorService errorservices.ErrorService) GinCtxService {
+	return &GinCtxServiceImpl{errorMessageService: errorService}
 }
 
-func BindValueToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value V) single.Single[V] {
+func BindValueToBody[V any](ginCtxService GinCtxService, c *gin.Context, value V) single.Single[V] {
 	if err := c.ShouldBind(&value); err != nil {
-		return single.Error[V](ginWrapperService.ProcessBindError(err))
+		return single.Error[V](ginCtxService.ProcessBindError(err))
 	}
 	return single.Just(value)
 }
 
-func BindPointerToBody[V any](ginWrapperService GinCtxService, c *gin.Context, value *V) single.Single[*V] {
+func BindPointerToBody[V any](ginCtxService GinCtxService, c *gin.Context, value *V) single.Single[*V] {
 	if err := c.ShouldBind(value); err != nil {
-		return single.Error[*V](ginWrapperService.ProcessBindError(err))
+		return single.Error[*V](ginCtxService.ProcessBindError(err))
 	}
 	return single.Just(value)
 }

@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	"gopkg.in/auth0.v5/management"
 )
 

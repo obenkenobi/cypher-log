@@ -5,10 +5,11 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/framework/streamx/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/extensions/streamx/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 )
 
@@ -29,7 +30,7 @@ type UserBr interface {
 type UserBrImpl struct {
 	dbHandler      database.DBHandler
 	userRepository repositories.UserRepository
-	errorService   apperrors.ErrorService
+	errorService   errorservices.ErrorService
 }
 
 func (u UserBrImpl) ValidateUserCreate(
@@ -85,7 +86,7 @@ func (u UserBrImpl) validateUserNameNotTaken(
 func NewUserBrImpl(
 	dbHandler database.DBHandler,
 	userRepository repositories.UserRepository,
-	errorMessageService apperrors.ErrorService,
+	errorMessageService errorservices.ErrorService,
 ) UserBr {
 	return &UserBrImpl{dbHandler: dbHandler, userRepository: userRepository, errorService: errorMessageService}
 }
