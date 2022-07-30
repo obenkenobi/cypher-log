@@ -141,7 +141,7 @@ func FlatMap[A any, B any](src Single[A], apply func(A) Single[B]) Single[B] {
 	}
 }
 
-// RetrieveValue returns the result value emitted by the Single
+// RetrieveValue returns the value emitted by the Single
 func RetrieveValue[T any](ctx context.Context, src Single[T]) (T, error) {
 	return stream.First(ctx, src.ToObservable())
 }
