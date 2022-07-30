@@ -14,9 +14,7 @@ func TestSingleFromSupplierAsync(t *testing.T) {
 	cv.Convey("When creating an observable with a supplier returns 1 that runs asynchronously", t, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Hour*24)
 		defer cancel()
-		oneSrc := single.FromSupplierAsync(func() (int, error) {
-			return 1, nil
-		})
+		oneSrc := single.FromSupplierAsync(func() (int, error) { return 1, nil })
 		cv.Convey("The same source is then mapped to other Singles twoSrc and threeSrc,\n"+
 			"incrementing the source value", func() {
 			twoSrc := single.Map(oneSrc, func(v int) int { return v + 1 })
