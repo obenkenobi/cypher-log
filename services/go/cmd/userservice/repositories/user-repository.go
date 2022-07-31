@@ -4,15 +4,14 @@ import (
 	"context"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/containers/option"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type UserRepository interface {
-	database.Repository[*models.User, string]
+	dbservices.Repository[*models.User, string]
 	FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 	FindByAuthIdAsync(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 	FindByUsername(ctx context.Context, username string) single.Single[option.Maybe[models.User]]
@@ -20,7 +19,7 @@ type UserRepository interface {
 }
 
 type UserRepositoryImpl struct {
-	database.RepositoryMongoImpl[*models.User, string]
+	dbservices.RepositoryMongoImpl[*models.User, string]
 }
 
 func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]] {
@@ -70,6 +69,6 @@ func (u UserRepositoryImpl) runFindByUsername(ctx context.Context, username stri
 
 func NewUserMongoRepository(mongoDBHandler *dbservices.MongoDBHandler) UserRepository {
 	return &UserRepositoryImpl{
-		RepositoryMongoImpl: *database.NewRepositoryMongoImpl[*models.User, string](&models.User{}, mongoDBHandler),
+		RepositoryMongoImpl: *dbservices.NewRepositoryMongoImpl[*models.User, string](&models.User{}, mongoDBHandler),
 	}
 }

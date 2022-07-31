@@ -41,16 +41,16 @@ func main() {
 		envVarKeyAuth0Audience,
 	)
 	mongoCOnf := conf.NewMongoConf(envVarKeyMongoUri, envVarMongoDBName, envVarMongoConnTimeoutMS)
-	mongoHandler := dbservices.BuildMongoHandler(mongoCOnf)
+	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
-	ginCtxService := webservices.NewGinWrapperService(errorService)
+	ginCtxService := webservices.NewGinCtxService(errorService)
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0ClientCredentialsConf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
-	authMiddleware := middlewares.BuildAuthMiddleware(auth0Conf)
+	authMiddleware := middlewares.NewAuthMiddleware(auth0Conf)
 	userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
-	appServer := webservices.BuildServer(serverConf, userController)
+	appServer := webservices.NewServer(serverConf, userController)
 
 	// Run webservices
 	appServer.Run()

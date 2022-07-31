@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// Single An interface that listens for a single value. It runs on top of an observable.
+// Single is an interface that listens for a single value. It runs on top of an observable.
 type Single[T any] struct {
 	src stream.Observable[T]
 }
@@ -74,6 +74,9 @@ func FromSupplier[T any](supplier func() (result T, err error)) Single[T] {
 	return fromObservable(src)
 }
 
+// FromChannel Creates a single that listens to a single value from a channel.
+// Recommended for channels that only emmit one value. If a channel emits
+// multiple values, it is recommended you use observables instead.
 func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelObservable[T]{_ch: ch}} }
 
 // FromSupplierAsync
@@ -102,6 +105,7 @@ func Map[A any, B any](src Single[A], apply func(A) B) Single[B] {
 	return fromObservable[B](stream.Map(src.ToObservable(), func(a A) B { return apply(a) }))
 }
 
+// MapWithError applies a function onto a Single where if an error is returned, the Single fails
 func MapWithError[A any, B any](src Single[A], apply func(A) (B, error)) Single[B] {
 	return fromObservable[B](
 		stream.FuncObservable[B](func(ctx context.Context, next func(B) error) error {

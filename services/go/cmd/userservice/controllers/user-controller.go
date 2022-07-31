@@ -29,10 +29,10 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bindBodySrc := webservices.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
-			addUserSrc := single.FlatMap(bindBodySrc,
+			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+			addUserSrc := single.FlatMap(readValFromBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
-					return u.userService.AddUser(security.GetIdentityFromContext(c), userSaveDto)
+					return u.userService.AddUser(security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			if userDto, err := single.RetrieveValue(c, addUserSrc); err != nil {
 				u.ginCtxService.HandleErrorResponse(c, err)
@@ -45,10 +45,10 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bindBodySrc := webservices.BindValueToBody(u.ginCtxService, c, userdtos.UserSaveDto{})
-			updateUserSrc := single.FlatMap(bindBodySrc,
+			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+			updateUserSrc := single.FlatMap(readValFromBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
-					return u.userService.UpdateUser(security.GetIdentityFromContext(c), userSaveDto)
+					return u.userService.UpdateUser(security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
@@ -58,7 +58,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			updateUserSrc := u.userService.DeleteUser(security.GetIdentityFromContext(c))
+			updateUserSrc := u.userService.DeleteUser(security.GetIdentityFromGinContext(c))
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
@@ -67,7 +67,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			getUserIdentitySrc := u.userService.GetUserIdentity(security.GetIdentityFromContext(c))
+			getUserIdentitySrc := u.userService.GetUserIdentity(security.GetIdentityFromGinContext(c))
 			userDto, err := single.RetrieveValue(c, getUserIdentitySrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
@@ -81,7 +81,6 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			userDto, err := single.RetrieveValue(c, getUserSrc)
 			u.ginCtxService.RespondJsonOk(c, userDto, err)
 		})
-
 }
 
 func NewUserController(

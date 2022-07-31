@@ -4,17 +4,27 @@ import (
 	"reflect"
 )
 
-type (
-	Maybe[V any] interface {
-		IsPresent() bool
-		IsEmpty() bool
-		IfPresent(func(V))
-		Filter(func(V) bool) Maybe[V]
-		OrElse(other V) V
-		OrElseGet(func() V) V
-		Get() (V, bool)
-	}
-)
+// Maybe is a container that may or may not contain a single value.
+type Maybe[V any] interface {
+	// IsPresent checks if the value is present
+	IsPresent() bool
+	// IsEmpty checks if the container is empty
+	IsEmpty() bool
+	// IfPresent calls this function if a value is present
+	IfPresent(func(V))
+	// Filter returns a new maybe that will contain a value only if the predicate is
+	// true and the Maybe already has a value present.
+	Filter(predicate func(V) bool) Maybe[V]
+	// OrElse returns a value contained in the Maybe or a default value provided in
+	// the parameter(s) if the Maybe is empty.
+	OrElse(other V) V
+	// OrElseGet returns a value contained in the Maybe or a default value provided
+	// by evaluating the function in the function parameter(s) if the Maybe is empty.
+	OrElseGet(other func() V) V
+	// Get returns a value from the container and a boolean value which evaluates to true if the value is present.
+	// If the value is not present, the value returned is a 'zero value' and should not be used.
+	Get() (V, bool)
+}
 
 type some[V any] struct {
 	value V

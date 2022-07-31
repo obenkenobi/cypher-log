@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/containers/option"
 	stx "github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,14 +16,23 @@ type Session interface {
 	CommitTransaction(context.Context) error
 }
 
-// DBHandler Handles database related tasks such as setting up database connection(s),
-// providing contexts for database operations, managing transactions, and handling database apperrors.
+// DBHandler Handles database related tasks such as setting up database
+// connection(s), providing contexts for database operations, managing
+// transactions, and handling database errors.
 type DBHandler interface {
+	// GetCtx creates a new contecxt to be sent to other database queries
 	GetCtx() context.Context
+	// IsNotFoundError checks if an error is created by an underlying object database
+	// mapper is due to a requested entity not being found.
 	IsNotFoundError(err error) bool
+	// ExecTransaction executes a transaction. Warning: not tested and will
+	// eventually be scrapped with an implementation meant to work with Singles and
+	// Observables.
 	ExecTransaction(runner func(Session, context.Context) error) error
 }
 
+// MongoDBHandler is a DBHandler implementation for MongoDB, in particular for
+// the kamva/mgm ODM.
 type MongoDBHandler struct {
 }
 
@@ -41,7 +50,7 @@ func (d MongoDBHandler) ExecTransaction(transactionFunc func(Session, context.Co
 	})
 }
 
-func BuildMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
+func NewMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 	if err := mgm.SetDefaultConfig(
 		&mgm.Config{CtxTimeout: mongoConf.GetConnectionTimeout()},
 		mongoConf.GetDBName(),

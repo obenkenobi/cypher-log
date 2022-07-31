@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// AuthorizerSettings provides settings on what criteria will be used to
+// authorize access to an HTTP request.
 type AuthorizerSettings struct {
 	VerifyAnonymous        bool     // Verifies if the identity is anonymous
 	VerifyIsUser           bool     // Verifies if the identity is a user
@@ -20,8 +22,14 @@ type AuthorizerSettings struct {
 	AllAuthoritiesToVerify []string // List of authorities of which all of them need to be in the user's identity
 }
 
+// AuthMiddleware provides Gin handler functions to authenticate and authorize a user.
 type AuthMiddleware interface {
+	// Authentication returns a handler to authenticate an HTTP request. If JWT
+	// authentication is implemented, a JWT token will be verified.
 	Authentication() gin.HandlerFunc
+
+	// Authorization returns a handler that authorized a user using the provided AuthorizerSettings.
+	// This handler should ONLY be called after the authentication handler is added to an HTTP router.
 	Authorization(settings AuthorizerSettings) gin.HandlerFunc
 }
 
@@ -32,7 +40,8 @@ type AuthMiddlewareImpl struct {
 	authorizationHandler gin.HandlerFunc
 }
 
-func BuildAuthMiddleware(auth0RouteSecurityConf authconf.Auth0RouteSecurityConf) AuthMiddleware {
+// NewAuthMiddleware creates an AuthMiddleware instance
+func NewAuthMiddleware(auth0RouteSecurityConf authconf.Auth0RouteSecurityConf) AuthMiddleware {
 	issuerURL := auth0RouteSecurityConf.GetIssuerUrl()
 	audience := auth0RouteSecurityConf.GetAudience()
 
@@ -41,11 +50,7 @@ func BuildAuthMiddleware(auth0RouteSecurityConf authconf.Auth0RouteSecurityConf)
 		validator.RS256,
 		issuerURL.String(),
 		[]string{audience},
-		validator.WithCustomClaims(
-			func() validator.CustomClaims {
-				return &security.Auth0CustomClaims{}
-			},
-		),
+		validator.WithCustomClaims(func() validator.CustomClaims { return &security.Auth0CustomClaims{} }),
 		validator.WithAllowedClockSkew(time.Minute),
 	)
 
@@ -65,7 +70,7 @@ func (a *AuthMiddlewareImpl) Authentication() gin.HandlerFunc {
 
 func (a *AuthMiddlewareImpl) Authorization(settings AuthorizerSettings) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		identity := security.GetIdentityFromContext(c)
+		identity := security.GetIdentityFromGinContext(c)
 		if (settings.VerifyAnonymous && !identity.IsAnonymous()) ||
 			(settings.VerifyIsUser && identity.IsSystemClient()) ||
 			(settings.VerifyIsSystemClient && identity.IsUser()) ||

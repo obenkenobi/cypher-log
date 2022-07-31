@@ -10,7 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// AppServer represents an interface that encapsulates the underlying web
+// framework to act as a general application server that can be run.
 type AppServer interface {
+	// Run initiates the app server and listens now for underlying web requests.
 	Run()
 }
 
@@ -27,7 +30,8 @@ func (s appserverImpl) Run() {
 	}
 }
 
-func BuildServer(serverConf conf.ServerConf, controllers ...web.Controller) AppServer {
+// NewServer creates an app server that can be run by the server configuration and a list of controllers
+func NewServer(serverConf conf.ServerConf, controllers ...web.Controller) AppServer {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}

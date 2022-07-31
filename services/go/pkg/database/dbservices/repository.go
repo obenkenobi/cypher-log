@@ -1,27 +1,60 @@
-package database
+package dbservices
 
 import (
 	"context"
 	"github.com/kamva/mgm/v3"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/containers/option"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
-type Repository[VModel MongoModel, VID any] interface {
+type Repository[VModel database.MongoModel, VID any] interface {
+	// Create saves a new model to a data store. The model is updated with the saved
+	// values from the database onto the same model and then is emitted by a Single.
+	// The model should be a pointer.
 	Create(ctx context.Context, modelRef VModel) single.Single[VModel]
+
+	// CreateAsync saves a new model to a data store. The model is updated with the
+	// saved values from the data store onto the same model and then is emitted by a
+	// Single. The operation is asynchronous (i.e. runs on another goroutine). The
+	// model should be a pointer.
 	CreateAsync(ctx context.Context, modelRef VModel) single.Single[VModel]
+
+	// Update saves an existing model to a data store. The model is updated with the
+	// saved values from the data store onto the same model and then is emitted by a
+	// Single. The model should be a pointer.
 	Update(ctx context.Context, modelRef VModel) single.Single[VModel]
+
+	// UpdateAsync saves an existing model to a data store. The model is updated with
+	// the saved values from the data store onto the same model and then is emitted
+	// by a Single. The operation is asynchronous (i.e. runs on another goroutine).
+	// The model should be a pointer.
 	UpdateAsync(ctx context.Context, modelRef VModel) single.Single[VModel]
+
+	// Delete deletes an existing model to a data store. The model is then emitted by
+	// a Single. The model should be a pointer.
 	Delete(ctx context.Context, modelRef VModel) single.Single[VModel]
+
+	// DeleteAsync deletes an existing model to a data store. The model is then
+	// emitted by a Single. The operation is asynchronous (i.e. runs on another
+	// goroutine). The model should be a pointer.
 	DeleteAsync(ctx context.Context, modelRef VModel) single.Single[VModel]
+
+	// FindById queries the data store by an entity's id and saves the value to the
+	// provided model. The same model is then emitted by a Single. The model should
+	// be a pointer.
 	FindById(ctx context.Context, modelRef VModel, id string) single.Single[option.Maybe[VModel]]
+
+	// FindByIdAsync queries the data store by an entity's id and saves the value to
+	// the provided model. The operation is asynchronous (i.e. runs on another
+	// goroutine). The same model is then emitted by a Single. The model should be a
+	// pointer.
 	FindByIdAsync(ctx context.Context, modelRef VModel, id string) single.Single[option.Maybe[VModel]]
 }
 
-type RepositoryMongoImpl[VModel MongoModel, VID any] struct {
+type RepositoryMongoImpl[VModel database.MongoModel, VID any] struct {
 	ModelColumn    VModel
-	MongoDBHandler *dbservices.MongoDBHandler
+	MongoDBHandler *MongoDBHandler
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, modelRef VModel) single.Single[VModel] {
@@ -68,7 +101,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindById(
 	modelRef VModel,
 	id string,
 ) single.Single[option.Maybe[VModel]] {
-	return dbservices.ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
+	return ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
 		return r.runFindByIdAsync(ctx, modelRef, id)
 	})
 }
@@ -78,7 +111,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindByIdAsync(
 	modelRef VModel,
 	id string,
 ) single.Single[option.Maybe[VModel]] {
-	return dbservices.ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
+	return ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
 		return r.runFindByIdAsync(ctx, modelRef, id)
 	})
 }
@@ -92,9 +125,9 @@ func (r RepositoryMongoImpl[VModel, VID]) runFindByIdAsync(
 	return modelRef, err
 }
 
-func NewRepositoryMongoImpl[VModel MongoModel, VID any](
+func NewRepositoryMongoImpl[VModel database.MongoModel, VID any](
 	modelColumn VModel,
-	mongoDBHandler *dbservices.MongoDBHandler,
+	mongoDBHandler *MongoDBHandler,
 ) *RepositoryMongoImpl[VModel, VID] {
 	return &RepositoryMongoImpl[VModel, VID]{ModelColumn: modelColumn, MongoDBHandler: mongoDBHandler}
 }

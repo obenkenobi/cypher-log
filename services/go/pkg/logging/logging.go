@@ -5,6 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ConfigureGlobalLogging Configure settings based on the app environment on how
+// the global logger should work.
 func ConfigureGlobalLogging() {
 	if environment.IsProduction() {
 		log.SetFormatter(getJsonFormatter())
@@ -19,9 +21,10 @@ func ConfigureGlobalLogging() {
 		log.SetFormatter(getTextFormatter())
 		log.SetLevel(log.DebugLevel)
 	}
-
 }
 
+// NewLogger Creates a new logger with settings based on the app environment on
+// how the logger should work.
 func NewLogger() *log.Logger {
 	logger := log.New()
 	if environment.IsProduction() {
@@ -41,12 +44,7 @@ func NewLogger() *log.Logger {
 }
 
 func getTextFormatter() *log.TextFormatter {
-	return &log.TextFormatter{
-		DisableColors: false,
-		FullTimestamp: true,
-	}
+	return &log.TextFormatter{DisableColors: false, FullTimestamp: true}
 }
 
-func getJsonFormatter() *log.JSONFormatter {
-	return &log.JSONFormatter{}
-}
+func getJsonFormatter() *log.JSONFormatter { return &log.JSONFormatter{} }
