@@ -1,0 +1,28 @@
+{
+  "name": "mongo-migrations",
+  "version": "1.0.0",
+  "description": "migrator for user service",
+  "main": "index.js",
+  "scripts": {
+    "migrate:help": "ts-node migrations/index.ts help new",
+    "migrate:init": "ts-node migrations/index.ts init",
+    "migrate:new": "ts-node migrations/index.ts new",
+    "migrate:up": "ts-node migrations/index.ts up",
+    "migrate:down:all": "ts-node migrations/index.ts down -a",
+    "migrate:down:last": "ts-node migrations/index.ts down -l",
+    "migrate:status": "ts-node migrations/index.ts status",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "mongo": "^0.1.0",
+    "mongo-migrate-ts": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.6.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4"
+  }
+}

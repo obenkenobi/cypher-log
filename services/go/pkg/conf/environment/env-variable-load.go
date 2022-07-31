@@ -23,7 +23,7 @@ func ReadEnvFiles(envFilesNames ...string) {
 	for _, envFileName := range envFilesNames {
 		err := godotenv.Load(envFileName)
 		if err != nil {
-			log.Infof("Failed to load environment file %v", envFileName)
+			log.Infof("Did not load environment file %v", envFileName)
 		}
 	}
 }

@@ -28,7 +28,7 @@ const envVarMongoDBName = "MONGO_DB_NAME"
 const envVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 func main() {
-	environment.ReadEnvFiles("userservice.env")                        // Load env files
+	environment.ReadEnvFiles(".env", "userservice.env")                // Load env files
 	environment.SetEnvVarKeyForAppEnvironment(envVarKeyAppEnvironment) // Set app environment
 	logging.ConfigureGlobalLogging()                                   // Configure logging
 	// Dependency graph
