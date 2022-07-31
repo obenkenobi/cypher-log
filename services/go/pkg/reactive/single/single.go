@@ -77,9 +77,10 @@ func FromSupplier[T any](supplier func() (result T, err error)) Single[T] {
 func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelObservable[T]{_ch: ch}} }
 
 // FromSupplierAsync
-//creates a single out of a supplier function that returns a value or an
-//error to be emitted asynchronously. The supplier function is run on a
-//separate goroutine
+//creates a single out of a supplier function that returns a value or an error
+//to be emitted asynchronously. The supplier function is run on a separate
+//goroutine. *Make sure your supplier function is thread safe or will
+//not cause race conditions on the values provided.*
 func FromSupplierAsync[T any](supplier func() (result T, err error)) Single[T] {
 	ch := make(chan tuple.T2[T, error])
 	go func() {

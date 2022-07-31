@@ -1,4 +1,4 @@
-package database
+package dbservices
 
 import (
 	"context"
@@ -51,31 +51,36 @@ func BuildMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 	return &MongoDBHandler{}
 }
 
-func ObserveOptionalSingleQueryAsync[TModel any](
+// ObserveOptionalSingleQueryAsync
+//creates a single out of a supplier function that queries a single value. The
+//supplier function is run on a separate goroutine. *Make sure your supplier
+//function is not going to be thread safe or not cause race conditions on the
+//data accessed.
+func ObserveOptionalSingleQueryAsync[TQueryResult any](
 	mongoDBHandler *MongoDBHandler,
-	producer func() (TModel, error),
-) stx.Single[option.Maybe[TModel]] {
-	return stx.FromSupplierAsync(func() (option.Maybe[TModel], error) {
-		return runOptionalSingleQuery(mongoDBHandler, producer)
+	supplier func() (TQueryResult, error),
+) stx.Single[option.Maybe[TQueryResult]] {
+	return stx.FromSupplierAsync(func() (option.Maybe[TQueryResult], error) {
+		return runOptionalSingleQuery(mongoDBHandler, supplier)
 	})
 }
 
-func ObserveOptionalSingleQuery[TModel any](
+func ObserveOptionalSingleQuery[TQueryResult any](
 	mongoDBHandler *MongoDBHandler,
-	producer func() (TModel, error),
-) stx.Single[option.Maybe[TModel]] {
-	return stx.FromSupplier(func() (option.Maybe[TModel], error) {
-		return runOptionalSingleQuery(mongoDBHandler, producer)
+	supplier func() (TQueryResult, error),
+) stx.Single[option.Maybe[TQueryResult]] {
+	return stx.FromSupplier(func() (option.Maybe[TQueryResult], error) {
+		return runOptionalSingleQuery(mongoDBHandler, supplier)
 	})
 }
 
-func runOptionalSingleQuery[TModel any](
+func runOptionalSingleQuery[TQueryResult any](
 	mongoDBHandler *MongoDBHandler,
-	producer func() (TModel, error),
-) (option.Maybe[TModel], error) {
-	if result, err := producer(); err != nil {
+	supplier func() (TQueryResult, error),
+) (option.Maybe[TQueryResult], error) {
+	if result, err := supplier(); err != nil {
 		if mongoDBHandler.IsNotFoundError(err) {
-			return option.None[TModel](), nil
+			return option.None[TQueryResult](), nil
 		}
 		return nil, err
 	} else {

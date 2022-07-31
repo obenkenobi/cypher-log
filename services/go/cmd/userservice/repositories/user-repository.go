@@ -5,6 +5,7 @@ import (
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +24,7 @@ type UserRepositoryImpl struct {
 }
 
 func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]] {
-	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
+	return dbservices.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
 		return u.runFindByAuthId(ctx, authId)
 	})
 }
@@ -32,7 +33,7 @@ func (u UserRepositoryImpl) FindByAuthIdAsync(
 	ctx context.Context,
 	authId string,
 ) single.Single[option.Maybe[models.User]] {
-	return database.ObserveOptionalSingleQueryAsync(u.MongoDBHandler, func() (models.User, error) {
+	return dbservices.ObserveOptionalSingleQueryAsync(u.MongoDBHandler, func() (models.User, error) {
 		return u.runFindByAuthId(ctx, authId)
 	})
 }
@@ -47,7 +48,7 @@ func (u UserRepositoryImpl) FindByUsername(
 	ctx context.Context,
 	username string,
 ) single.Single[option.Maybe[models.User]] {
-	return database.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
+	return dbservices.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
 		return u.runFindByUsername(ctx, username)
 	})
 }
@@ -56,7 +57,7 @@ func (u UserRepositoryImpl) FindByUsernameAsync(
 	ctx context.Context,
 	username string,
 ) single.Single[option.Maybe[models.User]] {
-	return database.ObserveOptionalSingleQueryAsync(u.MongoDBHandler, func() (models.User, error) {
+	return dbservices.ObserveOptionalSingleQueryAsync(u.MongoDBHandler, func() (models.User, error) {
 		return u.runFindByUsername(ctx, username)
 	})
 }
@@ -67,7 +68,7 @@ func (u UserRepositoryImpl) runFindByUsername(ctx context.Context, username stri
 	return user, err
 }
 
-func NewUserMongoRepository(mongoDBHandler *database.MongoDBHandler) UserRepository {
+func NewUserMongoRepository(mongoDBHandler *dbservices.MongoDBHandler) UserRepository {
 	return &UserRepositoryImpl{
 		RepositoryMongoImpl: *database.NewRepositoryMongoImpl[*models.User, string](&models.User{}, mongoDBHandler),
 	}

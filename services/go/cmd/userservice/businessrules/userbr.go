@@ -7,7 +7,7 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/validationutils"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
@@ -28,7 +28,7 @@ type UserBr interface {
 }
 
 type UserBrImpl struct {
-	dbHandler      database.DBHandler
+	dbHandler      dbservices.DBHandler
 	userRepository repositories.UserRepository
 	errorService   errorservices.ErrorService
 }
@@ -84,7 +84,7 @@ func (u UserBrImpl) validateUserNameNotTaken(
 }
 
 func NewUserBrImpl(
-	dbHandler database.DBHandler,
+	dbHandler dbservices.DBHandler,
 	userRepository repositories.UserRepository,
 	errorMessageService errorservices.ErrorService,
 ) UserBr {

@@ -7,7 +7,7 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
@@ -24,7 +24,7 @@ type UserService interface {
 }
 
 type userServiceImpl struct {
-	dbHandler             database.DBHandler
+	dbHandler             dbservices.DBHandler
 	userRepository        repositories.UserRepository
 	userBr                businessrules.UserBr
 	errorService          errorservices.ErrorService
@@ -100,10 +100,13 @@ func (u userServiceImpl) DeleteUser(identity security.Identity) single.Single[us
 	userDeletedLocalDBSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
 		return single.MapDerefPtr(u.userRepository.Delete(u.dbHandler.GetCtx(), &user))
 	})
-	userDeletedAuthServerSrc := single.FlatMap(userDeletedLocalDBSrc, func(user models.User) single.Single[models.User] {
-		return single.Map(u.authServerMgmtService.DeleteUser(identity.GetAuthId()),
-			func(_ bool) models.User { return user })
-	})
+	userDeletedAuthServerSrc := single.FlatMap(
+		userDeletedLocalDBSrc,
+		func(user models.User) single.Single[models.User] {
+			return single.Map(u.authServerMgmtService.DeleteUser(identity.GetAuthId()),
+				func(_ bool) models.User { return user })
+		},
+	)
 	return single.Map(userDeletedAuthServerSrc, func(user models.User) userdtos.UserDto {
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
@@ -133,7 +136,7 @@ func (u userServiceImpl) GetByAuthId(authId string) single.Single[userdtos.UserD
 }
 
 func NewUserService(
-	dbHandler database.DBHandler,
+	dbHandler dbservices.DBHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
 	errorService errorservices.ErrorService,

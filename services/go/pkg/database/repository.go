@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"github.com/kamva/mgm/v3"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
@@ -20,7 +21,7 @@ type Repository[VModel MongoModel, VID any] interface {
 
 type RepositoryMongoImpl[VModel MongoModel, VID any] struct {
 	ModelColumn    VModel
-	MongoDBHandler *MongoDBHandler
+	MongoDBHandler *dbservices.MongoDBHandler
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, modelRef VModel) single.Single[VModel] {
@@ -67,7 +68,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindById(
 	modelRef VModel,
 	id string,
 ) single.Single[option.Maybe[VModel]] {
-	return ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
+	return dbservices.ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
 		return r.runFindByIdAsync(ctx, modelRef, id)
 	})
 }
@@ -77,7 +78,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindByIdAsync(
 	modelRef VModel,
 	id string,
 ) single.Single[option.Maybe[VModel]] {
-	return ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
+	return dbservices.ObserveOptionalSingleQueryAsync(r.MongoDBHandler, func() (VModel, error) {
 		return r.runFindByIdAsync(ctx, modelRef, id)
 	})
 }
@@ -93,7 +94,7 @@ func (r RepositoryMongoImpl[VModel, VID]) runFindByIdAsync(
 
 func NewRepositoryMongoImpl[VModel MongoModel, VID any](
 	modelColumn VModel,
-	mongoDBHandler *MongoDBHandler,
+	mongoDBHandler *dbservices.MongoDBHandler,
 ) *RepositoryMongoImpl[VModel, VID] {
 	return &RepositoryMongoImpl[VModel, VID]{ModelColumn: modelColumn, MongoDBHandler: mongoDBHandler}
 }
