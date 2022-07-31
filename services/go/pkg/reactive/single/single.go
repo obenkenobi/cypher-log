@@ -149,5 +149,5 @@ func MapDerefPtr[T any](src Single[*T]) Single[T] {
 }
 
 func fromObservable[T any](src stream.Observable[T]) Single[T] {
-	return Single[T]{src: stream.Take(1, src)}
+	return Single[T]{src: src}
 }

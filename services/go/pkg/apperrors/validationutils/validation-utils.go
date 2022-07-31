@@ -49,10 +49,10 @@ func ConcatSinglesOfRuleErrs(
 func PassRuleErrorsIfEmptyElsePassBadReqError(
 	ruleErrsSrc single.Single[[]apperrors.RuleError],
 ) single.Single[[]apperrors.RuleError] {
-	return single.FlatMap(ruleErrsSrc, func(ruleErrors []apperrors.RuleError) single.Single[[]apperrors.RuleError] {
+	return single.MapWithError(ruleErrsSrc, func(ruleErrors []apperrors.RuleError) ([]apperrors.RuleError, error) {
 		if len(ruleErrors) == 0 {
-			return single.Just(ruleErrors)
+			return ruleErrors, nil
 		}
-		return single.Error[[]apperrors.RuleError](apperrors.NewBadReqErrorFromRuleErrors(ruleErrors...))
+		return ruleErrors, apperrors.NewBadReqErrorFromRuleErrors(ruleErrors...)
 	})
 }
