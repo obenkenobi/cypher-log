@@ -49,6 +49,11 @@ func (a *channelObservable[T]) Observe(ctx context.Context, next func(T) error) 
 	return next(value)
 }
 
+// FromChannel Creates a single that listens to a single value from a channel.
+// Recommended for channels that only emmit one value. If a channel emits
+// multiple values, it is recommended you use observables instead.
+func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelObservable[T]{_ch: ch}} }
+
 // Just creates a single from a single item
 func Just[T any](val T) Single[T] { return fromObservable(stream.Just(val)) }
 
@@ -74,11 +79,6 @@ func FromSupplier[T any](supplier func() (result T, err error)) Single[T] {
 	return fromObservable(src)
 }
 
-// FromChannel Creates a single that listens to a single value from a channel.
-// Recommended for channels that only emmit one value. If a channel emits
-// multiple values, it is recommended you use observables instead.
-func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelObservable[T]{_ch: ch}} }
-
 // FromSupplierAsync
 //creates a single out of a supplier function that returns a value or an error
 //to be emitted asynchronously. The supplier function is run on a separate
@@ -91,13 +91,7 @@ func FromSupplierAsync[T any](supplier func() (result T, err error)) Single[T] {
 		val, err := supplier()
 		ch <- tuple.New2(val, err)
 	}()
-	return FlatMap(FromChannel(ch), func(res tuple.T2[T, error]) Single[T] {
-		val, err := res.V1, res.V2
-		if err != nil {
-			return Error[T](err)
-		}
-		return Just(val)
-	})
+	return MapWithError(FromChannel(ch), func(res tuple.T2[T, error]) (T, error) { return res.V1, res.V2 })
 }
 
 // Map applies a function onto a Single
