@@ -24,10 +24,7 @@ func (a Auth0RouteSecurityConfImpl) GetAudience() string {
 	return a.audience
 }
 
-func NewAuth0RouteSecurityConf(
-	envVarKeyAuth0IssuerUrl string,
-	envVarKeyAuth0Audience string,
-) Auth0RouteSecurityConf {
+func NewAuth0RouteSecurityConf(envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience string) Auth0RouteSecurityConf {
 	issuerUrlStr := environment.GetEnvVariable(envVarKeyAuth0IssuerUrl)
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {

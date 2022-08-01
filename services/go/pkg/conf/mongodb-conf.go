@@ -2,6 +2,7 @@ package conf
 
 import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/utils"
 	"strconv"
 	"time"
 )
@@ -30,11 +31,10 @@ func (m MongoConfImpl) GetConnectionTimeout() time.Duration {
 	return m.connectionTimeout
 }
 
-func NewMongoConf(envVarKeyMongoUri string, envVarKeyMongoDBName string,
-	envVarKeyMongoConnTimeoutMS string) MongoConf {
+func NewMongoConf(envVarKeyMongoUri, envVarKeyMongoDBName, envVarKeyMongoConnTimeoutMS string) MongoConf {
 	connTimeout := 12 * time.Second
-	if connTimeoutStr := environment.GetEnvVariable(envVarKeyMongoConnTimeoutMS); connTimeoutStr != "" {
-		if connectionTimeoutInt, err := strconv.ParseInt(connTimeoutStr, 10, 64); err == nil {
+	if envVarStr := environment.GetEnvVariable(envVarKeyMongoConnTimeoutMS); utils.StringIsNotBlank(envVarStr) {
+		if connectionTimeoutInt, err := strconv.ParseInt(envVarStr, 10, 64); err == nil {
 			connTimeout = time.Duration(connectionTimeoutInt)
 		}
 	}

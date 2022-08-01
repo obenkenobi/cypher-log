@@ -8,7 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
 )
 
-type Repository[VModel database.MongoModel, VID any] interface {
+type CRUDRepository[VModel database.MongoModel, VID any] interface {
 	// Create saves a new model to a data store. The model is updated with the saved
 	// values from the database onto the same model and then is emitted by a Single.
 	// The model should be a pointer.
@@ -52,51 +52,51 @@ type Repository[VModel database.MongoModel, VID any] interface {
 	FindByIdAsync(ctx context.Context, modelRef VModel, id string) single.Single[option.Maybe[VModel]]
 }
 
-type RepositoryMongoImpl[VModel database.MongoModel, VID any] struct {
+type CRUDRepositoryMongoImpl[VModel database.MongoModel, VID any] struct {
 	ModelColumn    VModel
 	MongoDBHandler *MongoDBHandler
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, modelRef VModel) single.Single[VModel] {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) Create(ctx context.Context, modelRef VModel) single.Single[VModel] {
 	return single.FromSupplier(func() (VModel, error) { return r.runCreate(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) CreateAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) CreateAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
 	return single.FromSupplierAsync(func() (VModel, error) { return r.runCreate(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) runCreate(ctx context.Context, modelRef VModel) (VModel, error) {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) runCreate(ctx context.Context, modelRef VModel) (VModel, error) {
 	err := mgm.Coll(r.ModelColumn).CreateWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), modelRef)
 	return modelRef, err
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) Update(ctx context.Context, modelRef VModel) single.Single[VModel] {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) Update(ctx context.Context, modelRef VModel) single.Single[VModel] {
 	return single.FromSupplier(func() (VModel, error) { return r.runUpdate(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) UpdateAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) UpdateAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
 	return single.FromSupplierAsync(func() (VModel, error) { return r.runUpdate(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) runUpdate(ctx context.Context, modelRef VModel) (VModel, error) {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) runUpdate(ctx context.Context, modelRef VModel) (VModel, error) {
 	err := mgm.Coll(r.ModelColumn).UpdateWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), modelRef)
 	return modelRef, err
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) Delete(ctx context.Context, modelRef VModel) single.Single[VModel] {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) Delete(ctx context.Context, modelRef VModel) single.Single[VModel] {
 	return single.FromSupplier(func() (VModel, error) { return r.runDelete(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) DeleteAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) DeleteAsync(ctx context.Context, modelRef VModel) single.Single[VModel] {
 	return single.FromSupplierAsync(func() (VModel, error) { return r.runDelete(ctx, modelRef) })
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) runDelete(ctx context.Context, modelRef VModel) (VModel, error) {
+func (r CRUDRepositoryMongoImpl[VModel, VID]) runDelete(ctx context.Context, modelRef VModel) (VModel, error) {
 	err := mgm.Coll(r.ModelColumn).DeleteWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), modelRef)
 	return modelRef, err
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) FindById(
+func (r CRUDRepositoryMongoImpl[VModel, VID]) FindById(
 	ctx context.Context,
 	modelRef VModel,
 	id string,
@@ -106,7 +106,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindById(
 	})
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) FindByIdAsync(
+func (r CRUDRepositoryMongoImpl[VModel, VID]) FindByIdAsync(
 	ctx context.Context,
 	modelRef VModel,
 	id string,
@@ -116,7 +116,7 @@ func (r RepositoryMongoImpl[VModel, VID]) FindByIdAsync(
 	})
 }
 
-func (r RepositoryMongoImpl[VModel, VID]) runFindByIdAsync(
+func (r CRUDRepositoryMongoImpl[VModel, VID]) runFindByIdAsync(
 	ctx context.Context,
 	modelRef VModel,
 	id string,
@@ -128,6 +128,6 @@ func (r RepositoryMongoImpl[VModel, VID]) runFindByIdAsync(
 func NewRepositoryMongoImpl[VModel database.MongoModel, VID any](
 	modelColumn VModel,
 	mongoDBHandler *MongoDBHandler,
-) *RepositoryMongoImpl[VModel, VID] {
-	return &RepositoryMongoImpl[VModel, VID]{ModelColumn: modelColumn, MongoDBHandler: mongoDBHandler}
+) *CRUDRepositoryMongoImpl[VModel, VID] {
+	return &CRUDRepositoryMongoImpl[VModel, VID]{ModelColumn: modelColumn, MongoDBHandler: mongoDBHandler}
 }

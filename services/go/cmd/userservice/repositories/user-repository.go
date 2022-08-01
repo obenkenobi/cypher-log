@@ -11,7 +11,7 @@ import (
 )
 
 type UserRepository interface {
-	dbservices.Repository[*models.User, string]
+	dbservices.CRUDRepository[*models.User, string]
 	FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 	FindByAuthIdAsync(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 	FindByUsername(ctx context.Context, username string) single.Single[option.Maybe[models.User]]
@@ -19,7 +19,7 @@ type UserRepository interface {
 }
 
 type UserRepositoryImpl struct {
-	dbservices.RepositoryMongoImpl[*models.User, string]
+	dbservices.CRUDRepositoryMongoImpl[*models.User, string]
 }
 
 func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]] {
@@ -73,6 +73,9 @@ func (u UserRepositoryImpl) runFindByUsername(ctx context.Context, username stri
 
 func NewUserMongoRepository(mongoDBHandler *dbservices.MongoDBHandler) UserRepository {
 	return &UserRepositoryImpl{
-		RepositoryMongoImpl: *dbservices.NewRepositoryMongoImpl[*models.User, string](&models.User{}, mongoDBHandler),
+		CRUDRepositoryMongoImpl: *dbservices.NewRepositoryMongoImpl[*models.User, string](
+			&models.User{},
+			mongoDBHandler,
+		),
 	}
 }

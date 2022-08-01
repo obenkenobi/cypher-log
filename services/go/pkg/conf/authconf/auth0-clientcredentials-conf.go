@@ -33,9 +33,9 @@ func (a Auth0ClientCredentialsConfImpl) GetAudience() string {
 }
 
 func NewAuth0ClientCredentialsConf(
-	envVarKeyAuth0Domain string,
-	envAuth0ClientId string,
-	envAuth0ClientSecret string,
+	envVarKeyAuth0Domain,
+	envAuth0ClientId,
+	envAuth0ClientSecret,
 	envAuth0Audience string,
 ) Auth0ClientCredentialsConf {
 	return &Auth0ClientCredentialsConfImpl{
