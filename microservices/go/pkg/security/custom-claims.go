@@ -10,7 +10,7 @@ type Auth0CustomClaims struct {
 
 // Validate does nothing for this example, but we need
 // it to satisfy validator.CustomClaims interface.
-func (c Auth0CustomClaims) Validate(ctx context.Context) error {
+func (c Auth0CustomClaims) Validate(_ context.Context) error {
 	return nil
 }
 
