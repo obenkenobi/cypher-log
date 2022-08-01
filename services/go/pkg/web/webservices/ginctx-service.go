@@ -26,8 +26,9 @@ type GinCtxService interface {
 	// processBindError takes an error from binding a value from a request body processes it into a BadRequestError.
 	processBindError(err error) apperrors.BadRequestError
 
-	// RespondJsonOk responds with json value with a 200 status code.
-	RespondJsonOk(c *gin.Context, model any, err error)
+	// RespondJsonOkOrError responds with json value with a 200 status code or an
+	// error if the error != nil.
+	RespondJsonOkOrError(c *gin.Context, model any, err error)
 }
 
 type GinCtxServiceImpl struct {
@@ -61,7 +62,7 @@ func (h GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 	}
 }
 
-func (h GinCtxServiceImpl) RespondJsonOk(c *gin.Context, model any, err error) {
+func (h GinCtxServiceImpl) RespondJsonOkOrError(c *gin.Context, model any, err error) {
 	if err != nil {
 		h.HandleErrorResponse(c, err)
 		return

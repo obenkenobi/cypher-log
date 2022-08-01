@@ -9,7 +9,6 @@ import (
 	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/web"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/web/webservices"
-	"net/http"
 )
 
 type UserController interface {
@@ -34,11 +33,8 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.AddUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
 				})
-			if userDto, err := single.RetrieveValue(c, addUserSrc); err != nil {
-				u.ginCtxService.HandleErrorResponse(c, err)
-			} else {
-				c.JSON(http.StatusOK, userDto)
-			}
+			userDto, err := single.RetrieveValue(c, addUserSrc)
+			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
 	userGroup.PUT("",
@@ -51,7 +47,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 					return u.userService.UpdateUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
-			u.ginCtxService.RespondJsonOk(c, userDto, err)
+			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
 	userGroup.DELETE("",
@@ -60,7 +56,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			updateUserSrc := u.userService.DeleteUser(c, security.GetIdentityFromGinContext(c))
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
-			u.ginCtxService.RespondJsonOk(c, userDto, err)
+			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
 	userGroup.GET("/me",
@@ -69,7 +65,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			getUserIdentitySrc := u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
 			userDto, err := single.RetrieveValue(c, getUserIdentitySrc)
-			u.ginCtxService.RespondJsonOk(c, userDto, err)
+			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
 	userGroup.GET("/byAuthId/:id",
@@ -79,7 +75,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			authId := c.Param("id")
 			getUserSrc := u.userService.GetByAuthId(c, authId)
 			userDto, err := single.RetrieveValue(c, getUserSrc)
-			u.ginCtxService.RespondJsonOk(c, userDto, err)
+			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 }
 
