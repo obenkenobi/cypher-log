@@ -22,10 +22,9 @@ type userControllerImpl struct {
 }
 
 func (u userControllerImpl) AddRoutes(r *gin.Engine) {
-	userGroup := r.Group("/user")
+	userGroup := r.Group("/user", u.authMiddleware.Authentication())
 
 	userGroup.POST("",
-		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
@@ -38,7 +37,6 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		})
 
 	userGroup.PUT("",
-		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
@@ -51,7 +49,6 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		})
 
 	userGroup.DELETE("",
-		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			updateUserSrc := u.userService.DeleteUser(c, security.GetIdentityFromGinContext(c))
@@ -60,7 +57,6 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		})
 
 	userGroup.GET("/me",
-		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			getUserIdentitySrc := u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
@@ -69,7 +65,6 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		})
 
 	userGroup.GET("/byAuthId/:id",
-		u.authMiddleware.Authentication(),
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
 			authId := c.Param("id")
