@@ -39,7 +39,7 @@ func (u UserRepositoryImpl) FindByAuthIdAsync(
 
 func (u UserRepositoryImpl) runFindByAuthId(ctx context.Context, authId string) (models.User, error) {
 	user := models.User{}
-	err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"authId": authId}, &user)
+	err := mgm.Coll(u.ModelColumn).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"authId": authId}, &user)
 	return user, err
 }
 
@@ -63,7 +63,11 @@ func (u UserRepositoryImpl) FindByUsernameAsync(
 
 func (u UserRepositoryImpl) runFindByUsername(ctx context.Context, username string) (models.User, error) {
 	user := models.User{}
-	err := mgm.Coll(u.ModelColumn).FirstWithCtx(ctx, bson.M{"userName": username}, &user)
+	err := mgm.Coll(u.ModelColumn).FirstWithCtx(
+		u.MongoDBHandler.GetChildDBCtx(ctx),
+		bson.M{"userName": username},
+		&user,
+	)
 	return user, err
 }
 

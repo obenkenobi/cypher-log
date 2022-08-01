@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/mappers"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
@@ -16,15 +17,23 @@ import (
 )
 
 type UserService interface {
-	AddUser(identity security.Identity, userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto]
-	UpdateUser(identity security.Identity, userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto]
-	DeleteUser(identity security.Identity) single.Single[userdtos.UserDto]
-	GetByAuthId(tokenId string) single.Single[userdtos.UserDto]
-	GetUserIdentity(identity security.Identity) single.Single[userdtos.UserIdentityDto]
+	AddUser(
+		ctx context.Context,
+		identity security.Identity,
+		userSaveDto userdtos.UserSaveDto,
+	) single.Single[userdtos.UserDto]
+	UpdateUser(
+		ctx context.Context,
+		identity security.Identity,
+		userSaveDto userdtos.UserSaveDto,
+	) single.Single[userdtos.UserDto]
+	DeleteUser(ctx context.Context, identity security.Identity) single.Single[userdtos.UserDto]
+	GetByAuthId(ctx context.Context, tokenId string) single.Single[userdtos.UserDto]
+	GetUserIdentity(ctx context.Context, identity security.Identity) single.Single[userdtos.UserIdentityDto]
 }
 
 type userServiceImpl struct {
-	dbHandler             dbservices.DBHandler
+	crudDBHandler         dbservices.CrudDBHandler
 	userRepository        repositories.UserRepository
 	userBr                businessrules.UserBr
 	errorService          errorservices.ErrorService
@@ -32,15 +41,16 @@ type userServiceImpl struct {
 }
 
 func (u userServiceImpl) AddUser(
+	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserDto] {
-	userCreateValidationSrc := u.userBr.ValidateUserCreate(u.dbHandler.GetCtx(), identity, userSaveDto)
+	userCreateValidationSrc := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
 	userCreateSrc := single.FlatMap(userCreateValidationSrc, func([]apperrors.RuleError) single.Single[models.User] {
 		user := models.User{}
 		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
 		user.AuthId = identity.GetAuthId()
-		return single.MapDerefPtr(u.userRepository.Create(u.dbHandler.GetCtx(), &user))
+		return single.MapDerefPtr(u.userRepository.Create(ctx, &user))
 	})
 	return single.Map(userCreateSrc, func(user models.User) userdtos.UserDto {
 		userDto := userdtos.UserDto{}
@@ -51,10 +61,11 @@ func (u userServiceImpl) AddUser(
 }
 
 func (u userServiceImpl) UpdateUser(
+	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserDto] {
-	userSearchSrc := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), identity.GetAuthId())
+	userSearchSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
 	userExistsSrc := single.MapWithError(
 		userSearchSrc,
 		func(userMaybe option.Maybe[models.User]) (models.User, error) {
@@ -68,12 +79,12 @@ func (u userServiceImpl) UpdateUser(
 		},
 	)
 	userValidatedSrc := single.FlatMap(userExistsSrc, func(existingUser models.User) single.Single[models.User] {
-		validationSrc := u.userBr.ValidateUserUpdate(u.dbHandler.GetCtx(), userSaveDto, existingUser)
+		validationSrc := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
 		return single.Map(validationSrc, func([]apperrors.RuleError) models.User { return existingUser })
 	})
 	userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
 		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
-		return single.MapDerefPtr(u.userRepository.Update(u.dbHandler.GetCtx(), &user))
+		return single.MapDerefPtr(u.userRepository.Update(ctx, &user))
 	})
 	return single.Map(userSavedSrc, func(user models.User) userdtos.UserDto {
 		userDto := userdtos.UserDto{}
@@ -83,8 +94,8 @@ func (u userServiceImpl) UpdateUser(
 	})
 }
 
-func (u userServiceImpl) DeleteUser(identity security.Identity) single.Single[userdtos.UserDto] {
-	userSearchSrc := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), identity.GetAuthId())
+func (u userServiceImpl) DeleteUser(ctx context.Context, identity security.Identity) single.Single[userdtos.UserDto] {
+	userSearchSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
 	userExistsSrc := single.MapWithError(
 		userSearchSrc,
 		func(userMaybe option.Maybe[models.User]) (models.User, error) {
@@ -98,7 +109,7 @@ func (u userServiceImpl) DeleteUser(identity security.Identity) single.Single[us
 		},
 	)
 	userDeletedLocalDBSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
-		return single.MapDerefPtr(u.userRepository.Delete(u.dbHandler.GetCtx(), &user))
+		return single.MapDerefPtr(u.userRepository.Delete(ctx, &user))
 	})
 	userDeletedAuthServerSrc := single.FlatMap(
 		userDeletedLocalDBSrc,
@@ -115,8 +126,11 @@ func (u userServiceImpl) DeleteUser(identity security.Identity) single.Single[us
 	})
 }
 
-func (u userServiceImpl) GetUserIdentity(identity security.Identity) single.Single[userdtos.UserIdentityDto] {
-	userSrc := u.GetByAuthId(identity.GetAuthId())
+func (u userServiceImpl) GetUserIdentity(
+	ctx context.Context,
+	identity security.Identity,
+) single.Single[userdtos.UserIdentityDto] {
+	userSrc := u.GetByAuthId(ctx, identity.GetAuthId())
 	return single.Map(userSrc, func(userDto userdtos.UserDto) userdtos.UserIdentityDto {
 		userIdentityDto := userdtos.UserIdentityDto{}
 		mappers.MapToUserDtoAndIdentityToUserIdentityDto(userDto, identity, &userIdentityDto)
@@ -125,8 +139,8 @@ func (u userServiceImpl) GetUserIdentity(identity security.Identity) single.Sing
 
 }
 
-func (u userServiceImpl) GetByAuthId(authId string) single.Single[userdtos.UserDto] {
-	userSearchSrc := u.userRepository.FindByAuthId(u.dbHandler.GetCtx(), authId)
+func (u userServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
+	userSearchSrc := u.userRepository.FindByAuthId(ctx, authId)
 	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserDto {
 		user := userMaybe.OrElse(models.User{})
 		userDto := userdtos.UserDto{}
@@ -136,14 +150,14 @@ func (u userServiceImpl) GetByAuthId(authId string) single.Single[userdtos.UserD
 }
 
 func NewUserService(
-	dbHandler dbservices.DBHandler,
+	crudDBHandler dbservices.CrudDBHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
 	errorService errorservices.ErrorService,
 	authServerMgmtService AuthServerMgmtService,
 ) UserService {
 	return &userServiceImpl{
-		dbHandler:             dbHandler,
+		crudDBHandler:         crudDBHandler,
 		userRepository:        userRepository,
 		userBr:                userBr,
 		errorService:          errorService,

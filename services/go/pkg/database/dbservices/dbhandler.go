@@ -16,12 +16,14 @@ type Session interface {
 	CommitTransaction(context.Context) error
 }
 
-// DBHandler Handles database related tasks such as setting up database
+// CrudDBHandler Handles CRUD database related tasks such as setting up database
 // connection(s), providing contexts for database operations, managing
 // transactions, and handling database errors.
-type DBHandler interface {
-	// GetCtx creates a new contecxt to be sent to other database queries
-	GetCtx() context.Context
+type CrudDBHandler interface {
+	// GetChildDBCtxWithCancel creates a new context to be sent to other database queries with a cancel function
+	GetChildDBCtxWithCancel(ctx context.Context) (context.Context, context.CancelFunc)
+	// GetChildDBCtx creates a new context to be sent to other database queries
+	GetChildDBCtx(ctx context.Context) context.Context
 	// IsNotFoundError checks if an error is created by an underlying object database
 	// mapper is due to a requested entity not being found.
 	IsNotFoundError(err error) bool
@@ -31,17 +33,23 @@ type DBHandler interface {
 	ExecTransaction(runner func(Session, context.Context) error) error
 }
 
-// MongoDBHandler is a DBHandler implementation for MongoDB, in particular for
+// MongoDBHandler is a CrudDBHandler implementation for MongoDB, in particular for
 // the kamva/mgm ODM.
 type MongoDBHandler struct {
+	mongoConf conf.MongoConf
 }
 
 func (d MongoDBHandler) IsNotFoundError(err error) bool {
 	return err.Error() == "mongo: no documents in result"
 }
 
-func (d MongoDBHandler) GetCtx() context.Context {
-	return mgm.Ctx()
+func (d MongoDBHandler) GetChildDBCtxWithCancel(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, d.mongoConf.GetConnectionTimeout())
+}
+
+func (d MongoDBHandler) GetChildDBCtx(ctx context.Context) context.Context {
+	dbCtx, _ := d.GetChildDBCtxWithCancel(ctx)
+	return dbCtx
 }
 
 func (d MongoDBHandler) ExecTransaction(transactionFunc func(Session, context.Context) error) error {
@@ -57,7 +65,7 @@ func NewMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 		options.Client().ApplyURI(mongoConf.GetUri())); err != nil {
 		log.WithError(err).Fatal("Failed to set mongodb config")
 	}
-	return &MongoDBHandler{}
+	return &MongoDBHandler{mongoConf: mongoConf}
 }
 
 // ObserveOptionalSingleQueryAsync

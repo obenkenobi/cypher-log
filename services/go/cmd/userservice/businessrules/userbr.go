@@ -28,7 +28,7 @@ type UserBr interface {
 }
 
 type UserBrImpl struct {
-	dbHandler      dbservices.DBHandler
+	crudDBHandler  dbservices.CrudDBHandler
 	userRepository repositories.UserRepository
 	errorService   errorservices.ErrorService
 }
@@ -84,9 +84,9 @@ func (u UserBrImpl) validateUserNameNotTaken(
 }
 
 func NewUserBrImpl(
-	dbHandler dbservices.DBHandler,
+	crudDBHandler dbservices.CrudDBHandler,
 	userRepository repositories.UserRepository,
 	errorMessageService errorservices.ErrorService,
 ) UserBr {
-	return &UserBrImpl{dbHandler: dbHandler, userRepository: userRepository, errorService: errorMessageService}
+	return &UserBrImpl{crudDBHandler: crudDBHandler, userRepository: userRepository, errorService: errorMessageService}
 }

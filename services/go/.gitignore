@@ -24,5 +24,6 @@ go.work
 /bin
 
 # environment files
-userservice.env
 .env
+userservice.env
+keyservice.env

@@ -66,7 +66,7 @@ func (r RepositoryMongoImpl[VModel, VID]) CreateAsync(ctx context.Context, model
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) runCreate(ctx context.Context, modelRef VModel) (VModel, error) {
-	err := mgm.Coll(r.ModelColumn).CreateWithCtx(ctx, modelRef)
+	err := mgm.Coll(r.ModelColumn).CreateWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), modelRef)
 	return modelRef, err
 }
 
@@ -79,7 +79,7 @@ func (r RepositoryMongoImpl[VModel, VID]) UpdateAsync(ctx context.Context, model
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) runUpdate(ctx context.Context, modelRef VModel) (VModel, error) {
-	err := mgm.Coll(r.ModelColumn).UpdateWithCtx(ctx, modelRef)
+	err := mgm.Coll(r.ModelColumn).UpdateWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), modelRef)
 	return modelRef, err
 }
 
@@ -92,7 +92,7 @@ func (r RepositoryMongoImpl[VModel, VID]) DeleteAsync(ctx context.Context, model
 }
 
 func (r RepositoryMongoImpl[VModel, VID]) runDelete(ctx context.Context, modelRef VModel) (VModel, error) {
-	err := mgm.Coll(r.ModelColumn).DeleteWithCtx(ctx, modelRef)
+	err := mgm.Coll(r.ModelColumn).DeleteWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), modelRef)
 	return modelRef, err
 }
 
@@ -121,7 +121,7 @@ func (r RepositoryMongoImpl[VModel, VID]) runFindByIdAsync(
 	modelRef VModel,
 	id string,
 ) (VModel, error) {
-	err := mgm.Coll(r.ModelColumn).FindByIDWithCtx(ctx, id, modelRef)
+	err := mgm.Coll(r.ModelColumn).FindByIDWithCtx(r.MongoDBHandler.GetChildDBCtx(ctx), id, modelRef)
 	return modelRef, err
 }
 
