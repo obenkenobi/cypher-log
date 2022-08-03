@@ -3,7 +3,7 @@ package dbservices
 import (
 	"context"
 	"encoding/json"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"time"
 )
 

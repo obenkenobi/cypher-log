@@ -2,17 +2,17 @@ package services
 
 import (
 	"context"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/businessrules"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/mappers"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/businessrules"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/mappers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,7 +28,7 @@ type UserService interface {
 		userSaveDto userdtos.UserSaveDto,
 	) single.Single[userdtos.UserDto]
 	DeleteUser(ctx context.Context, identity security.Identity) single.Single[userdtos.UserDto]
-	GetByAuthId(ctx context.Context, tokenId string) single.Single[userdtos.UserDto]
+	GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto]
 	GetUserIdentity(ctx context.Context, identity security.Identity) single.Single[userdtos.UserIdentityDto]
 }
 

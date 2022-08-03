@@ -1,19 +1,22 @@
 package main
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/businessrules"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/controllers"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/services"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/taskrunner"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/web/webservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/businessrules"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/controllers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/grpcservers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -33,9 +36,22 @@ func main() {
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0ClientCredentialsConf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
 	authMiddleware := middlewares.NewAuthMiddleware(auth0Conf)
-	userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
-	appServer := webservices.NewServer(serverConf, userController)
+
+	appServer := webservices.NewAppServer(
+		serverConf,
+		controllers.NewUserController(authMiddleware, userService, ginCtxService),
+	)
+
+	grpcServer := webservices.NewGrpcServer(
+		serverConf,
+		func(s *grpc.Server) {
+			userpb.RegisterUserReaderServer(s, grpcservers.NewUserReaderServer(userService))
+		},
+	)
 
 	// Run tasks
-	taskrunner.RunAndWait(func() { appServer.Run() })
+	taskrunner.RunAndWait(
+		func() { appServer.Run() },
+		func() { grpcServer.Run() },
+	)
 }

@@ -1,8 +1,8 @@
 package dbservices
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
 type DBHandler interface {

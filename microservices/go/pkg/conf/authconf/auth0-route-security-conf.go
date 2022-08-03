@@ -1,7 +1,8 @@
 package authconf
 
 import (
-	environment2 "github.com/obenkenobi/cypher-log/services/go/pkg/environment"
+	"fmt"
+	environment2 "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	log "github.com/sirupsen/logrus"
 	"net/url"
 )
@@ -25,7 +26,7 @@ func (a Auth0RouteSecurityConfImpl) GetAudience() string {
 }
 
 func NewAuth0RouteSecurityConf() Auth0RouteSecurityConf {
-	issuerUrlStr := environment2.GetEnvVariable(environment2.EnvVarKeyAuth0IssuerUrl)
+	issuerUrlStr := fmt.Sprintf("https://%v/", environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Domain))
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {
 		log.Fatalf("Failed to parse issuer url %v", issuerUrlStr)

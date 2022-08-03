@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/pkg/utils"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"os"
 	"strconv"
 	"time"

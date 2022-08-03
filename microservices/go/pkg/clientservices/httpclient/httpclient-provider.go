@@ -2,7 +2,7 @@ package httpclient
 
 import (
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 )
 
 type ClientProvider interface {

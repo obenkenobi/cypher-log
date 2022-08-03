@@ -2,15 +2,15 @@ package businessrules
 
 import (
 	"context"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/repositories"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/errorservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors/validationutils"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 )
 
 type UserBr interface {

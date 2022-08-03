@@ -2,7 +2,7 @@ package errorservices
 
 import (
 	"fmt"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 )
 
 type ErrorService interface {

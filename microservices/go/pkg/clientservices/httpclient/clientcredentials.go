@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/clientcredentialsdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/clientcredentialsdtos"
 )
 
 type SystemAccessTokenClient interface {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/barweiss/go-tuple"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	cv "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"

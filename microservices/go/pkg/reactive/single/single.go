@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/barweiss/go-tuple"
 	"github.com/joamaki/goreactive/stream"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive"
 	"sync"
 )
 

@@ -1,7 +1,7 @@
 package authconf
 
 import (
-	environment2 "github.com/obenkenobi/cypher-log/services/go/pkg/environment"
+	environment2 "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 )
 
 type Auth0ClientCredentialsConf interface {

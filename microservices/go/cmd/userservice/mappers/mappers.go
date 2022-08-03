@@ -1,9 +1,9 @@
 package mappers
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 )
 
 func MapUserSaveDtoToUser(source userdtos.UserSaveDto, dest *models.User) {

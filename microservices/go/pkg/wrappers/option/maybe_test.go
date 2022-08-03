@@ -2,7 +2,7 @@ package option_test
 
 import (
 	"fmt"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	cv "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

@@ -2,7 +2,7 @@ package conf_test
 
 import (
 	"fmt"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	cv "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

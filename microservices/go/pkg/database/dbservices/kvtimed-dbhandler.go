@@ -2,7 +2,7 @@ package dbservices
 
 import (
 	"github.com/go-redis/redis/v9"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 )
 
 type KeyValueTimedDBHandler interface {

@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	log "github.com/sirupsen/logrus"
 )
 

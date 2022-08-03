@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/logging"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/taskrunner"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/web/webservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 	//errorService := errorservices.NewErrorService()
 	//ginCtxService := webservices.NewGinCtxService(errorService)
 	//authMiddleware := middlewares.NewAuthMiddleware(auth0Conf)
-	appServer := webservices.NewServer(serverConf)
+	appServer := webservices.NewAppServer(serverConf)
 
 	// Run tasks
 	taskrunner.RunAndWait(func() { appServer.Run() })

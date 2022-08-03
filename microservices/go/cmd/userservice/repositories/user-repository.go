@@ -3,10 +3,10 @@ package repositories
 import (
 	"context"
 	"github.com/kamva/mgm/v3"
-	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

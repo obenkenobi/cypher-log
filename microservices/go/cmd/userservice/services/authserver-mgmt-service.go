@@ -1,8 +1,8 @@
 package services
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"gopkg.in/auth0.v5/management"
 )
 

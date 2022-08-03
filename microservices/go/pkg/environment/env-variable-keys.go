@@ -11,7 +11,6 @@ const EnvVarKeyGrpcServerPort = "GRPC_SERVER_PORT"
 
 // Auth0
 
-const EnvVarKeyAuth0IssuerUrl = "AUTH0_ISSUER_URL"
 const EnvVarKeyAuth0Audience = "AUTH0_AUDIENCE"
 const EnvVarKeyAuth0Domain = "AUTH0_DOMAIN"
 const EnvVarKeyAuth0ClientId = "AUTH0_CLIENT_ID"

@@ -6,8 +6,8 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 	adapter "github.com/gwatts/gin-adapter"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"net/http"
 	"time"
 )

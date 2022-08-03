@@ -4,7 +4,7 @@ import (
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/utils"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"strings"
 )
 

@@ -3,7 +3,7 @@ package dbservices
 import (
 	"context"
 	"github.com/kamva/mgm/v3"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb";
+
+message AuthIdRequest {
+  string authId = 1;
+}
+
+message UserReply {
+  string id = 1;
+  bool exists = 2;
+  string userName = 3;
+  string displayName = 4;
+  int64 createdAt = 5;
+  int64 updatedAt = 6;
+}
+
+service UserReader {
+  rpc GetUserByAuthId(AuthIdRequest) returns (UserReply) {}
+}

@@ -1,6 +1,6 @@
 package environment
 
-import "github.com/obenkenobi/cypher-log/services/go/pkg/utils"
+import "github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 
 const Development = "DEVELOPMENT"
 const Staging = "STAGING"
