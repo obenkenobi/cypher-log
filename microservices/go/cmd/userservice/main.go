@@ -50,7 +50,7 @@ func main() {
 		func(s *grpc.Server) {
 			userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))
 		},
-		grpcserveroptions.NewAuthenticationInterceptor(grpcAuth0JwtValidateService),
+		grpcserveroptions.NewAuthenticationServerOptionCreator(grpcAuth0JwtValidateService),
 	)
 
 	// Run tasks

@@ -10,16 +10,14 @@ import (
 	"strings"
 )
 
-type AuthenticationServerOptionBuilder interface {
-	ServerOptionCreator
-}
+type AuthenticationServerOptionCreator interface{ ServerOptionCreator }
 
-type AuthenticationServerOptionBuilderImpl struct {
+type AuthenticationServerOptionCreatorImpl struct {
 	grpcAuth0JwtValidateService securityservices.ExternalOath2ValidateService
 }
 
 // valid validates the authorization.
-func (a AuthenticationServerOptionBuilderImpl) valid(ctx context.Context, authorization []string) bool {
+func (a AuthenticationServerOptionCreatorImpl) valid(ctx context.Context, authorization []string) bool {
 	if len(authorization) < 1 {
 		return false
 	}
@@ -28,7 +26,7 @@ func (a AuthenticationServerOptionBuilderImpl) valid(ctx context.Context, author
 	return err == nil
 }
 
-func (a AuthenticationServerOptionBuilderImpl) authenticate(
+func (a AuthenticationServerOptionCreatorImpl) authenticate(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
@@ -47,11 +45,12 @@ func (a AuthenticationServerOptionBuilderImpl) authenticate(
 	return handler(ctx, req)
 }
 
-func (a AuthenticationServerOptionBuilderImpl) CreateServerOption() grpc.ServerOption {
+func (a AuthenticationServerOptionCreatorImpl) CreateServerOption() grpc.ServerOption {
 	return grpc.UnaryInterceptor(a.authenticate)
 }
 
-func NewAuthenticationInterceptor(
-	grpcAuth0JwtValidateService securityservices.ExternalOath2ValidateService) AuthenticationServerOptionBuilder {
-	return &AuthenticationServerOptionBuilderImpl{grpcAuth0JwtValidateService: grpcAuth0JwtValidateService}
+func NewAuthenticationServerOptionCreator(
+	grpcAuth0JwtValidateService securityservices.ExternalOath2ValidateService,
+) AuthenticationServerOptionCreator {
+	return &AuthenticationServerOptionCreatorImpl{grpcAuth0JwtValidateService: grpcAuth0JwtValidateService}
 }
