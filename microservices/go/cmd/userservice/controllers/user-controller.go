@@ -12,7 +12,7 @@ import (
 )
 
 type UserController interface {
-	web.Controller
+	webservices.Controller
 }
 
 type userControllerImpl struct {
@@ -22,9 +22,9 @@ type userControllerImpl struct {
 }
 
 func (u userControllerImpl) AddRoutes(r *gin.Engine) {
-	userGroup := r.Group("/user", u.authMiddleware.Authentication())
+	userGroupV1 := r.Group(web.APIPath(1, "user"), u.authMiddleware.Authentication())
 
-	userGroup.POST("",
+	userGroupV1.POST("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
@@ -36,7 +36,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
-	userGroup.PUT("",
+	userGroupV1.PUT("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
@@ -48,7 +48,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
-	userGroup.DELETE("",
+	userGroupV1.DELETE("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			updateUserSrc := u.userService.DeleteUser(c, security.GetIdentityFromGinContext(c))
@@ -56,7 +56,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
-	userGroup.GET("/me",
+	userGroupV1.GET("/me",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			getUserIdentitySrc := u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
@@ -64,7 +64,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})
 
-	userGroup.GET("/byAuthId/:id",
+	userGroupV1.GET("/byAuthId/:id",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
 			authId := c.Param("id")

@@ -1,21 +1,26 @@
 package conf
 
-import "github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
+import (
+	environment2 "github.com/obenkenobi/cypher-log/services/go/pkg/environment"
+)
 
 type ServerConf interface {
-	GetPort() string
+	GetAppServerPort() string
+	GetGrpcServerPort() string
 }
 
 type serverConfImpl struct {
-	port string
+	appServerPort  string
+	grpcServerPort string
 }
 
-func (s serverConfImpl) GetPort() string {
-	return s.port
-}
+func (s serverConfImpl) GetGrpcServerPort() string { return s.grpcServerPort }
 
-func NewServerConf(envVarKeyPort string) ServerConf {
+func (s serverConfImpl) GetAppServerPort() string { return s.appServerPort }
+
+func NewServerConf() ServerConf {
 	return &serverConfImpl{
-		port: environment.GetEnvVariableOrDefault(envVarKeyPort, "8080"),
+		appServerPort:  environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyAppServerPort, "8080"),
+		grpcServerPort: environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyGrpcServerPort, "5000"),
 	}
 }

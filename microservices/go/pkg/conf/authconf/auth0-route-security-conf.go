@@ -1,7 +1,7 @@
 package authconf
 
 import (
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
+	environment2 "github.com/obenkenobi/cypher-log/services/go/pkg/environment"
 	log "github.com/sirupsen/logrus"
 	"net/url"
 )
@@ -24,14 +24,14 @@ func (a Auth0RouteSecurityConfImpl) GetAudience() string {
 	return a.audience
 }
 
-func NewAuth0RouteSecurityConf(envVarKeyAuth0IssuerUrl, envVarKeyAuth0Audience string) Auth0RouteSecurityConf {
-	issuerUrlStr := environment.GetEnvVariable(envVarKeyAuth0IssuerUrl)
+func NewAuth0RouteSecurityConf() Auth0RouteSecurityConf {
+	issuerUrlStr := environment2.GetEnvVariable(environment2.EnvVarKeyAuth0IssuerUrl)
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {
 		log.Fatalf("Failed to parse issuer url %v", issuerUrlStr)
 	}
 	return &Auth0RouteSecurityConfImpl{
 		issuerUrl: issuerUrl,
-		audience:  environment.GetEnvVariable(envVarKeyAuth0Audience),
+		audience:  environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Audience),
 	}
 }

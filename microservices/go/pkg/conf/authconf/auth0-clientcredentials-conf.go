@@ -1,6 +1,8 @@
 package authconf
 
-import "github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
+import (
+	environment2 "github.com/obenkenobi/cypher-log/services/go/pkg/environment"
+)
 
 type Auth0ClientCredentialsConf interface {
 	GetDomain() string
@@ -32,16 +34,11 @@ func (a Auth0ClientCredentialsConfImpl) GetAudience() string {
 	return a.audience
 }
 
-func NewAuth0ClientCredentialsConf(
-	envVarKeyAuth0Domain,
-	envAuth0ClientId,
-	envAuth0ClientSecret,
-	envAuth0Audience string,
-) Auth0ClientCredentialsConf {
+func NewAuth0ClientCredentialsConf() Auth0ClientCredentialsConf {
 	return &Auth0ClientCredentialsConfImpl{
-		domain:       environment.GetEnvVariable(envVarKeyAuth0Domain),
-		clientId:     environment.GetEnvVariable(envAuth0ClientId),
-		clientSecret: environment.GetEnvVariable(envAuth0ClientSecret),
-		audience:     environment.GetEnvVariable(envAuth0Audience),
+		domain:       environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Domain),
+		clientId:     environment2.GetEnvVariable(environment2.EnvVarKeyAuth0ClientId),
+		clientSecret: environment2.GetEnvVariable(environment2.EnvVarKeyAuth0ClientSecret),
+		audience:     environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Audience),
 	}
 }

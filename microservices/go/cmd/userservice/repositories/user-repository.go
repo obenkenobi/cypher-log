@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/services/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/containers/option"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/conf/environment"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/web"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,7 +22,7 @@ type appserverImpl struct {
 }
 
 func (s appserverImpl) Run() {
-	err := s.router.Run(fmt.Sprintf(":%s", s.serverConf.GetPort()))
+	err := s.router.Run(fmt.Sprintf(":%s", s.serverConf.GetAppServerPort()))
 	if err != nil {
 		log.WithError(err).Fatal("Server failed to run")
 		return
@@ -31,7 +30,7 @@ func (s appserverImpl) Run() {
 }
 
 // NewServer creates an app server that can be run by the server configuration and a list of controllers
-func NewServer(serverConf conf.ServerConf, controllers ...web.Controller) AppServer {
+func NewServer(serverConf conf.ServerConf, controllers ...Controller) AppServer {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}

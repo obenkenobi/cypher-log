@@ -3,9 +3,9 @@ package dbservices
 import (
 	"context"
 	"github.com/kamva/mgm/v3"
-	"github.com/obenkenobi/cypher-log/services/go/pkg/containers/option"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/database"
 	"github.com/obenkenobi/cypher-log/services/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/services/go/pkg/wrappers/option"
 )
 
 type CRUDRepository[VModel database.MongoModel, VID any] interface {

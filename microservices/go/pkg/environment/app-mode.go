@@ -2,18 +2,15 @@ package environment
 
 import "github.com/obenkenobi/cypher-log/services/go/pkg/utils"
 
-const DefaultEnvVarKeyAppEnv = "ENVIRONMENT"
-
 const Development = "DEVELOPMENT"
 const Staging = "STAGING"
 const Production = "PRODUCTION"
 
-var environmentVarKeyAppEnvironment = DefaultEnvVarKeyAppEnv
 var cachedAppEnvironment = ""
 
 func GetAppEnvironment() string {
 	if utils.StringIsBlank(cachedAppEnvironment) {
-		return GetEnvVariableOrDefault(environmentVarKeyAppEnvironment, Development)
+		return GetEnvVariableOrDefault(EnvVarKeyAppEnvironment, Development)
 	}
 	return cachedAppEnvironment
 }
@@ -28,8 +25,4 @@ func IsDevelopment() bool {
 
 func IsProduction() bool {
 	return GetAppEnvironment() == Production
-}
-
-func SetEnvVarKeyForAppEnvironment(key string) {
-	environmentVarKeyAppEnvironment = key
 }

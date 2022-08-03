@@ -6,7 +6,7 @@ type MockServerConf struct {
 	mock.Mock
 }
 
-func (s *MockServerConf) GetPort() string {
+func (s *MockServerConf) GetAppServerPort() string {
 	args := s.Mock.Called()
 	return args.Get(0).(string)
 }

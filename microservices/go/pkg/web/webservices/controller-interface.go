@@ -1,4 +1,4 @@
-package web
+package webservices
 
 import "github.com/gin-gonic/gin"
 
