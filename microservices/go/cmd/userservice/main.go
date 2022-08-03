@@ -46,7 +46,7 @@ func main() {
 	grpcServer := webservices.NewGrpcServer(
 		serverConf,
 		func(s *grpc.Server) {
-			userpb.RegisterUserReaderServer(s, grpcservers.NewUserReaderServer(userService))
+			userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))
 		},
 	)
 

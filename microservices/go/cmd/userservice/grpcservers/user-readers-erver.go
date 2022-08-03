@@ -9,12 +9,12 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 )
 
-type UserReaderServerImpl struct {
-	userpb.UnimplementedUserReaderServer
+type UserServiceServerImpl struct {
+	userpb.UnimplementedUserServiceServer
 	userService services.UserService
 }
 
-func (u UserReaderServerImpl) GetUserByAuthId(ctx context.Context, request *userpb.AuthIdRequest) (*userpb.UserReply, error) {
+func (u UserServiceServerImpl) GetUserByAuthId(ctx context.Context, request *userpb.AuthIdRequest) (*userpb.UserReply, error) {
 	userFindSrc := u.userService.GetByAuthId(ctx, request.GetAuthId())
 	userReplySrc := single.Map(userFindSrc, func(userDto userdtos.UserDto) *userpb.UserReply {
 		userReply := &userpb.UserReply{}
@@ -24,6 +24,6 @@ func (u UserReaderServerImpl) GetUserByAuthId(ctx context.Context, request *user
 	return single.RetrieveValue(ctx, userReplySrc)
 }
 
-func NewUserReaderServer(userService services.UserService) userpb.UserReaderServer {
-	return &UserReaderServerImpl{userService: userService}
+func NewUserServiceServer(userService services.UserService) userpb.UserServiceServer {
+	return &UserServiceServerImpl{userService: userService}
 }

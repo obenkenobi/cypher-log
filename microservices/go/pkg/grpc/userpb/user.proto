@@ -15,6 +15,6 @@ message UserReply {
   int64 updatedAt = 6;
 }
 
-service UserReader {
+service UserService {
   rpc GetUserByAuthId(AuthIdRequest) returns (UserReply) {}
 }
