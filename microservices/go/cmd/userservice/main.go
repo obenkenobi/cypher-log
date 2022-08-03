@@ -11,6 +11,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
@@ -36,6 +37,7 @@ func main() {
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0Conf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
 	apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
+	grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
 	authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
 
 	appServer := webservices.NewAppServer(
@@ -48,6 +50,7 @@ func main() {
 		func(s *grpc.Server) {
 			userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))
 		},
+		grpcserveroptions.NewAuthenticationInterceptor(grpcAuth0JwtValidateService),
 	)
 
 	// Run tasks
