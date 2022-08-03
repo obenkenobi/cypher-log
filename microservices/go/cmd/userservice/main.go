@@ -14,6 +14,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
 	"google.golang.org/grpc"
@@ -34,7 +35,8 @@ func main() {
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0Conf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
-	authMiddleware := middlewares.NewAuthMiddleware(auth0Conf)
+	apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
+	authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
 
 	appServer := webservices.NewAppServer(
 		serverConf,

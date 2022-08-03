@@ -2,14 +2,11 @@ package middlewares
 
 import (
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
-	"github.com/auth0/go-jwt-middleware/v2/jwks"
-	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
 	adapter "github.com/gwatts/gin-adapter"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
 	"net/http"
-	"time"
 )
 
 // AuthorizerSettings provides settings on what criteria will be used to
@@ -34,31 +31,16 @@ type AuthMiddleware interface {
 }
 
 type AuthMiddlewareImpl struct {
-	provider             *jwks.CachingProvider
-	jwtValidator         *validator.Validator
 	jwtMiddleware        *jwtmiddleware.JWTMiddleware
 	authorizationHandler gin.HandlerFunc
 }
 
 // NewAuthMiddleware creates an AuthMiddleware instance
-func NewAuthMiddleware(auth0RouteSecurityConf authconf.Auth0SecurityConf) AuthMiddleware {
-	issuerURL := auth0RouteSecurityConf.GetIssuerUrl()
-	audience := auth0RouteSecurityConf.GetApiAudience()
+func NewAuthMiddleware(externalOath2ValidateService securityservices.ExternalOath2ValidateService) AuthMiddleware {
 
-	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
-	jwtValidator, _ := validator.New(provider.KeyFunc,
-		validator.RS256,
-		issuerURL.String(),
-		[]string{audience},
-		validator.WithCustomClaims(func() validator.CustomClaims { return &security.Auth0CustomClaims{} }),
-		validator.WithAllowedClockSkew(time.Minute),
-	)
-
-	jwtMiddleware := jwtmiddleware.New(jwtValidator.ValidateToken)
+	jwtMiddleware := jwtmiddleware.New(externalOath2ValidateService.GetJwtValidator().ValidateToken)
 	authorizationHandler := adapter.Wrap(jwtMiddleware.CheckJWT)
 	return &AuthMiddlewareImpl{
-		provider:             provider,
-		jwtValidator:         jwtValidator,
 		jwtMiddleware:        jwtMiddleware,
 		authorizationHandler: authorizationHandler,
 	}

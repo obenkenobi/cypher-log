@@ -23,6 +23,8 @@ go.work
 # Build folder
 /bin
 
+# certs files
+
 # environment files
 .env
 userservice.env

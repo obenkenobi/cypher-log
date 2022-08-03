@@ -21,6 +21,6 @@ func (s serverConfImpl) GetAppServerPort() string { return s.appServerPort }
 func NewServerConf() ServerConf {
 	return &serverConfImpl{
 		appServerPort:  environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyAppServerPort, "8080"),
-		grpcServerPort: environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyGrpcServerPort, "5000"),
+		grpcServerPort: environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyGrpcServerPort, "50051"),
 	}
 }
