@@ -26,14 +26,13 @@ func main() {
 	// Dependency graph
 	serverConf := conf.NewServerConf()
 	auth0Conf := authconf.NewAuth0RouteSecurityConf()
-	auth0ClientCredentialsConf := authconf.NewAuth0ClientCredentialsConf()
 	mongoCOnf := conf.NewMongoConf()
 	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
 	ginCtxService := webservices.NewGinCtxService(errorService)
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
-	authServerMgmtService := services.NewAuthServerMgmtService(auth0ClientCredentialsConf)
+	authServerMgmtService := services.NewAuthServerMgmtService(auth0Conf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
 	authMiddleware := middlewares.NewAuthMiddleware(auth0Conf)
 

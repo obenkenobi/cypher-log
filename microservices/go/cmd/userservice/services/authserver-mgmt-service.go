@@ -12,7 +12,7 @@ type AuthServerMgmtService interface {
 }
 
 type AuthServerMgmtServiceImpl struct {
-	auth0ClientCredentialsConf authconf.Auth0ClientCredentialsConf
+	auth0SecurityConf authconf.Auth0SecurityConf
 }
 
 func (a AuthServerMgmtServiceImpl) DeleteUser(authId string) single.Single[bool] {
@@ -24,9 +24,9 @@ func (a AuthServerMgmtServiceImpl) DeleteAsync(authId string) single.Single[bool
 }
 
 func (a AuthServerMgmtServiceImpl) runDeleteUser(authId string) (bool, error) {
-	m, err := management.New(a.auth0ClientCredentialsConf.GetDomain(), management.WithClientCredentials(
-		a.auth0ClientCredentialsConf.GetClientId(),
-		a.auth0ClientCredentialsConf.GetClientSecret(),
+	m, err := management.New(a.auth0SecurityConf.GetDomain(), management.WithClientCredentials(
+		a.auth0SecurityConf.GetClientCredentialsId(),
+		a.auth0SecurityConf.GetClientCredentialsSecret(),
 	))
 	if err != nil {
 		return false, err
@@ -38,6 +38,6 @@ func (a AuthServerMgmtServiceImpl) runDeleteUser(authId string) (bool, error) {
 	return true, nil
 }
 
-func NewAuthServerMgmtService(auth0ClientCredentialsConf authconf.Auth0ClientCredentialsConf) AuthServerMgmtService {
-	return &AuthServerMgmtServiceImpl{auth0ClientCredentialsConf: auth0ClientCredentialsConf}
+func NewAuthServerMgmtService(auth0ClientCredentialsConf authconf.Auth0SecurityConf) AuthServerMgmtService {
+	return &AuthServerMgmtServiceImpl{auth0SecurityConf: auth0ClientCredentialsConf}
 }

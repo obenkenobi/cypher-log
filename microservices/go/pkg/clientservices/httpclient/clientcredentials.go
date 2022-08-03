@@ -14,19 +14,19 @@ type SystemAccessTokenClient interface {
 }
 
 type Auth0SystemAccessTokenClient struct {
-	httpClientConf        conf.HttpClientConf
-	clientCredentialsConf authconf.Auth0ClientCredentialsConf
-	clientProvider        ClientProvider
+	httpClientConf    conf.HttpClientConf
+	auth0SecurityConf authconf.Auth0SecurityConf
+	clientProvider    ClientProvider
 }
 
 func (a Auth0SystemAccessTokenClient) getAccessToken() (string, error) {
 	token := ""
-	url := fmt.Sprintf("https://%v/oauth/token", a.clientCredentialsConf.GetDomain())
+	url := fmt.Sprintf("https://%v/oauth/token", a.auth0SecurityConf.GetDomain())
 	client := a.clientProvider.Client()
 	payload := clientcredentialsdtos.ClientCredentialsRequestDto{
-		ClientId:     a.clientCredentialsConf.GetClientId(),
-		ClientSecret: a.clientCredentialsConf.GetClientSecret(),
-		Audience:     a.clientCredentialsConf.GetAudience(),
+		ClientId:     a.auth0SecurityConf.GetClientCredentialsId(),
+		ClientSecret: a.auth0SecurityConf.GetClientCredentialsSecret(),
+		Audience:     a.auth0SecurityConf.GetApiAudience(),
 		GrantType:    "client_credentials",
 	}
 	jsonPayload, err := json.Marshal(payload)

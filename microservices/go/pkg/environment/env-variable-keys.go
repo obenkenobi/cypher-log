@@ -11,10 +11,11 @@ const EnvVarKeyGrpcServerPort = "GRPC_SERVER_PORT"
 
 // Auth0
 
-const EnvVarKeyAuth0Audience = "AUTH0_AUDIENCE"
+const EnvVarKeyAuth0ApiAudience = "AUTH0_API_AUDIENCE"
+const EnvVarKeyAuth0GrpcAudience = "AUTH0_GRPC_AUDIENCE"
 const EnvVarKeyAuth0Domain = "AUTH0_DOMAIN"
-const EnvVarKeyAuth0ClientId = "AUTH0_CLIENT_ID"
-const EnvVarKeyAuth0ClientSecret = "AUTH0_CLIENT_SECRET"
+const EnvVarKeyAuth0ClientCredentialsId = "AUTH0_CLIENT_CREDENTIALS_ID"
+const EnvVarKeyAuth0ClientCredentialsSecret = "AUTH0_CLIENT_CREDENTIALS_SECRET"
 
 // MongoDB
 

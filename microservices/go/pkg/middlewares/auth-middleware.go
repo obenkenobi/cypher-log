@@ -41,9 +41,9 @@ type AuthMiddlewareImpl struct {
 }
 
 // NewAuthMiddleware creates an AuthMiddleware instance
-func NewAuthMiddleware(auth0RouteSecurityConf authconf.Auth0RouteSecurityConf) AuthMiddleware {
+func NewAuthMiddleware(auth0RouteSecurityConf authconf.Auth0SecurityConf) AuthMiddleware {
 	issuerURL := auth0RouteSecurityConf.GetIssuerUrl()
-	audience := auth0RouteSecurityConf.GetAudience()
+	audience := auth0RouteSecurityConf.GetApiAudience()
 
 	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
 	jwtValidator, _ := validator.New(provider.KeyFunc,
