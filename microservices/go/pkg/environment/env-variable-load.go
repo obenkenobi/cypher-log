@@ -4,6 +4,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -20,6 +21,18 @@ func GetEnvVariableOrDefault(key string, defaultValue string) string {
 		return defaultValue
 	}
 	return val
+}
+
+func GetEnvVarAsBoolOrDefault(key string, defaultValue bool) bool {
+	rawVal := GetEnvVariable(key)
+	switch strings.ToLower(rawVal) {
+	case "true":
+		return true
+	case "false":
+		return false
+	default:
+		return defaultValue
+	}
 }
 
 func GetEnvVarAsIntOrDefault(key string, defaultValue int) int {

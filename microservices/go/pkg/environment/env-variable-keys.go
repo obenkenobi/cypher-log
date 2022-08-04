@@ -4,6 +4,12 @@ package environment
 
 const EnvVarKeyAppEnvironment = "ENVIRONMENT"
 
+// Boolean Activation Flags
+
+const EnvVarKeyActivateAppServer = "ACTIVATE_APP_SERVER"
+const EnvVarKeyActivateGrpcServer = "ACTIVATE_GRPC_SERVER"
+const EnvVarActivateRabbitMQConsumer = "ACTIVATE_RABBITMQ_CONSUMER"
+
 // Server
 
 const EnvVarKeyAppServerPort = "APP_SERVER_PORT"

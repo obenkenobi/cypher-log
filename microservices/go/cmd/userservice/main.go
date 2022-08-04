@@ -25,37 +25,43 @@ func main() {
 	environment.ReadEnvFiles(".env", "userservice.env") // Load env files
 	logging.ConfigureGlobalLogging()                    // Configure logging
 
-	// Dependency graph
+	// Main dependency graph
 	serverConf := conf.NewServerConf()
 	auth0Conf := authconf.NewAuth0RouteSecurityConf()
 	mongoCOnf := conf.NewMongoConf()
 	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
-	ginCtxService := webservices.NewGinCtxService(errorService)
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0Conf)
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
-	apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
-	grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
-	authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
 
-	appServer := webservices.NewAppServer(
-		serverConf,
-		controllers.NewUserController(authMiddleware, userService, ginCtxService),
-	)
+	// Add task dependencies
+	var tasks []func()
 
-	grpcServer := webservices.NewGrpcServer(
-		serverConf,
-		func(s *grpc.Server) {
-			userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))
-		},
-		grpcserveroptions.NewAuthenticationServerOptionCreator(grpcAuth0JwtValidateService),
-	)
+	if environment.ActivateAppServer() { // Add app server
+		ginCtxService := webservices.NewGinCtxService(errorService)
+		apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
+		authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
+		userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
+		appServer := webservices.NewAppServer(serverConf, userController)
+		tasks = append(tasks, appServer.Run)
+	}
+
+	if environment.ActivateGrpcServer() { // Add GRPC server
+		grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
+		userServiceServer := grpcservers.NewUserServiceServer(userService)
+		authInterceptorCreator := grpcserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
+		grpcServer := webservices.NewGrpcServer(
+			serverConf,
+			func(s *grpc.Server) {
+				userpb.RegisterUserServiceServer(s, userServiceServer)
+			},
+			authInterceptorCreator.CreateUnaryInterceptor(),
+		)
+		tasks = append(tasks, grpcServer.Run)
+	}
 
 	// Run tasks
-	taskrunner.RunAndWait(
-		func() { appServer.Run() },
-		func() { grpcServer.Run() },
-	)
+	taskrunner.RunAndWait(tasks...)
 }

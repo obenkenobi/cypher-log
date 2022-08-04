@@ -3,7 +3,6 @@ package webservices
 import (
 	"fmt"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcserveroptions"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -30,13 +29,9 @@ func (g grpcServerImpl) Run() {
 func NewGrpcServer(
 	serverConf conf.ServerConf,
 	registerServers func(server *grpc.Server),
-	serverOptionBuilders ...grpcserveroptions.ServerOptionCreator,
+	serverOptions ...grpc.ServerOption,
 ) GrpcServer {
-	var opts []grpc.ServerOption
-	for _, builder := range serverOptionBuilders {
-		opts = append(opts, builder.CreateServerOption())
-	}
-	server := grpc.NewServer(opts...)
+	server := grpc.NewServer(serverOptions...)
 	registerServers(server)
 	grpcServerImpl := &grpcServerImpl{serverConf: serverConf, server: server}
 	return grpcServerImpl
