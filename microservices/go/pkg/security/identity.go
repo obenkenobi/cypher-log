@@ -1,6 +1,7 @@
 package security
 
 import (
+	"github.com/akrennmair/slice"
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/gin-gonic/gin"
@@ -74,14 +75,14 @@ func (i identityAuth0Impl) GetAuthId() string {
 	return i.validatedClaims.RegisteredClaims.Subject
 }
 
+type authoritySet map[string]bool
+
 func (i identityAuth0Impl) ContainsAnyAuthorities(authoritiesToCheck []string) bool {
 	if len(authoritiesToCheck) == 0 {
 		return true
 	}
-	authoritiesToCheckSet := map[string]bool{}
-	for _, authToCheck := range authoritiesToCheck {
-		authoritiesToCheckSet[authToCheck] = true
-	}
+	authoritiesToCheckSet := slice.Reduce(authoritiesToCheck,
+		func(m authoritySet, authToCheck string) authoritySet { m[authToCheck] = true; return m })
 	for _, authority := range i.GetAuthorities() {
 		if _, ok := authoritiesToCheckSet[authority]; ok {
 			return true
@@ -94,10 +95,8 @@ func (i identityAuth0Impl) ContainsAllAuthorities(requiredAuthorities []string) 
 	if len(requiredAuthorities) == 0 {
 		return true
 	}
-	authoritySet := map[string]bool{}
-	for _, authority := range i.GetAuthorities() {
-		authoritySet[authority] = true
-	}
+	authoritySet := slice.Reduce(i.GetAuthorities(),
+		func(m authoritySet, authority string) authoritySet { m[authority] = true; return m })
 	for _, requiredAuthority := range requiredAuthorities {
 		if _, ok := authoritySet[requiredAuthority]; !ok {
 			return false

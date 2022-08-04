@@ -42,7 +42,7 @@ func (u UserBrImpl) ValidateUserCreate(
 	userNotCreatedValidationSrc := validationutils.ValidateValueIsNotPresent(
 		u.errorService,
 		u.userRepository.FindByAuthIdAsync(ctx, identity.GetAuthId()),
-		apperrors.ErrCodeUserAlreadyCreated,
+		apperrors.ErrCodeResourceAlreadyCreated,
 	)
 	ruleErrorsSrc := validationutils.ConcatSinglesOfRuleErrs(userNameNotTakenValidationSrc, userNotCreatedValidationSrc)
 	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrorsSrc)

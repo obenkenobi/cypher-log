@@ -1,14 +1,16 @@
-package webservices
+package grpcserver
 
 import (
 	"fmt"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 )
 
-type GrpcServer interface{ Server }
+// GrpcServer represents an interface for a grpc server that can be run.
+type GrpcServer interface{ taskrunner.TaskRunner }
 
 type grpcServerImpl struct {
 	server     *grpc.Server

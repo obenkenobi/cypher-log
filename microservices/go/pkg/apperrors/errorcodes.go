@@ -1,6 +1,6 @@
 package apperrors
 
-const ErrCodeReqItemsNotFound = "ReqItemsNotFound"
+const ErrCodeReqResourcesNotFound = "ReqItemsNotFound"
 const ErrCodeCannotBindJson = "CannotBindJson"
-const ErrCodeUserAlreadyCreated = "UserAlreadyCreated"
+const ErrCodeResourceAlreadyCreated = "UserAlreadyCreated"
 const ErrCodeUsernameTaken = "UsernameTaken"

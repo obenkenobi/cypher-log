@@ -3,14 +3,14 @@ package taskrunner
 import "sync"
 
 // RunAndWait runs each tasks in a goroutine and waits for each of them to complete
-func RunAndWait(tasks ...func()) {
+func RunAndWait(taskRunners ...TaskRunner) {
 	var wg sync.WaitGroup
-	for _, task := range tasks {
-		task := task
+	for _, taskRunner := range taskRunners {
+		taskRunner := taskRunner
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			task()
+			taskRunner.Run()
 		}()
 	}
 	wg.Wait()

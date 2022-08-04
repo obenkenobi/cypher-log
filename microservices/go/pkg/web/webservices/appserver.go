@@ -6,11 +6,12 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	log "github.com/sirupsen/logrus"
 )
 
-// AppServer represents an interface acts as a general application server that can be run.
-type AppServer interface{ Server }
+// AppServer represents an interface acts as a general application server that can be run as a task.
+type AppServer interface{ taskrunner.TaskRunner }
 
 type appServerGinImpl struct {
 	serverConf conf.ServerConf

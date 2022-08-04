@@ -29,10 +29,10 @@ func (e errorMessageServiceImpl) RuleErrorFromCode(code string, args ...any) app
 
 func NewErrorService() ErrorService {
 	errorCodeToMsgMap := map[string]string{
-		apperrors.ErrCodeReqItemsNotFound:   "Requested item(s) not found",
-		apperrors.ErrCodeCannotBindJson:     "Unable to bind json",
-		apperrors.ErrCodeUserAlreadyCreated: "User already created",
-		apperrors.ErrCodeUsernameTaken:      "Username is taken",
+		apperrors.ErrCodeReqResourcesNotFound:   "Requested resources not found",
+		apperrors.ErrCodeCannotBindJson:         "Unable to bind json",
+		apperrors.ErrCodeResourceAlreadyCreated: "Resource already created",
+		apperrors.ErrCodeUsernameTaken:          "Username is taken",
 	}
 	return &errorMessageServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

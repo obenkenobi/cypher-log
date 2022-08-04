@@ -73,7 +73,7 @@ func (u userServiceImpl) UpdateUser(
 				return user, nil
 			} else {
 				err := apperrors.NewBadReqErrorFromRuleError(
-					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqItemsNotFound))
+					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
 				return user, err
 			}
 		},
@@ -103,7 +103,7 @@ func (u userServiceImpl) DeleteUser(ctx context.Context, identity security.Ident
 				return user, nil
 			} else {
 				err := apperrors.NewBadReqErrorFromRuleError(
-					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqItemsNotFound))
+					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
 				return user, err
 			}
 		},

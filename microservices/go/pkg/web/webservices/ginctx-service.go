@@ -1,6 +1,7 @@
 package webservices
 
 import (
+	"github.com/akrennmair/slice"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
@@ -41,11 +42,9 @@ func (h GinCtxServiceImpl) ParamStr(c *gin.Context, key string) string {
 
 func (h GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError {
 	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
-		var appValErrors []apperrors.ValidationError
-		for _, fieldError := range fieldErrors {
-			appValError := apperrors.ValidationError{Field: fieldError.Field(), Message: fieldError.ActualTag()}
-			appValErrors = append(appValErrors, appValError)
-		}
+		appValErrors := slice.Map(fieldErrors, func(fieldError validator.FieldError) apperrors.ValidationError {
+			return apperrors.ValidationError{Field: fieldError.Field(), Message: fieldError.ActualTag()}
+		})
 		return apperrors.NewBadReqErrorFromValidationErrors(appValErrors)
 	}
 	log.WithError(err).Info("Unable to bind json")

@@ -11,6 +11,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcserver"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
@@ -37,7 +38,7 @@ func main() {
 	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
 
 	// Add task dependencies
-	var tasks []func()
+	var taskRunners []taskrunner.TaskRunner
 
 	if environment.ActivateAppServer() { // Add app server
 		ginCtxService := webservices.NewGinCtxService(errorService)
@@ -45,23 +46,23 @@ func main() {
 		authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
 		userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
 		appServer := webservices.NewAppServer(serverConf, userController)
-		tasks = append(tasks, appServer.Run)
+		taskRunners = append(taskRunners, appServer)
 	}
 
 	if environment.ActivateGrpcServer() { // Add GRPC server
 		grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
 		userServiceServer := grpcservers.NewUserServiceServer(userService)
 		authInterceptorCreator := grpcserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
-		grpcServer := webservices.NewGrpcServer(
+		grpcServer := grpcserver.NewGrpcServer(
 			serverConf,
 			func(s *grpc.Server) {
 				userpb.RegisterUserServiceServer(s, userServiceServer)
 			},
 			authInterceptorCreator.CreateUnaryInterceptor(),
 		)
-		tasks = append(tasks, grpcServer.Run)
+		taskRunners = append(taskRunners, grpcServer)
 	}
 
-	// Run tasks
-	taskrunner.RunAndWait(tasks...)
+	// Run taskRunners
+	taskrunner.RunAndWait(taskRunners...)
 }
