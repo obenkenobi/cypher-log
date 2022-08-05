@@ -81,7 +81,7 @@ func (i identityAuth0Impl) ContainsAnyAuthorities(authoritiesToCheck []string) b
 	if len(authoritiesToCheck) == 0 {
 		return true
 	}
-	authoritiesToCheckSet := slice.Reduce(authoritiesToCheck,
+	authoritiesToCheckSet := slice.ReduceWithInitialValue(authoritiesToCheck, make(authoritySet),
 		func(m authoritySet, authToCheck string) authoritySet { m[authToCheck] = true; return m })
 	for _, authority := range i.GetAuthorities() {
 		if _, ok := authoritiesToCheckSet[authority]; ok {
@@ -95,7 +95,7 @@ func (i identityAuth0Impl) ContainsAllAuthorities(requiredAuthorities []string) 
 	if len(requiredAuthorities) == 0 {
 		return true
 	}
-	authoritySet := slice.Reduce(i.GetAuthorities(),
+	authoritySet := slice.ReduceWithInitialValue(i.GetAuthorities(), make(authoritySet),
 		func(m authoritySet, authority string) authoritySet { m[authority] = true; return m })
 	for _, requiredAuthority := range requiredAuthorities {
 		if _, ok := authoritySet[requiredAuthority]; !ok {

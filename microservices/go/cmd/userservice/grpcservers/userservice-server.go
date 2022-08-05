@@ -3,10 +3,11 @@ package grpcservers
 import (
 	"context"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcerrorhandling"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpbmapper"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb/userpbmapper"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 )
 
@@ -26,7 +27,8 @@ func (u UserServiceServerImpl) GetUserByAuthId(
 		return userReply
 	})
 	res, err := single.RetrieveValue(ctx, userReplySrc)
-	return res, grpcerrorhandling.ProcessError(err)
+	err = apperrors.NewBadReqErrorFromRuleError(apperrors.RuleError{Code: "SOMETHING", Message: "IDK"})
+	return res, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
 }
 
 func NewUserServiceServer(userService services.UserService) userpb.UserServiceServer {

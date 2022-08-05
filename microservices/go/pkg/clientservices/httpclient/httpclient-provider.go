@@ -18,3 +18,7 @@ func (h ClientProviderImpl) Client() *retryablehttp.Client {
 	retryClient.RetryMax = h.httpClientConf.GetRetryCount()
 	return retryClient
 }
+
+func NewClientProvider(httpClientConf conf.HttpClientConf) *ClientProviderImpl {
+	return &ClientProviderImpl{httpClientConf: httpClientConf}
+}

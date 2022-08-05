@@ -11,8 +11,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcserver"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/grpcserveroptions"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gserver"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gserver/gserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
@@ -28,7 +28,7 @@ func main() {
 
 	// Main dependency graph
 	serverConf := conf.NewServerConf()
-	auth0Conf := authconf.NewAuth0RouteSecurityConf()
+	auth0Conf := authconf.NewAuth0SecurityConf()
 	mongoCOnf := conf.NewMongoConf()
 	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
@@ -52,8 +52,8 @@ func main() {
 	if environment.ActivateGrpcServer() { // Add GRPC server
 		grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
 		userServiceServer := grpcservers.NewUserServiceServer(userService)
-		authInterceptorCreator := grpcserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
-		grpcServer := grpcserver.NewGrpcServer(
+		authInterceptorCreator := gserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
+		grpcServer := gserver.NewGrpcServer(
 			serverConf,
 			func(s *grpc.Server) {
 				userpb.RegisterUserServiceServer(s, userServiceServer)

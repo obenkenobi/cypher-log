@@ -14,7 +14,7 @@ func MapUserDtoToUserReply(dto *userdtos.UserDto, reply *userpb.UserReply) {
 	reply.UpdatedAt = dto.UpdatedAt
 }
 
-func MapUserReplyToUserDto(dto *userdtos.UserDto, reply *userpb.UserReply) {
+func MapUserReplyToUserDto(reply *userpb.UserReply, dto *userdtos.UserDto) {
 	dto.Id = reply.Id
 	dto.Exists = reply.Exists
 	dto.UserName = reply.UserName

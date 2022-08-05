@@ -7,29 +7,30 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/clientcredentialsdtos"
+	"golang.org/x/oauth2"
 )
 
-type SystemAccessTokenClient interface {
-	GetApiAccessToken() (string, error)
-	GetGRPCAccessToken() (string, error)
+type SysAccessTokenClient interface {
+	GetApiAccessToken() (oauth2.Token, error)
+	GetGRPCAccessToken() (oauth2.Token, error)
 }
 
-type Auth0SystemAccessTokenClient struct {
+type Auth0SysAccessTokenClient struct {
 	httpClientConf    conf.HttpClientConf
 	auth0SecurityConf authconf.Auth0SecurityConf
 	clientProvider    ClientProvider
 }
 
-func (a Auth0SystemAccessTokenClient) GetApiAccessToken() (string, error) {
+func (a Auth0SysAccessTokenClient) GetApiAccessToken() (oauth2.Token, error) {
 	return a.getAccessToken(a.auth0SecurityConf.GetApiAudience())
 }
 
-func (a Auth0SystemAccessTokenClient) GetGRPCAccessToken() (string, error) {
+func (a Auth0SysAccessTokenClient) GetGRPCAccessToken() (oauth2.Token, error) {
 	return a.getAccessToken(a.auth0SecurityConf.GetGrpcAudience())
 }
 
-func (a Auth0SystemAccessTokenClient) getAccessToken(audience string) (string, error) {
-	token := ""
+func (a Auth0SysAccessTokenClient) getAccessToken(audience string) (oauth2.Token, error) {
+	token := oauth2.Token{}
 	url := fmt.Sprintf("https://%v/oauth/token", a.auth0SecurityConf.GetDomain())
 	client := a.clientProvider.Client()
 	payload := clientcredentialsdtos.ClientCredentialsRequestDto{
@@ -46,19 +47,18 @@ func (a Auth0SystemAccessTokenClient) getAccessToken(audience string) (string, e
 	if err != nil {
 		return token, err
 	}
-	clientCredentialsResponse := clientcredentialsdtos.ClientCredentialsResultDto{}
-	if err := json.NewDecoder(resp.Body).Decode(&clientCredentialsResponse); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
 		return token, err
 	}
-	return clientCredentialsResponse.AccessToken, err
+	return token, err
 }
 
-func NewAuth0SystemAccessTokenClient(
+func NewAuth0SysAccessTokenClient(
 	httpClientConf conf.HttpClientConf,
 	auth0SecurityConf authconf.Auth0SecurityConf,
 	clientProvider ClientProvider,
-) *Auth0SystemAccessTokenClient {
-	return &Auth0SystemAccessTokenClient{
+) SysAccessTokenClient {
+	return &Auth0SysAccessTokenClient{
 		httpClientConf:    httpClientConf,
 		auth0SecurityConf: auth0SecurityConf,
 		clientProvider:    clientProvider,

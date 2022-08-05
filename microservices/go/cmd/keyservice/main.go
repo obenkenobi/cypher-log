@@ -14,8 +14,15 @@ func main() {
 
 	// Dependency graph
 	serverConf := conf.NewServerConf()
-	//auth0Conf := authconf.NewAuth0RouteSecurityConf()
-	//auth0ClientCredentialsConf := authconf.NewAuth0ClientCredentialsConf()
+	//httpclientConf := conf.NewHttpClientConf()
+	//auth0Conf := authconf.NewAuth0SecurityConf()
+	//httpClientProvider := httpclient.NewClientProvider(httpclientConf)
+	//auth0SysAccessTokenClient := httpclient.NewAuth0SysAccessTokenClient(
+	//	httpclientConf,
+	//	auth0Conf,
+	//	httpClientProvider,
+	//)
+	//userService := clientservices.NewUserService(auth0SysAccessTokenClient)
 	//mongoCOnf := conf.NewMongoConf()
 	//mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	//errorService := errorservices.NewErrorService()
@@ -24,6 +31,6 @@ func main() {
 	appServer := webservices.NewAppServer(serverConf)
 
 	// Run tasks
-	taskrunner.RunAndWait(func() { appServer.Run() })
+	taskrunner.RunAndWait(appServer)
 
 }

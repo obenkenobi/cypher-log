@@ -1,4 +1,4 @@
-package grpcserveroptions
+package gserveroptions
 
 import (
 	"context"

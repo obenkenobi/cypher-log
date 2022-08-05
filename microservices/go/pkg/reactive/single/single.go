@@ -19,14 +19,15 @@ func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
 // single is made from a channel, it will always emit the same value even when
 // observed multiple times. This is done by caching the channel result in a
 // thread safe manner.
-type channelObservable[T any] struct {
+type singleChanReadObservable[T any] struct {
 	_channelRead bool
 	_ch          <-chan T
+	_chErr       <-chan error
 	_value       T
 	_valueRWLock sync.RWMutex
 }
 
-func (a *channelObservable[T]) Observe(ctx context.Context, next func(T) error) error {
+func (a *singleChanReadObservable[T]) Observe(ctx context.Context, next func(T) error) error {
 	if ctx.Err() != nil {
 		// Context already cancelled, stop before emitting items.
 		return ctx.Err()
@@ -38,8 +39,13 @@ func (a *channelObservable[T]) Observe(ctx context.Context, next func(T) error) 
 	if shouldAttemptWriteValue {
 		a._valueRWLock.Lock()
 		if !a._channelRead {
-			a._value = <-a._ch
 			a._channelRead = true
+			if a._chErr != nil {
+				if err := <-a._chErr; err != nil {
+					return err
+				}
+			}
+			a._value = <-a._ch
 		}
 		a._valueRWLock.Unlock()
 	}
@@ -52,7 +58,15 @@ func (a *channelObservable[T]) Observe(ctx context.Context, next func(T) error) 
 // FromChannel Creates a single that listens to a single value from a channel.
 // Recommended for channels that only emmit one value. If a channel emits
 // multiple values, it is recommended you use observables instead.
-func FromChannel[T any](ch <-chan T) Single[T] { return Single[T]{src: &channelObservable[T]{_ch: ch}} }
+func FromChannel[T any](ch <-chan T) Single[T] { return FromChannels(ch, nil) }
+
+// FromChannels Creates a single that listens to a single value from a channel
+// and checks for errors in the error channel. Recommended for channels that only
+// emmit one value. If a channel emits multiple values, it is recommended you use
+// observables instead.
+func FromChannels[T any](ch <-chan T, chErr <-chan error) Single[T] {
+	return Single[T]{src: &singleChanReadObservable[T]{_ch: ch, _chErr: chErr}}
+}
 
 // Just creates a single from a single item
 func Just[T any](val T) Single[T] { return fromObservable(stream.Just(val)) }
@@ -132,9 +146,24 @@ func FlatMap[A any, B any](src Single[A], apply func(A) Single[B]) Single[B] {
 	}
 }
 
+// MapIdentityAsync takes a single and ensures it is evaluated asynchronously
+// while mapping it to another single that emits the same item. Warning: This
+// forces the single to start evaluate its contents in another goroutine so
+// benefits of lazy evaluation will be lost.
+func MapIdentityAsync[A any](ctx context.Context, src Single[A]) Single[A] {
+	ch, errCh := ToChannels(ctx, src)
+	return FromChannels(ch, errCh)
+}
+
 // RetrieveValue returns the value emitted by the Single
 func RetrieveValue[T any](ctx context.Context, src Single[T]) (T, error) {
 	return stream.First(ctx, src.ToObservable())
+}
+
+// ToChannels returns channels that can emit a value created by a single. It
+// ensures asynchronous execution when the value is evaluated.
+func ToChannels[T any](ctx context.Context, src Single[T]) (<-chan T, <-chan error) {
+	return stream.ToChannels(ctx, src.ToObservable())
 }
 
 // MapDerefPtr takes a single of a pointer and maps it to a single of a de-referenced value of that pointer
