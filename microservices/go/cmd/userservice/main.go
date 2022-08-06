@@ -11,8 +11,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gserver"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gserver/gserveroptions"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gservices/gserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
@@ -62,7 +62,7 @@ func main() {
 				credentialsOptionCreator.CreateCredentialsOption(),
 			)
 		}
-		grpcServer := gserver.NewGrpcServer(
+		grpcServer := gservices.NewGrpcServer(
 			serverConf,
 			func(s *grpc.Server) {
 				userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))

@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
-	env "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb/userpbmapper"
@@ -24,23 +24,19 @@ type UserServiceImpl struct {
 }
 
 func (u UserServiceImpl) GetByAuthIdAsync(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
-	return single.MapIdentityAsync[userdtos.UserDto](ctx, u.GetByAuthId(ctx, authId))
+	return single.MapToAsync[userdtos.UserDto](ctx, u.GetByAuthId(ctx, authId))
 }
 func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
-	optsSrc := gtools.CreateSingleWithDialOptionsIfAuthActivated(
-		env.ActivateGRPCAuth(),
-		[]gtools.DialOptionSingleCreator{
-			func() single.Single[grpc.DialOption] {
-				oathTknSrc := single.FromSupplierAsync(u.systemAccessTokenClient.GetGRPCAccessToken)
-				return single.Map(oathTknSrc, gtools.OathAccessOption)
-			},
-			func() single.Single[grpc.DialOption] {
-				return single.FromSupplierAsync(func() (result grpc.DialOption, err error) {
-					return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath())
-				})
-			},
-		},
-	)
+	var dialOptSources []single.Single[grpc.DialOption]
+	if environment.ActivateGRPCAuth() {
+		oathTokenSrc := single.FromSupplierAsync(u.systemAccessTokenClient.GetGRPCAccessToken)
+		oathOptSrc := single.Map(oathTokenSrc, gtools.OathAccessOption)
+		tlsOptSrc := single.FromSupplierAsync(func() (grpc.DialOption, error) {
+			return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
+		})
+		dialOptSources = append(dialOptSources, oathOptSrc, tlsOptSrc)
+	}
+	optsSrc := gtools.CreateSingleWithDialOptions(dialOptSources)
 	connectionSrc := single.MapWithError(optsSrc, func(opts []grpc.DialOption) (*grpc.ClientConn, error) {
 		return gtools.CreateConnectionWithOptions(u.grpcClientConf.UserServiceAddress(), opts...)
 	})

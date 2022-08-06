@@ -78,7 +78,7 @@ func Error[T any](err error) Single[T] { return fromObservable(stream.Error[T](e
 //creates a single out of a supplier function that returns a value or an
 //error to emit. If the supplier is successful, the result value is emitted.
 //Otherwise, if an error is returned, an error id emitted.
-func FromSupplier[T any](supplier func() (result T, err error)) Single[T] {
+func FromSupplier[T any](supplier func() (T, error)) Single[T] {
 	var src stream.Observable[T] = stream.FuncObservable[T](func(ctx context.Context, next func(T) error) error {
 		if ctx.Err() != nil {
 			// Context already cancelled, stop before emitting items.
@@ -98,7 +98,7 @@ func FromSupplier[T any](supplier func() (result T, err error)) Single[T] {
 //to be emitted asynchronously. The supplier function is run on a separate
 //goroutine. *Make sure your supplier function is thread safe or will
 //not cause race conditions on the values provided.*
-func FromSupplierAsync[T any](supplier func() (result T, err error)) Single[T] {
+func FromSupplierAsync[T any](supplier func() (T, error)) Single[T] {
 	ch := make(chan tuple.T2[T, error])
 	go func() {
 		defer close(ch)
@@ -146,11 +146,11 @@ func FlatMap[A any, B any](src Single[A], apply func(A) Single[B]) Single[B] {
 	}
 }
 
-// MapIdentityAsync takes a single and ensures it is evaluated asynchronously
+// MapToAsync takes a single and ensures it is evaluated asynchronously
 // while mapping it to another single that emits the same item. Warning: This
 // forces the single to start evaluate its contents in another goroutine so
 // benefits of lazy evaluation will be lost.
-func MapIdentityAsync[A any](ctx context.Context, src Single[A]) Single[A] {
+func MapToAsync[A any](ctx context.Context, src Single[A]) Single[A] {
 	ch, errCh := ToChannels(ctx, src)
 	return FromChannels(ch, errCh)
 }

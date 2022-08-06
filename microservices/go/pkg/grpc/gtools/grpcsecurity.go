@@ -1,17 +1,16 @@
 package gtools
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
 )
 
-func LoadTLSCredentialsOption(certPath string) (grpc.DialOption, error) {
+func LoadTLSCredentialsOption(certPath string, overrideServerName bool) (grpc.DialOption, error) {
 	// Load certificate of the CA who signed server's certificate
 	serverNameOverride := ""
-	if environment.IsDevelopment() {
+	if overrideServerName {
 		serverNameOverride = "x.cypherlog.com"
 	}
 	creds, err := credentials.NewClientTLSFromFile(certPath, serverNameOverride)

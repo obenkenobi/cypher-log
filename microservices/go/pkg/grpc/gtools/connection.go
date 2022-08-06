@@ -9,15 +9,10 @@ import (
 
 type DialOptionSingleCreator func() single.Single[grpc.DialOption]
 
-func CreateSingleWithDialOptionsIfAuthActivated(isAuth bool, dialOptionCreators []DialOptionSingleCreator) single.Single[[]grpc.DialOption] {
-	if !isAuth {
-		return single.Just([]grpc.DialOption{})
-	}
-	evaluatedOptionSingles := slice.Map(dialOptionCreators,
-		func(creator DialOptionSingleCreator) single.Single[grpc.DialOption] { return creator() },
-	)
+func CreateSingleWithDialOptions(
+	dialOptionSingles []single.Single[grpc.DialOption]) single.Single[[]grpc.DialOption] {
 	return slice.ReduceWithInitialValue(
-		evaluatedOptionSingles,
+		dialOptionSingles,
 		single.Just([]grpc.DialOption{}),
 		func(
 			dialOptionsSrc single.Single[[]grpc.DialOption],
