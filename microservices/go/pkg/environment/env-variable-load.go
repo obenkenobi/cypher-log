@@ -23,6 +23,11 @@ func GetEnvVariableOrDefault(key string, defaultValue string) string {
 	return val
 }
 
+func GetEnvVariableAsListSplitByComma(key string) []string {
+	rawVal := GetEnvVariable(key)
+	return strings.Split(rawVal, ",")
+}
+
 func GetEnvVarAsBoolOrDefault(key string, defaultValue bool) bool {
 	rawVal := GetEnvVariable(key)
 	switch strings.ToLower(rawVal) {

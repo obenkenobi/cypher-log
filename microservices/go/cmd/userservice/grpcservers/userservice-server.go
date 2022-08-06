@@ -3,7 +3,6 @@ package grpcservers
 import (
 	"context"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
@@ -27,7 +26,6 @@ func (u UserServiceServerImpl) GetUserByAuthId(
 		return userReply
 	})
 	res, err := single.RetrieveValue(ctx, userReplySrc)
-	err = apperrors.NewBadReqErrorFromRuleError(apperrors.RuleError{Code: "SOMETHING", Message: "IDK"})
 	return res, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
 }
 

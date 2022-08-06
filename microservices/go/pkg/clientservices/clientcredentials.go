@@ -1,4 +1,4 @@
-package httpclient
+package clientservices
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ type SysAccessTokenClient interface {
 type Auth0SysAccessTokenClient struct {
 	httpClientConf    conf.HttpClientConf
 	auth0SecurityConf authconf.Auth0SecurityConf
-	clientProvider    ClientProvider
+	clientProvider    HttpClientProvider
 }
 
 func (a Auth0SysAccessTokenClient) GetApiAccessToken() (oauth2.Token, error) {
@@ -56,7 +56,7 @@ func (a Auth0SysAccessTokenClient) getAccessToken(audience string) (oauth2.Token
 func NewAuth0SysAccessTokenClient(
 	httpClientConf conf.HttpClientConf,
 	auth0SecurityConf authconf.Auth0SecurityConf,
-	clientProvider ClientProvider,
+	clientProvider HttpClientProvider,
 ) SysAccessTokenClient {
 	return &Auth0SysAccessTokenClient{
 		httpClientConf:    httpClientConf,

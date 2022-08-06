@@ -15,23 +15,37 @@ type AppServer interface{ taskrunner.TaskRunner }
 
 type appServerGinImpl struct {
 	serverConf conf.ServerConf
+	tlsConf    conf.TLSConf
 	router     *gin.Engine
 }
 
 func (s appServerGinImpl) Run() {
-	err := s.router.Run(fmt.Sprintf(":%s", s.serverConf.GetAppServerPort()))
+	var err error
+	if environment.ActivateAppServerTLS() {
+		err = s.router.RunTLS(
+			s.getFormattedPort(),
+			s.tlsConf.ServerCertPath(),
+			s.tlsConf.ServerKeyPath(),
+		)
+	} else {
+		err = s.router.Run(s.getFormattedPort())
+	}
 	if err != nil {
 		log.WithError(err).Fatal("AppServer failed to run")
 		return
 	}
 }
 
+func (s appServerGinImpl) getFormattedPort() string {
+	return fmt.Sprintf(":%s", s.serverConf.GetAppServerPort())
+}
+
 // NewAppServer creates an app server that can be run by the server configuration and a list of controllers
-func NewAppServer(serverConf conf.ServerConf, controllers ...Controller) AppServer {
+func NewAppServer(serverConf conf.ServerConf, tlsConf conf.TLSConf, controllers ...Controller) AppServer {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	server := appServerGinImpl{serverConf: serverConf, router: gin.New()}
+	server := appServerGinImpl{serverConf: serverConf, tlsConf: tlsConf, router: gin.New()}
 	// Bind middlewares and routes
 	middlewares.AddGlobalMiddleWares(server.router)
 	for _, controller := range controllers {

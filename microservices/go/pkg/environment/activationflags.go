@@ -5,3 +5,11 @@ func ActivateGrpcServer() bool { return GetEnvVarAsBoolOrDefault(EnvVarKeyActiva
 func ActivateRabbitMqConsumer() bool {
 	return GetEnvVarAsBoolOrDefault(EnvVarActivateRabbitMQConsumer, true)
 }
+
+func ActivateGRPCAuth() bool {
+	return GetEnvVarAsBoolOrDefault(EnvVarActivateGRPCAuth, true)
+}
+
+func ActivateAppServerTLS() bool {
+	return GetEnvVarAsBoolOrDefault(EnvVarActivateAppServerTLS, true)
+}

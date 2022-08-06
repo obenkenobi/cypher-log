@@ -31,6 +31,7 @@ func main() {
 	auth0Conf := authconf.NewAuth0SecurityConf()
 	mongoCOnf := conf.NewMongoConf()
 	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
+	tlsConf := conf.NewTlsConf()
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
@@ -45,20 +46,28 @@ func main() {
 		apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
 		authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
 		userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
-		appServer := webservices.NewAppServer(serverConf, userController)
+		appServer := webservices.NewAppServer(serverConf, tlsConf, userController)
 		taskRunners = append(taskRunners, appServer)
 	}
 
 	if environment.ActivateGrpcServer() { // Add GRPC server
-		grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
-		userServiceServer := grpcservers.NewUserServiceServer(userService)
-		authInterceptorCreator := gserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
+		var grpcOpts []grpc.ServerOption
+		if environment.ActivateGRPCAuth() {
+			grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
+			authInterceptorCreator := gserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
+			credentialsOptionCreator := gserveroptions.NewCredentialsOptionCreator(tlsConf)
+			grpcOpts = append(
+				grpcOpts,
+				authInterceptorCreator.CreateUnaryInterceptor(),
+				credentialsOptionCreator.CreateCredentialsOption(),
+			)
+		}
 		grpcServer := gserver.NewGrpcServer(
 			serverConf,
 			func(s *grpc.Server) {
-				userpb.RegisterUserServiceServer(s, userServiceServer)
+				userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))
 			},
-			authInterceptorCreator.CreateUnaryInterceptor(),
+			grpcOpts...,
 		)
 		taskRunners = append(taskRunners, grpcServer)
 	}

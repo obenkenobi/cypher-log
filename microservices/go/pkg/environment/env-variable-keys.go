@@ -9,6 +9,14 @@ const EnvVarKeyAppEnvironment = "ENVIRONMENT"
 const EnvVarKeyActivateAppServer = "ACTIVATE_APP_SERVER"
 const EnvVarKeyActivateGrpcServer = "ACTIVATE_GRPC_SERVER"
 const EnvVarActivateRabbitMQConsumer = "ACTIVATE_RABBITMQ_CONSUMER"
+const EnvVarActivateAppServerTLS = "ACTIVATE_APP_SERVER_TLS"
+const EnvVarActivateGRPCAuth = "ACTIVATE_GRPC_AUTH"
+
+// SSL/TLS
+
+const EnvVarKeyServerCertPath = "SERVER_CERT_PATH"
+const EnvVarKeyServerKeyPath = "SERVER_KEY_PATH"
+const EnvVarKeyCACertPaths = "CA_CERT_PATHS"
 
 // Server
 
