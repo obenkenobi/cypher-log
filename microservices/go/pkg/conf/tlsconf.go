@@ -24,6 +24,6 @@ func NewTlsConf() TLSConf {
 	return &tlsConfImpl{
 		serverCertPath: env.GetEnvVariable(env.EnvVarKeyServerCertPath),
 		serverKeyPath:  env.GetEnvVariable(env.EnvVarKeyServerKeyPath),
-		caCertPath:     env.GetEnvVariable(env.EnvVarKeyCACertPaths),
+		caCertPath:     env.GetEnvVariable(env.EnvVarKeyCACertPath),
 	}
 }

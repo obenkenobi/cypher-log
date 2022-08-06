@@ -16,7 +16,11 @@ const EnvVarActivateGRPCAuth = "ACTIVATE_GRPC_AUTH"
 
 const EnvVarKeyServerCertPath = "SERVER_CERT_PATH"
 const EnvVarKeyServerKeyPath = "SERVER_KEY_PATH"
-const EnvVarKeyCACertPaths = "CA_CERT_PATHS"
+const EnvVarKeyCACertPath = "CA_CERT_PATH"
+
+// GRPC Client
+
+const EnvVarKeyGrpcUserServiceAddress = "GRPC_USER_SERVICE_ADDRESS"
 
 // Server
 

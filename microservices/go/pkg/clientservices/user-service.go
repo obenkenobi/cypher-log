@@ -19,6 +19,7 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	systemAccessTokenClient SysAccessTokenClient
+	grpcClientConf          conf.GrpcClientConf
 	tlsConf                 conf.TLSConf
 }
 
@@ -41,8 +42,7 @@ func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.
 		},
 	)
 	connectionSrc := single.MapWithError(optsSrc, func(opts []grpc.DialOption) (*grpc.ClientConn, error) {
-		// Todo: load from config
-		return gtools.CreateConnectionWithOptions("localhost:50051", opts...)
+		return gtools.CreateConnectionWithOptions(u.grpcClientConf.UserServiceAddress(), opts...)
 	})
 	userReplySrc := single.MapWithError(connectionSrc, func(conn *grpc.ClientConn) (*userpb.UserReply, error) {
 		defer conn.Close()
@@ -57,6 +57,14 @@ func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.
 	})
 }
 
-func NewUserService(systemAccessTokenClient SysAccessTokenClient, tlsConf conf.TLSConf) UserService {
-	return &UserServiceImpl{systemAccessTokenClient: systemAccessTokenClient, tlsConf: tlsConf}
+func NewUserService(
+	systemAccessTokenClient SysAccessTokenClient,
+	tlsConf conf.TLSConf,
+	grpcClientConf conf.GrpcClientConf,
+) UserService {
+	return &UserServiceImpl{
+		systemAccessTokenClient: systemAccessTokenClient,
+		tlsConf:                 tlsConf,
+		grpcClientConf:          grpcClientConf,
+	}
 }
