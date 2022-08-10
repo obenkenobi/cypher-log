@@ -1,4 +1,4 @@
-package clientservices
+package externalservices
 
 import (
 	"bytes"

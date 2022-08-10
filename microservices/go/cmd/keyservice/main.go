@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/clientservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
@@ -24,13 +24,14 @@ func main() {
 	httpclientConf := conf.NewHttpClientConf()
 	grpcClientConf := conf.NewGrpcClientConf()
 	auth0Conf := authconf.NewAuth0SecurityConf()
-	httpClientProvider := clientservices.NewHTTPClientProvider(httpclientConf)
-	auth0SysAccessTokenClient := clientservices.NewAuth0SysAccessTokenClient(
+	httpClientProvider := externalservices.NewHTTPClientProvider(httpclientConf)
+	auth0SysAccessTokenClient := externalservices.NewAuth0SysAccessTokenClient(
 		httpclientConf,
 		auth0Conf,
 		httpClientProvider,
 	)
-	userService := clientservices.NewUserService(auth0SysAccessTokenClient, tlsConf, grpcClientConf)
+	coreGrpcConnProvider := externalservices.NewCoreGrpcConnProvider(auth0SysAccessTokenClient, tlsConf)
+	userService := externalservices.NewExtUserService(coreGrpcConnProvider, grpcClientConf)
 	//mongoCOnf := conf.NewMongoConf()
 	//mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	errorService := errorservices.NewErrorService()
