@@ -22,11 +22,14 @@ func (u CoreGrpcConnProviderImpl) CreateConnectionSingle(ctx context.Context, ad
 	var dialOptSources []single.Single[grpc.DialOption]
 	if environment.ActivateGRPCAuth() {
 		oathTokenSrc := single.FromSupplierAsync(u.systemAccessTokenClient.GetGRPCAccessToken)
-		tlsOptSrc := single.FromSupplierAsync(func() (grpc.DialOption, error) {
-			return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
-		})
+		if u.tlsConf.WillLoadCACert() {
+			tlsOptSrc := single.FromSupplierAsync(func() (grpc.DialOption, error) {
+				return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
+			})
+			dialOptSources = append(dialOptSources, tlsOptSrc)
+		}
 		oathOptSrc := single.Map(oathTokenSrc, gtools.OathAccessOption)
-		dialOptSources = append(dialOptSources, oathOptSrc, tlsOptSrc)
+		dialOptSources = append(dialOptSources, oathOptSrc)
 	}
 	optsSrc := gtools.CreateSingleWithDialOptions(dialOptSources)
 	return single.MapWithError(optsSrc, func(opts []grpc.DialOption) (*grpc.ClientConn, error) {

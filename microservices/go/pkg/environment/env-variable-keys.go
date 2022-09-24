@@ -17,6 +17,7 @@ const EnvVarActivateGRPCAuth = "ACTIVATE_GRPC_AUTH"
 const EnvVarKeyServerCertPath = "SERVER_CERT_PATH"
 const EnvVarKeyServerKeyPath = "SERVER_KEY_PATH"
 const EnvVarKeyCACertPath = "CA_CERT_PATH"
+const EnvVarLoadCACert = "LOAD_CA_CERT"
 
 // GRPC Client
 
@@ -40,6 +41,10 @@ const EnvVarKeyAuth0ClientCredentialsSecret = "AUTH0_CLIENT_CREDENTIALS_SECRET"
 const EnvVarKeyMongoUri = "MONGO_URI"
 const EnvVarMongoDBName = "MONGO_DB_NAME"
 const EnvVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
+
+// RabbitMQ
+
+const EnvVarRabbitMQUri = "RABBITMQ_URI"
 
 // redis
 

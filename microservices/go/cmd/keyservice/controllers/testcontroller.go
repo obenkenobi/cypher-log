@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
@@ -13,7 +14,7 @@ type UserController interface {
 }
 
 type userControllerImpl struct {
-	userService    externalservices.UserService
+	userService    externalservices.ExtUserService
 	authMiddleware middlewares.AuthMiddleware
 	ginCtxService  webservices.GinCtxService
 }
@@ -32,7 +33,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 
 func NewUserController(
 	authMiddleware middlewares.AuthMiddleware,
-	userService externalservices.UserService,
+	userService externalservices.ExtUserService,
 	ginCtxService webservices.GinCtxService,
 ) UserController {
 	return &userControllerImpl{

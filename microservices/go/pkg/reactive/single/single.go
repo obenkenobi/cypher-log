@@ -8,7 +8,9 @@ import (
 	"sync"
 )
 
-// Single is an interface that listens for a single value. It runs on top of an observable.
+// Single is a listener for a single value. It by default listens for a value
+// lazily or if specified, asynchronously. Async singles will cache the stored
+// result.
 type Single[T any] struct {
 	src stream.Observable[T]
 }
@@ -75,8 +77,8 @@ func Just[T any](val T) Single[T] { return fromObservable(stream.Just(val)) }
 func Error[T any](err error) Single[T] { return fromObservable(stream.Error[T](err)) }
 
 // FromSupplier
-//creates a single out of a supplier function that returns a value or an
-//error to emit. If the supplier is successful, the result value is emitted.
+//creates a single out of a supplier function that returns a value or an error
+//to emit. If the supplier is successful, the result value is emitted.
 //Otherwise, if an error is returned, an error id emitted.
 func FromSupplier[T any](supplier func() (T, error)) Single[T] {
 	var src stream.Observable[T] = stream.FuncObservable[T](func(ctx context.Context, next func(T) error) error {
@@ -146,11 +148,10 @@ func FlatMap[A any, B any](src Single[A], apply func(A) Single[B]) Single[B] {
 	}
 }
 
-// MapToAsync takes a single and ensures it is evaluated asynchronously
-// while mapping it to another single that emits the same item. Warning: This
-// forces the single to start evaluate its contents in another goroutine so
-// benefits of lazy evaluation will be lost.
-func MapToAsync[A any](ctx context.Context, src Single[A]) Single[A] {
+// ScheduleAsync takes a single and ensures it is scheduled to be evaluated
+// asynchronously up until this point of execution as opposed to lazy evaluation.
+// A new single is returned emitting the item that is evaluated asynchronously.
+func ScheduleAsync[A any](ctx context.Context, src Single[A]) Single[A] {
 	ch, errCh := ToChannels(ctx, src)
 	return FromChannels(ch, errCh)
 }

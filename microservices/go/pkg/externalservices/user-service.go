@@ -22,7 +22,7 @@ type ExtUserServiceImpl struct {
 }
 
 func (u ExtUserServiceImpl) GetByAuthIdAsync(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
-	return single.MapToAsync[userdtos.UserDto](ctx, u.GetByAuthId(ctx, authId))
+	return single.ScheduleAsync[userdtos.UserDto](ctx, u.GetByAuthId(ctx, authId))
 }
 func (u ExtUserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
 	connectionSrc := u.coreGrpcConnProvider.CreateConnectionSingle(ctx, u.grpcClientConf.UserServiceAddress())
