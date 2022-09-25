@@ -1,7 +1,7 @@
 package conf
 
 import (
-	environment2 "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"time"
 )
 
@@ -30,10 +30,10 @@ func (m MongoConfImpl) GetConnectionTimeout() time.Duration {
 }
 
 func NewMongoConf() MongoConf {
-	connTimeout := environment2.GetEnvVarAsTimeDurationOrDefault(environment2.EnvVarMongoConnTimeoutMS, 12*time.Second)
+	connTimeout := environment.GetEnvVarAsTimeDurationOrDefault(environment.EnvVarMongoConnTimeoutMS, 12*time.Second)
 	return &MongoConfImpl{
-		mongoUri:          environment2.GetEnvVariable(environment2.EnvVarKeyMongoUri),
-		mongoDBName:       environment2.GetEnvVariable(environment2.EnvVarMongoDBName),
+		mongoUri:          environment.GetEnvVariable(environment.EnvVarKeyMongoUri),
+		mongoDBName:       environment.GetEnvVariable(environment.EnvVarMongoDBName),
 		connectionTimeout: connTimeout,
 	}
 }

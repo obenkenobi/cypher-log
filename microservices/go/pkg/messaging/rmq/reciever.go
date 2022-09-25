@@ -107,9 +107,10 @@ func (r Receiver[T]) Close() {
 	}(r.ch)
 }
 
-func CreateReceiver[T any](receiverOpts ReceiverOptions) messaging.Receiver[T] {
+// StartReceiver connects to a rabbitMQ instance and returns a receiver that can be listened to.
+func StartReceiver[T any](receiverOpts ReceiverOptions[T]) messaging.Receiver[T] {
 	var receiver = Receiver[T]{}
-	conn, err := amqp.Dial(receiverOpts.uri)
+	conn, err := amqp.Dial(receiverOpts.Uri)
 	receiver.conn = conn
 	receiver.err = err
 	if err != nil {
@@ -124,13 +125,13 @@ func CreateReceiver[T any](receiverOpts ReceiverOptions) messaging.Receiver[T] {
 	}
 
 	err = ch.ExchangeDeclare(
-		receiverOpts.exchangeOpts.name,
-		receiverOpts.exchangeOpts.kind,
-		receiverOpts.exchangeOpts.durable,
-		receiverOpts.exchangeOpts.autoDeleted,
-		receiverOpts.exchangeOpts.internal,
-		receiverOpts.exchangeOpts.noWait,
-		receiverOpts.exchangeOpts.args,
+		receiverOpts.ExchangeOpts.Name,
+		receiverOpts.ExchangeOpts.Kind,
+		receiverOpts.ExchangeOpts.Durable,
+		receiverOpts.ExchangeOpts.AutoDeleted,
+		receiverOpts.ExchangeOpts.Internal,
+		receiverOpts.ExchangeOpts.NoWait,
+		receiverOpts.ExchangeOpts.Args,
 	)
 	receiver.err = err
 	if err != nil {
@@ -138,24 +139,24 @@ func CreateReceiver[T any](receiverOpts ReceiverOptions) messaging.Receiver[T] {
 	}
 
 	q, err := ch.QueueDeclare(
-		receiverOpts.queueOptions.name,       // name
-		receiverOpts.queueOptions.durable,    // durable
-		receiverOpts.queueOptions.autoDelete, // delete when unused
-		receiverOpts.queueOptions.exclusive,  // exclusive
-		receiverOpts.queueOptions.noWait,     // no-wait
-		receiverOpts.queueOptions.args,       // arguments
+		receiverOpts.QueueOptions.Name,       // name
+		receiverOpts.QueueOptions.Durable,    // durable
+		receiverOpts.QueueOptions.AutoDelete, // delete when unused
+		receiverOpts.QueueOptions.Exclusive,  // exclusive
+		receiverOpts.QueueOptions.NoWait,     // no-wait
+		receiverOpts.QueueOptions.Args,       // arguments
 	)
 	receiver.err = err
 	if err != nil {
 		return receiver
 	}
-	for _, routingKey := range receiverOpts.routingKeys {
+	for _, bindingOpt := range receiverOpts.BindingOptionsList {
 		err = ch.QueueBind(
 			q.Name,                         // queue name
-			routingKey,                     // routing key
-			receiverOpts.exchangeOpts.name, // exchange
-			receiverOpts.bindNoWait,
-			receiverOpts.bindArgs)
+			bindingOpt.RoutingKey,          // routing key
+			receiverOpts.ExchangeOpts.Name, // exchange
+			bindingOpt.BindNoWait,
+			bindingOpt.BindArgs)
 		receiver.err = err
 		if err != nil {
 			return receiver
@@ -163,12 +164,12 @@ func CreateReceiver[T any](receiverOpts ReceiverOptions) messaging.Receiver[T] {
 	}
 	messages, err := ch.Consume(
 		q.Name,                                // queue
-		receiverOpts.consumeOptions.consumer,  // consumer
-		receiverOpts.consumeOptions.autoAck,   // auto ack
-		receiverOpts.consumeOptions.exclusive, // exclusive
-		receiverOpts.consumeOptions.noLocal,   // no local
-		receiverOpts.consumeOptions.noWait,    // no wait
-		receiverOpts.consumeOptions.args,      // args
+		receiverOpts.ConsumeOptions.Consumer,  // consumer
+		receiverOpts.ConsumeOptions.AutoAck,   // auto ack
+		receiverOpts.ConsumeOptions.Exclusive, // exclusive
+		receiverOpts.ConsumeOptions.NoLocal,   // no local
+		receiverOpts.ConsumeOptions.NoWait,    // no wait
+		receiverOpts.ConsumeOptions.Args,      // args
 	)
 	receiver.err = err
 	receiver.messageSrc = stream.FromChannel(messages)

@@ -13,10 +13,10 @@ import (
 type Sender[T any] struct {
 	_exchangeDeclaredRWLock sync.RWMutex
 	_exchangeDeclared       bool
-	senderOptions           SenderOptions
+	senderOptions           SenderOptions[T]
 }
 
-func BuildRabbitMQSender[T any](rmqPublishOpts SenderOptions) messaging.Sender[T] {
+func NewRabbitMQSender[T any](rmqPublishOpts SenderOptions[T]) messaging.Sender[T] {
 	return &Sender[T]{
 		senderOptions:     rmqPublishOpts,
 		_exchangeDeclared: false,
@@ -33,13 +33,13 @@ func (r *Sender[T]) declareExchange(ch *amqp.Channel) error {
 		r._exchangeDeclaredRWLock.Lock()
 		if !r._exchangeDeclared {
 			err = ch.ExchangeDeclare(
-				r.senderOptions.exchangeOpts.name,
-				r.senderOptions.exchangeOpts.kind,
-				r.senderOptions.exchangeOpts.durable,
-				r.senderOptions.exchangeOpts.autoDeleted,
-				r.senderOptions.exchangeOpts.internal,
-				r.senderOptions.exchangeOpts.noWait,
-				r.senderOptions.exchangeOpts.args,
+				r.senderOptions.ExchangeOpts.Name,
+				r.senderOptions.ExchangeOpts.Kind,
+				r.senderOptions.ExchangeOpts.Durable,
+				r.senderOptions.ExchangeOpts.AutoDeleted,
+				r.senderOptions.ExchangeOpts.Internal,
+				r.senderOptions.ExchangeOpts.NoWait,
+				r.senderOptions.ExchangeOpts.Args,
 			)
 			r._exchangeDeclared = err == nil
 		}
@@ -51,7 +51,7 @@ func (r *Sender[T]) declareExchange(ch *amqp.Channel) error {
 
 func (r *Sender[T]) Send(msg T) single.Single[T] {
 	return single.FromSupplier(func() (T, error) {
-		conn, err := amqp.Dial(r.senderOptions.uri)
+		conn, err := amqp.Dial(r.senderOptions.Uri)
 		if err != nil {
 			return msg, err
 		}
@@ -82,10 +82,10 @@ func (r *Sender[T]) Send(msg T) single.Single[T] {
 			}
 		}
 		err = ch.PublishWithContext(ctx,
-			r.senderOptions.exchangeOpts.name, // exchange
-			r.senderOptions.routingKey,        // routing key
-			r.senderOptions.mandatory,         // mandatory
-			r.senderOptions.immediate,         // immediate
+			r.senderOptions.ExchangeOpts.Name, // exchange
+			r.senderOptions.RoutingKey,        // routing key
+			r.senderOptions.Mandatory,         // mandatory
+			r.senderOptions.Immediate,         // immediate
 			amqpMsg)
 		return msg, err
 	})
