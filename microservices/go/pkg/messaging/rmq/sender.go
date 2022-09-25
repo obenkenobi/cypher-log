@@ -50,7 +50,7 @@ func (r *Sender[T]) declareExchange(ch *amqp.Channel) error {
 }
 
 func (r *Sender[T]) Send(msg T) single.Single[T] {
-	return single.FromSupplierAsync(func() (T, error) {
+	return single.FromSupplier(func() (T, error) {
 		conn, err := amqp.Dial(r.senderOptions.uri)
 		if err != nil {
 			return msg, err

@@ -50,7 +50,7 @@ func (u userServiceImpl) AddUser(
 		user := models.User{}
 		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
 		user.AuthId = identity.GetAuthId()
-		return single.MapDerefPtr(u.userRepository.Create(ctx, &user))
+		return u.userRepository.Create(ctx, user)
 	})
 	return single.Map(userCreateSrc, func(user models.User) userdtos.UserDto {
 		userDto := userdtos.UserDto{}
@@ -84,7 +84,7 @@ func (u userServiceImpl) UpdateUser(
 	})
 	userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
 		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
-		return single.MapDerefPtr(u.userRepository.Update(ctx, &user))
+		return u.userRepository.Update(ctx, user)
 	})
 	return single.Map(userSavedSrc, func(user models.User) userdtos.UserDto {
 		userDto := userdtos.UserDto{}
@@ -109,7 +109,7 @@ func (u userServiceImpl) DeleteUser(ctx context.Context, identity security.Ident
 		},
 	)
 	userDeletedLocalDBSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
-		return single.MapDerefPtr(u.userRepository.Delete(ctx, &user))
+		return u.userRepository.Delete(ctx, user)
 	})
 	userDeletedAuthServerSrc := single.FlatMap(
 		userDeletedLocalDBSrc,

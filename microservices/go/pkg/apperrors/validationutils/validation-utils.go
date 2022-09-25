@@ -1,7 +1,7 @@
 package validationutils
 
 import (
-	"github.com/barweiss/go-tuple"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
@@ -40,7 +40,7 @@ func ConcatSinglesOfRuleErrs(
 ) single.Single[[]apperrors.RuleError] {
 	return single.Map(
 		single.Zip2(src1, src2),
-		func(rulErrsTuple tuple.T2[[]apperrors.RuleError, []apperrors.RuleError]) []apperrors.RuleError {
+		func(rulErrsTuple stream.Tuple2[[]apperrors.RuleError, []apperrors.RuleError]) []apperrors.RuleError {
 			return append(rulErrsTuple.V1, rulErrsTuple.V2...)
 		},
 	)

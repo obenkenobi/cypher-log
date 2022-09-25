@@ -61,13 +61,13 @@ type Receiver[T any] struct {
 	conn       *amqp.Connection
 	ch         *amqp.Channel
 	autoAck    bool
-	messageObs stream.Observable[amqp.Delivery]
+	messageSrc stream.Observable[amqp.Delivery]
 }
 
 func (r Receiver[T]) IsAutoAck() bool { return r.autoAck }
 
-func (r Receiver[T]) ReceiveMessages() stream.Observable[T] {
-	deliveredObs := stream.Map(r.messageObs, func(d amqp.Delivery) tuple.T2[messaging.Delivered[T], error] {
+func (r Receiver[T]) MessageStream() stream.Observable[T] {
+	deliveredObs := stream.Map(r.messageSrc, func(d amqp.Delivery) tuple.T2[messaging.Delivered[T], error] {
 		msgDelivered, err := createDelivered[T](d, r.IsAutoAck())
 		return tuple.New2(msgDelivered, err)
 	})
@@ -171,6 +171,6 @@ func CreateReceiver[T any](receiverOpts ReceiverOptions) messaging.Receiver[T] {
 		receiverOpts.consumeOptions.args,      // args
 	)
 	receiver.err = err
-	receiver.messageObs = stream.FromChannel(messages)
+	receiver.messageSrc = stream.FromChannel(messages)
 	return receiver
 }

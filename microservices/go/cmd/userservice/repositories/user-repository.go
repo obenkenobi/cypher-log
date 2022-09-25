@@ -11,71 +11,69 @@ import (
 )
 
 type UserRepository interface {
-	dbservices.CRUDRepository[*models.User, string]
+	dbservices.CRUDRepository[models.User, string]
 	FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
-	FindByAuthIdAsync(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 	FindByUsername(ctx context.Context, username string) single.Single[option.Maybe[models.User]]
-	FindByUsernameAsync(ctx context.Context, username string) single.Single[option.Maybe[models.User]]
 }
 
 type UserRepositoryImpl struct {
-	dbservices.CRUDRepositoryMongo[*models.User, string]
+	dbservices.BaseRepositoryMongo[models.User]
+}
+
+func (u UserRepositoryImpl) Create(ctx context.Context, user models.User) single.Single[models.User] {
+	return single.FromSupplier(func() (models.User, error) {
+		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &user)
+		return user, err
+	})
+}
+
+func (u UserRepositoryImpl) Update(ctx context.Context, user models.User) single.Single[models.User] {
+	return single.FromSupplier(func() (models.User, error) {
+		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &user)
+		return user, err
+	})
+}
+
+func (u UserRepositoryImpl) Delete(ctx context.Context, user models.User) single.Single[models.User] {
+	return single.FromSupplier(func() (models.User, error) {
+		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &user)
+		return user, err
+	})
+}
+
+func (u UserRepositoryImpl) FindById(ctx context.Context, id string) single.Single[option.Maybe[models.User]] {
+	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+		user := models.User{}
+		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), id, &user)
+		return user, err
+	})
 }
 
 func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]] {
-	return dbservices.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
-		return u.runFindByAuthId(ctx, authId)
+	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+		user := models.User{}
+		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"authId": authId}, &user)
+		return user, err
 	})
-}
-
-func (u UserRepositoryImpl) FindByAuthIdAsync(
-	ctx context.Context,
-	authId string,
-) single.Single[option.Maybe[models.User]] {
-	return dbservices.ObserveOptionalSingleQueryAsync(u.MongoDBHandler, func() (models.User, error) {
-		return u.runFindByAuthId(ctx, authId)
-	})
-}
-
-func (u UserRepositoryImpl) runFindByAuthId(ctx context.Context, authId string) (models.User, error) {
-	user := models.User{}
-	err := mgm.Coll(u.ModelColumn).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"authId": authId}, &user)
-	return user, err
 }
 
 func (u UserRepositoryImpl) FindByUsername(
 	ctx context.Context,
 	username string,
 ) single.Single[option.Maybe[models.User]] {
-	return dbservices.ObserveOptionalSingleQuery(u.MongoDBHandler, func() (models.User, error) {
-		return u.runFindByUsername(ctx, username)
+	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+		user := models.User{}
+		err := mgm.Coll(u.ModelColl).FirstWithCtx(
+			u.MongoDBHandler.GetChildDBCtx(ctx),
+			bson.M{"userName": username},
+			&user,
+		)
+		return user, err
 	})
-}
-
-func (u UserRepositoryImpl) FindByUsernameAsync(
-	ctx context.Context,
-	username string,
-) single.Single[option.Maybe[models.User]] {
-	return dbservices.ObserveOptionalSingleQueryAsync(u.MongoDBHandler, func() (models.User, error) {
-		return u.runFindByUsername(ctx, username)
-	})
-}
-
-func (u UserRepositoryImpl) runFindByUsername(ctx context.Context, username string) (models.User, error) {
-	user := models.User{}
-	err := mgm.Coll(u.ModelColumn).FirstWithCtx(
-		u.MongoDBHandler.GetChildDBCtx(ctx),
-		bson.M{"userName": username},
-		&user,
-	)
-	return user, err
 }
 
 func NewUserMongoRepository(mongoDBHandler *dbservices.MongoDBHandler) UserRepository {
 	return &UserRepositoryImpl{
-		CRUDRepositoryMongo: *dbservices.NewRepositoryMongoImpl[*models.User, string](
-			&models.User{},
-			mongoDBHandler,
-		),
+		BaseRepositoryMongo: *dbservices.NewBaseRepositoryMongo[models.User](models.User{}, mongoDBHandler),
 	}
 }

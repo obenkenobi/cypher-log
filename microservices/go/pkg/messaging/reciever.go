@@ -3,7 +3,7 @@ package messaging
 import "github.com/joamaki/goreactive/stream"
 
 type Receiver[T any] interface {
-	ReceiveMessages() stream.Observable[T]
+	MessageStream() stream.Observable[T]
 	IsAutoAck() bool
 	Close()
 }

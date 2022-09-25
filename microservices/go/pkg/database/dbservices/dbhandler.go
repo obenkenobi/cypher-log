@@ -11,21 +11,7 @@ type DBHandler interface {
 	IsNotFoundError(err error) bool
 }
 
-// ObserveOptionalSingleQueryAsync
-//creates a single out of a supplier function that queries a single value. The
-//supplier function is run on a separate goroutine. *Make sure your supplier
-//function is not going to be thread safe or not cause race conditions on the
-//data accessed.
-func ObserveOptionalSingleQueryAsync[TQueryResult any](
-	dbHandler DBHandler,
-	supplier func() (TQueryResult, error),
-) single.Single[option.Maybe[TQueryResult]] {
-	return single.FromSupplierAsync(func() (option.Maybe[TQueryResult], error) {
-		return runOptionalSingleQuery(dbHandler, supplier)
-	})
-}
-
-func ObserveOptionalSingleQuery[TQueryResult any](
+func OptionalSingleQuerySrc[TQueryResult any](
 	dbHandler DBHandler,
 	supplier func() (TQueryResult, error),
 ) single.Single[option.Maybe[TQueryResult]] {

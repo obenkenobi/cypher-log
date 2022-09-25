@@ -38,10 +38,10 @@ func (u UserBrImpl) ValidateUserCreate(
 	identity security.Identity,
 	dto userdtos.UserSaveDto,
 ) single.Single[[]apperrors.RuleError] {
-	userNameNotTakenValidationSrc := u.validateUserNameNotTakenAsync(ctx, dto)
+	userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto).ScheduleAsync(ctx)
 	userNotCreatedValidationSrc := validationutils.ValidateValueIsNotPresent(
 		u.errorService,
-		u.userRepository.FindByAuthIdAsync(ctx, identity.GetAuthId()),
+		u.userRepository.FindByAuthId(ctx, identity.GetAuthId()).ScheduleAsync(ctx),
 		apperrors.ErrCodeResourceAlreadyCreated,
 	)
 	ruleErrorsSrc := validationutils.ConcatSinglesOfRuleErrs(userNameNotTakenValidationSrc, userNotCreatedValidationSrc)
@@ -59,17 +59,6 @@ func (u UserBrImpl) ValidateUserUpdate(
 		ruleErrorsSrc = validationutils.ConcatSinglesOfRuleErrs(ruleErrorsSrc, userNameNotTakenValidationSrc)
 	}
 	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrorsSrc)
-}
-
-func (u UserBrImpl) validateUserNameNotTakenAsync(
-	ctx context.Context,
-	dto userdtos.UserSaveDto,
-) single.Single[[]apperrors.RuleError] {
-	return validationutils.ValidateValueIsNotPresent(
-		u.errorService,
-		u.userRepository.FindByUsernameAsync(ctx, dto.UserName),
-		apperrors.ErrCodeUsernameTaken,
-	)
 }
 
 func (u UserBrImpl) validateUserNameNotTaken(

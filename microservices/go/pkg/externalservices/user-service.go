@@ -13,7 +13,6 @@ import (
 
 type ExtUserService interface {
 	GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto]
-	GetByAuthIdAsync(ctx context.Context, authId string) single.Single[userdtos.UserDto]
 }
 
 type ExtUserServiceImpl struct {
@@ -21,9 +20,6 @@ type ExtUserServiceImpl struct {
 	coreGrpcConnProvider CoreGrpcConnProvider
 }
 
-func (u ExtUserServiceImpl) GetByAuthIdAsync(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
-	return single.ScheduleAsync[userdtos.UserDto](ctx, u.GetByAuthId(ctx, authId))
-}
 func (u ExtUserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
 	connectionSrc := u.coreGrpcConnProvider.CreateConnectionSingle(ctx, u.grpcClientConf.UserServiceAddress())
 	userReplySrc := single.MapWithError(connectionSrc, func(conn *grpc.ClientConn) (*userpb.UserReply, error) {

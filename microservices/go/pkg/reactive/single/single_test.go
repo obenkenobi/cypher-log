@@ -3,7 +3,7 @@ package single_test
 import (
 	"context"
 	"fmt"
-	"github.com/barweiss/go-tuple"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	cv "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -14,13 +14,13 @@ func TestSingleFromSupplierAsync(t *testing.T) {
 	cv.Convey("When creating an observable with a supplier returns 1 that runs asynchronously", t, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Hour*24)
 		defer cancel()
-		oneSrc := single.FromSupplierAsync(func() (int, error) { return 1, nil })
+		oneSrc := single.FromSupplier(func() (int, error) { return 1, nil }).ScheduleAsync(ctx)
 		cv.Convey("The same source is then mapped to other Singles twoSrc and threeSrc,\n"+
 			"incrementing the source value", func() {
 			twoSrc := single.Map(oneSrc, func(v int) int { return v + 1 })
 			threeSrc := single.Map(oneSrc, func(v int) int { return v + 2 })
 			twoExpected, threeExpected := 2, 3
-			tupleExpected := tuple.T2[int, int]{twoExpected, threeExpected}
+			tupleExpected := stream.Tuple2[int, int]{V1: twoExpected, V2: threeExpected}
 
 			cv.Convey(
 				fmt.Sprintf(

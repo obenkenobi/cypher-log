@@ -2,9 +2,7 @@ package single
 
 import (
 	"context"
-	"github.com/barweiss/go-tuple"
 	"github.com/joamaki/goreactive/stream"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive"
 	"sync"
 )
 
@@ -16,6 +14,13 @@ type Single[T any] struct {
 }
 
 func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
+
+// ScheduleAsync takes a single and returns a new Single that is scheduled to be
+// evaluated asynchronously up until point of execution of the returning single.
+func (s Single[T]) ScheduleAsync(ctx context.Context) Single[T] {
+	ch, errCh := ToChannels(ctx, s)
+	return FromChannels(ch, errCh)
+}
 
 // Thread safe Observable that reads from a channel, used for ensuring when a
 // single is made from a channel, it will always emit the same value even when
@@ -95,21 +100,6 @@ func FromSupplier[T any](supplier func() (T, error)) Single[T] {
 	return fromObservable(src)
 }
 
-// FromSupplierAsync
-//creates a single out of a supplier function that returns a value or an error
-//to be emitted asynchronously. The supplier function is run on a separate
-//goroutine. *Make sure your supplier function is thread safe or will
-//not cause race conditions on the values provided.*
-func FromSupplierAsync[T any](supplier func() (T, error)) Single[T] {
-	ch := make(chan tuple.T2[T, error])
-	go func() {
-		defer close(ch)
-		val, err := supplier()
-		ch <- tuple.New2(val, err)
-	}()
-	return MapWithError(FromChannel(ch), func(res tuple.T2[T, error]) (T, error) { return res.V1, res.V2 })
-}
-
 // Map applies a function onto a Single
 func Map[A any, B any](src Single[A], apply func(A) B) Single[B] {
 	return fromObservable[B](stream.Map(src.ToObservable(), func(a A) B { return apply(a) }))
@@ -134,10 +124,8 @@ func MapWithError[A any, B any](src Single[A], apply func(A) (B, error)) Single[
 
 // Zip2 Takes 2 Singles and returns a Single that emits a tuple of each of the
 // singles in the order they are supplied
-func Zip2[V1 any, V2 any](src1 Single[V1], src2 Single[V2]) Single[tuple.T2[V1, V2]] {
-	return FlatMap(src1, func(a V1) Single[tuple.T2[V1, V2]] {
-		return Map(src2, func(b V2) tuple.T2[V1, V2] { return tuple.New2(a, b) })
-	})
+func Zip2[V1 any, V2 any](src1 Single[V1], src2 Single[V2]) Single[stream.Tuple2[V1, V2]] {
+	return fromObservable(stream.Zip2(src1.ToObservable(), src2.ToObservable()))
 }
 
 // FlatMap applies a function that returns a single of V2 to the source single of V1.
@@ -146,14 +134,6 @@ func FlatMap[A any, B any](src Single[A], apply func(A) Single[B]) Single[B] {
 	return Single[B]{
 		stream.FlatMap(src.ToObservable(), func(a A) stream.Observable[B] { return apply(a).ToObservable() }),
 	}
-}
-
-// ScheduleAsync takes a single and ensures it is scheduled to be evaluated
-// asynchronously up until this point of execution as opposed to lazy evaluation.
-// A new single is returned emitting the item that is evaluated asynchronously.
-func ScheduleAsync[A any](ctx context.Context, src Single[A]) Single[A] {
-	ch, errCh := ToChannels(ctx, src)
-	return FromChannels(ch, errCh)
 }
 
 // RetrieveValue returns the value emitted by the Single
@@ -165,11 +145,6 @@ func RetrieveValue[T any](ctx context.Context, src Single[T]) (T, error) {
 // ensures asynchronous execution when the value is evaluated.
 func ToChannels[T any](ctx context.Context, src Single[T]) (<-chan T, <-chan error) {
 	return stream.ToChannels(ctx, src.ToObservable())
-}
-
-// MapDerefPtr takes a single of a pointer and maps it to a single of a de-referenced value of that pointer
-func MapDerefPtr[T any](src Single[*T]) Single[T] {
-	return fromObservable(reactive.MapDerefPtr(src.ToObservable()))
 }
 
 func fromObservable[T any](src stream.Observable[T]) Single[T] {
