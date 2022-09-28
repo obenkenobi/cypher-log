@@ -18,40 +18,22 @@ type rmqListenerImpl struct {
 	connector rmqservices.RabbitConnector
 }
 
-func (r rmqListenerImpl) ListenUserCreate() {
+func (r rmqListenerImpl) ListenUserSave() {
 	userCreateReceiver := rmq.NewReceiver(
 		r.connector.GetConsumer(),
-		"key_service_user_create",
+		"key_service_user_save",
 		rmq.RoutingKeysDefault,
 		"",
-		exchanges.UserCreateExchange,
+		exchanges.UserSaveExchange,
 		rabbitmq.WithConsumeOptionsConcurrency(10),
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
 	userCreateReceiver.Listen(func(userDto userdtos.UserDto) error {
-		logger.Log.Info("creating user", userDto)
+		logger.Log.Info("saving user", userDto)
 		return nil
 	}, true)
-	logger.Log.Info("Listening for user creation")
-}
-
-func (r rmqListenerImpl) ListenUserUpdate() {
-	userCreateReceiver := rmq.NewReceiver(
-		r.connector.GetConsumer(),
-		"key_service_user_update",
-		rmq.RoutingKeysDefault,
-		"",
-		exchanges.UserUpdateExchange,
-		rabbitmq.WithConsumeOptionsConcurrency(10),
-		rabbitmq.WithConsumeOptionsQueueDurable,
-		rabbitmq.WithConsumeOptionsQuorum,
-	)
-	userCreateReceiver.Listen(func(userDto userdtos.UserDto) error {
-		logger.Log.Info("updating user", userDto)
-		return nil
-	}, true)
-	logger.Log.Info("Listening for user updates")
+	logger.Log.Info("Listening for user saves")
 }
 
 func (r rmqListenerImpl) ListenUserDelete() {
@@ -74,9 +56,8 @@ func (r rmqListenerImpl) ListenUserDelete() {
 
 func (r rmqListenerImpl) Run() {
 	forever := make(chan any)
-	go r.ListenUserCreate()
-	go r.ListenUserUpdate()
-	go r.ListenUserDelete()
+	r.ListenUserSave()
+	r.ListenUserDelete()
 	<-forever
 }
 

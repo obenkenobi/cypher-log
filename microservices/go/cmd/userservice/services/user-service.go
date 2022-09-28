@@ -57,7 +57,7 @@ func (u userServiceImpl) AddUser(
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
 		logger.Log.Debugf("Created user %v", userDto)
-		return u.userMsgSendService.UserCreateSender().Send(userDto)
+		return u.userMsgSendService.UserSaveSender().Send(userDto)
 	})
 
 }
@@ -92,7 +92,7 @@ func (u userServiceImpl) UpdateUser(
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
 		logger.Log.Debug("Saved user ", userDto)
-		return u.userMsgSendService.UserUpdateSender().Send(userDto)
+		return u.userMsgSendService.UserSaveSender().Send(userDto)
 	})
 }
 

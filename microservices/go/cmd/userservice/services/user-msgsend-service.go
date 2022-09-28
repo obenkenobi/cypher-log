@@ -9,23 +9,17 @@ import (
 )
 
 type UserMsgSendService interface {
-	UserCreateSender() msg.Sender[userdtos.UserDto]
-	UserUpdateSender() msg.Sender[userdtos.UserDto]
+	UserSaveSender() msg.Sender[userdtos.UserDto]
 	UserDeleteSender() msg.Sender[userdtos.UserDto]
 }
 
 type UserMessageServiceImpl struct {
-	userCreateSender msg.Sender[userdtos.UserDto]
-	userUpdateSender msg.Sender[userdtos.UserDto]
+	userSaveSender   msg.Sender[userdtos.UserDto]
 	userDeleteSender msg.Sender[userdtos.UserDto]
 }
 
-func (u UserMessageServiceImpl) UserCreateSender() msg.Sender[userdtos.UserDto] {
-	return u.userCreateSender
-}
-
-func (u UserMessageServiceImpl) UserUpdateSender() msg.Sender[userdtos.UserDto] {
-	return u.userUpdateSender
+func (u UserMessageServiceImpl) UserSaveSender() msg.Sender[userdtos.UserDto] {
+	return u.userSaveSender
 }
 
 func (u UserMessageServiceImpl) UserDeleteSender() msg.Sender[userdtos.UserDto] {
@@ -34,8 +28,7 @@ func (u UserMessageServiceImpl) UserDeleteSender() msg.Sender[userdtos.UserDto] 
 
 func NewUserMessageServiceImpl(connector rmqservices.RabbitConnector) UserMsgSendService {
 	return &UserMessageServiceImpl{
-		userCreateSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserCreateExchange, rmq.RoutingKeysDefault),
-		userUpdateSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserUpdateExchange, rmq.RoutingKeysDefault),
+		userSaveSender:   rmq.NewSender(connector.GetPublisher(), exchanges.UserSaveExchange, rmq.RoutingKeysDefault),
 		userDeleteSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserDeleteExchange, rmq.RoutingKeysDefault),
 	}
 }
