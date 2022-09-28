@@ -24,7 +24,7 @@ type CRUDRepository[VModel any, VID any] interface {
 	// FindById queries the data store by an entity's id and saves the value to the
 	// provided model. The same model is then emitted by a Single. The model should
 	// be a pointer.
-	FindById(ctx context.Context, id string) single.Single[option.Maybe[VModel]]
+	FindById(ctx context.Context, id VID) single.Single[option.Maybe[VModel]]
 }
 
 // BaseRepositoryMongo is a MongoDB implementation of CRUDRepository

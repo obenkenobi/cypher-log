@@ -33,6 +33,7 @@ func NewErrorService() ErrorService {
 		apperrors.ErrCodeCannotBindJson:         "Unable to bind json",
 		apperrors.ErrCodeResourceAlreadyCreated: "Resource already created",
 		apperrors.ErrCodeUsernameTaken:          "Username is taken",
+		apperrors.ErrCodeUserRequireFail:        "User is not found or incomplete",
 	}
 	return &errorMessageServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

@@ -1,11 +1,14 @@
 package listeners
 
 import (
+	"context"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/rmqservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"github.com/wagslane/go-rabbitmq"
 )
@@ -15,7 +18,9 @@ type RmqListener interface {
 }
 
 type rmqListenerImpl struct {
-	connector rmqservices.RabbitConnector
+	connector   rmqservices.RabbitConnector
+	userService services.UserService
+	ctx         context.Context
 }
 
 func (r rmqListenerImpl) ListenUserSave() {
@@ -30,8 +35,8 @@ func (r rmqListenerImpl) ListenUserSave() {
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
 	userCreateReceiver.Listen(func(userDto userdtos.UserDto) error {
-		logger.Log.Info("saving user", userDto)
-		return nil
+		_, err := single.RetrieveValue(r.ctx, r.userService.SaveUserAndGetBO(r.ctx, userDto))
+		return err
 	}, true)
 	logger.Log.Info("Listening for user saves")
 }
@@ -48,8 +53,8 @@ func (r rmqListenerImpl) ListenUserDelete() {
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
 	userCreateReceiver.Listen(func(userDto userdtos.UserDto) error {
-		logger.Log.Info("deleting user", userDto)
-		return nil
+		_, err := single.RetrieveValue(r.ctx, r.userService.DeleteUserIfFoundAndGetBO(r.ctx, userDto))
+		return err
 	}, true)
 	logger.Log.Info("Listening for user deletions")
 }
@@ -61,6 +66,6 @@ func (r rmqListenerImpl) Run() {
 	<-forever
 }
 
-func NewRmqListener(connector rmqservices.RabbitConnector) RmqListener {
-	return &rmqListenerImpl{connector: connector}
+func NewRmqListener(connector rmqservices.RabbitConnector, userService services.UserService) RmqListener {
+	return &rmqListenerImpl{ctx: context.Background(), connector: connector, userService: userService}
 }

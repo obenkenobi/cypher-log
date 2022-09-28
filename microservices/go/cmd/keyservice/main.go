@@ -3,9 +3,12 @@ package main
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
@@ -36,11 +39,13 @@ func main() {
 		httpClientProvider,
 	)
 	coreGrpcConnProvider := externalservices.NewCoreGrpcConnProvider(auth0SysAccessTokenClient, tlsConf)
-	userService := externalservices.NewExtUserService(coreGrpcConnProvider, grpcClientConf)
-	//mongoCOnf := conf.NewMongoConf()
-	//mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
+	extUserService := externalservices.NewExtUserService(coreGrpcConnProvider, grpcClientConf)
+	mongoCOnf := conf.NewMongoConf()
+	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
+	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
 	ginCtxService := webservices.NewGinCtxService(errorService)
+	userService := services.NewUserService(userRepository, extUserService)
 
 	// Add task dependencies
 	var taskRunners []taskrunner.TaskRunner
@@ -48,12 +53,12 @@ func main() {
 	if environment.ActivateAppServer() { // Add app server
 		apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
 		authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
-		userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
+		userController := controllers.NewTestController(authMiddleware, userService, ginCtxService)
 		appServer := webservices.NewAppServer(serverConf, tlsConf, userController)
 		taskRunners = append(taskRunners, appServer)
 	}
 	if environment.ActivateRabbitMqListener() {
-		rmqListener := listeners.NewRmqListener(rabbitMqConnector)
+		rmqListener := listeners.NewRmqListener(rabbitMqConnector, userService)
 		taskRunners = append(taskRunners, rmqListener)
 	}
 

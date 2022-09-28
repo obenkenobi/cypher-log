@@ -2,41 +2,41 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/externalservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
 )
 
-type UserController interface {
+type TestController interface {
 	webservices.Controller
 }
 
-type userControllerImpl struct {
-	userService    externalservices.ExtUserService
+type testControllerImpl struct {
+	userService    services.UserService
 	authMiddleware middlewares.AuthMiddleware
 	ginCtxService  webservices.GinCtxService
 }
 
-func (u userControllerImpl) AddRoutes(r *gin.Engine) {
+func (u testControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1 := r.Group("test", u.authMiddleware.Authentication())
 
-	userGroupV1.GET("/user",
+	userGroupV1.GET("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			identity := security.GetIdentityFromGinContext(c)
-			userDto, err := single.RetrieveValue(c, u.userService.GetByAuthId(c, identity.GetAuthId()))
-			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
+			reqUser := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c).GetAuthId())
+			user, err := single.RetrieveValue(c, reqUser)
+			u.ginCtxService.RespondJsonOkOrError(c, user, err)
 		})
 }
 
-func NewUserController(
+func NewTestController(
 	authMiddleware middlewares.AuthMiddleware,
-	userService externalservices.ExtUserService,
+	userService services.UserService,
 	ginCtxService webservices.GinCtxService,
-) UserController {
-	return &userControllerImpl{
+) TestController {
+	return &testControllerImpl{
 		authMiddleware: authMiddleware,
 		userService:    userService,
 		ginCtxService:  ginCtxService,
