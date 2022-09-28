@@ -34,8 +34,8 @@ func (u UserMessageServiceImpl) UserDeleteSender() msg.Sender[userdtos.UserDto] 
 
 func NewUserMessageServiceImpl(connector rmqservices.RabbitConnector) UserMsgSendService {
 	return &UserMessageServiceImpl{
-		userCreateSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserCreateExchange, []string{}),
-		userUpdateSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserUpdateExchange, []string{}),
-		userDeleteSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserDeleteExchange, []string{}),
+		userCreateSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserCreateExchange, rmq.RoutingKeysDefault),
+		userUpdateSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserUpdateExchange, rmq.RoutingKeysDefault),
+		userDeleteSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserDeleteExchange, rmq.RoutingKeysDefault),
 	}
 }

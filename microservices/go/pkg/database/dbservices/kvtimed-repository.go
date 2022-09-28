@@ -9,9 +9,7 @@ import (
 
 type KeyValueTimedRepository[Key any, Value any] interface {
 	Get(ctx context.Context, key Key) single.Single[Value]
-	GetAsync(ctx context.Context, key Key) single.Single[Value]
 	Set(ctx context.Context, key Key, value Value, expiration time.Duration) single.Single[Value]
-	SetAsync(ctx context.Context, key Key, expiration time.Duration) single.Single[Value]
 }
 
 // KeyValueTimedRepositoryRedis is a Redis implementation of KeyValueTimedRepository
@@ -21,10 +19,6 @@ type KeyValueTimedRepositoryRedis[Value any] struct {
 
 func (k KeyValueTimedRepositoryRedis[Value]) Get(ctx context.Context, key string) single.Single[Value] {
 	return single.FromSupplier[Value](func() (Value, error) { return k.runGet(ctx, key) })
-}
-
-func (k KeyValueTimedRepositoryRedis[Value]) GetAsync(ctx context.Context, key string) single.Single[Value] {
-	return single.FromSupplierAsync[Value](func() (Value, error) { return k.runGet(ctx, key) })
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) runGet(ctx context.Context, key string) (Value, error) {
@@ -43,15 +37,6 @@ func (k KeyValueTimedRepositoryRedis[Value]) Set(
 	expiration time.Duration,
 ) single.Single[Value] {
 	return single.FromSupplier[Value](func() (Value, error) { return k.runSet(ctx, key, value, expiration) })
-}
-
-func (k KeyValueTimedRepositoryRedis[Value]) SetAsync(
-	ctx context.Context,
-	key string,
-	value Value,
-	expiration time.Duration,
-) single.Single[Value] {
-	return single.FromSupplierAsync[Value](func() (Value, error) { return k.runSet(ctx, key, value, expiration) })
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) runSet(

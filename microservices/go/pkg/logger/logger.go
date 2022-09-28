@@ -11,11 +11,7 @@ func getTextFormatter() *log.TextFormatter {
 
 func getJsonFormatter() *log.JSONFormatter { return &log.JSONFormatter{} }
 
-// NewLogger Creates a new logger with settings based on the app environment on
-// how the logger should work.
-func NewLogger() *log.Logger {
-	environment.ReadEnvFiles()
-	logger := log.New()
+func configureLoggerFromEnv(logger *log.Logger) {
 	if environment.IsProduction() {
 		logger.SetFormatter(getJsonFormatter())
 		logger.SetLevel(log.InfoLevel)
@@ -29,7 +25,8 @@ func NewLogger() *log.Logger {
 		logger.SetFormatter(getTextFormatter())
 		logger.SetLevel(log.DebugLevel)
 	}
-	return logger
 }
 
-var Log = NewLogger()
+var Log = log.New()
+
+func ConfigureLoggerFromEnv() { configureLoggerFromEnv(Log) }

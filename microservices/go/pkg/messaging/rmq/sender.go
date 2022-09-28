@@ -47,7 +47,9 @@ func (r *Sender[T]) Send(body T) single.Single[T] {
 		}
 		publishOpts := append(r.publishOpts,
 			rabbitmq.WithPublishOptionsContentType(contentType),
-			rabbitmq.WithPublishOptionsPersistentDelivery)
+			rabbitmq.WithPublishOptionsPersistentDelivery,
+			rabbitmq.WithPublishOptionsMandatory)
+		r.publisher.NotifyReturn()
 		err := r.publisher.Publish(msgBytes, r.routingKeys, publishOpts...)
 		return body, err
 	})

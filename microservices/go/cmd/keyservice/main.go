@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/externalservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
@@ -17,6 +18,7 @@ import (
 
 func main() {
 	environment.ReadEnvFiles(".env", "keyservice.env") // Load env files
+	logger.ConfigureLoggerFromEnv()
 
 	// Dependency graph
 	serverConf := conf.NewServerConf()

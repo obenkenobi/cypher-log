@@ -22,7 +22,7 @@ func (r rmqListenerImpl) ListenUserCreate() {
 	userCreateReceiver := rmq.NewReceiver(
 		r.connector.GetConsumer(),
 		"key_service_user_create",
-		[]string{},
+		rmq.RoutingKeysDefault,
 		"",
 		exchanges.UserCreateExchange,
 		rabbitmq.WithConsumeOptionsConcurrency(10),
@@ -33,13 +33,14 @@ func (r rmqListenerImpl) ListenUserCreate() {
 		logger.Log.Info("creating user", userDto)
 		return nil
 	}, true)
+	logger.Log.Info("Listening for user creation")
 }
 
 func (r rmqListenerImpl) ListenUserUpdate() {
 	userCreateReceiver := rmq.NewReceiver(
 		r.connector.GetConsumer(),
 		"key_service_user_update",
-		[]string{},
+		rmq.RoutingKeysDefault,
 		"",
 		exchanges.UserUpdateExchange,
 		rabbitmq.WithConsumeOptionsConcurrency(10),
@@ -50,13 +51,14 @@ func (r rmqListenerImpl) ListenUserUpdate() {
 		logger.Log.Info("updating user", userDto)
 		return nil
 	}, true)
+	logger.Log.Info("Listening for user updates")
 }
 
 func (r rmqListenerImpl) ListenUserDelete() {
 	userCreateReceiver := rmq.NewReceiver(
 		r.connector.GetConsumer(),
 		"key_service_user_delete",
-		[]string{},
+		rmq.RoutingKeysDefault,
 		"",
 		exchanges.UserDeleteExchange,
 		rabbitmq.WithConsumeOptionsConcurrency(10),
@@ -67,6 +69,7 @@ func (r rmqListenerImpl) ListenUserDelete() {
 		logger.Log.Info("deleting user", userDto)
 		return nil
 	}, true)
+	logger.Log.Info("Listening for user deletions")
 }
 
 func (r rmqListenerImpl) Run() {
