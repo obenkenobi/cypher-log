@@ -12,11 +12,12 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
 type UserService interface {
-	RequireUser(ctx context.Context, authId string) single.Single[bos.UserBo]
+	RequireUser(ctx context.Context, identity security.Identity) single.Single[bos.UserBo]
 	SaveUser(ctx context.Context, distUserDto userdtos.DistributedUserDto) single.Single[bos.UserBo]
 	DeleteUser(ctx context.Context, distUserDto userdtos.DistributedUserDto) single.Single[bos.UserBo]
 }
@@ -86,18 +87,18 @@ func (u userServiceImpl) DeleteUser(
 	})
 }
 
-func (u userServiceImpl) RequireUser(ctx context.Context, authId string) single.Single[bos.UserBo] {
-	userFindSrc := u.userRepository.FindByAuthId(ctx, authId)
+func (u userServiceImpl) RequireUser(ctx context.Context, identity security.Identity) single.Single[bos.UserBo] {
+	userFindSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
 	userSrc := single.FlatMap(userFindSrc, func(userMaybe option.Maybe[models.User]) single.Single[models.User] {
 		return option.Map(userMaybe, single.Just[models.User]).OrElseGet(func() single.Single[models.User] {
 			// If user is not stored locally in the database
-			extUserFindSrc := u.extUserService.GetByAuthId(ctx, authId)
+			extUserFindSrc := u.extUserService.GetByAuthId(ctx, identity.GetAuthId())
 			return single.FlatMap(extUserFindSrc, func(extUserDto userdtos.UserDto) single.Single[models.User] {
 				if !extUserDto.Exists {
 					userReqFailRuleErr := u.errorService.RuleErrorFromCode(apperrors.ErrCodeUserRequireFail)
 					return single.Error[models.User](apperrors.NewBadReqErrorFromRuleError(userReqFailRuleErr))
 				}
-				return u.saveUserDataAndGetModel(ctx, authId, extUserDto)
+				return u.saveUserDataAndGetModel(ctx, identity.GetAuthId(), extUserDto)
 			})
 		})
 	})

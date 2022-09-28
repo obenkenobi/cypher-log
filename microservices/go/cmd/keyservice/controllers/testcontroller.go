@@ -25,7 +25,7 @@ func (u testControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1.GET("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUser := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c).GetAuthId())
+			reqUser := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)).ScheduleAsync(c)
 			user, err := single.RetrieveValue(c, reqUser)
 			u.ginCtxService.RespondJsonOkOrError(c, user, err)
 		})
