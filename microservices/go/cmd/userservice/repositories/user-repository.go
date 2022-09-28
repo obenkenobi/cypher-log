@@ -4,20 +4,21 @@ import (
 	"context"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/baserepos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type UserRepository interface {
-	dbservices.CRUDRepository[models.User, string]
+	baserepos.CRUDRepository[models.User, string]
 	FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 	FindByUsername(ctx context.Context, username string) single.Single[option.Maybe[models.User]]
 }
 
 type UserRepositoryImpl struct {
-	dbservices.BaseRepositoryMongo[models.User]
+	baserepos.BaseRepositoryMongo[models.User]
 }
 
 func (u UserRepositoryImpl) Create(ctx context.Context, user models.User) single.Single[models.User] {
@@ -42,7 +43,7 @@ func (u UserRepositoryImpl) Delete(ctx context.Context, user models.User) single
 }
 
 func (u UserRepositoryImpl) FindById(ctx context.Context, id string) single.Single[option.Maybe[models.User]] {
-	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		user := models.User{}
 		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), id, &user)
 		return user, err
@@ -50,7 +51,7 @@ func (u UserRepositoryImpl) FindById(ctx context.Context, id string) single.Sing
 }
 
 func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]] {
-	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		user := models.User{}
 		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"authId": authId}, &user)
 		return user, err
@@ -61,7 +62,7 @@ func (u UserRepositoryImpl) FindByUsername(
 	ctx context.Context,
 	username string,
 ) single.Single[option.Maybe[models.User]] {
-	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		user := models.User{}
 		err := mgm.Coll(u.ModelColl).FirstWithCtx(
 			u.MongoDBHandler.GetChildDBCtx(ctx),
@@ -72,8 +73,8 @@ func (u UserRepositoryImpl) FindByUsername(
 	})
 }
 
-func NewUserMongoRepository(mongoDBHandler *dbservices.MongoDBHandler) UserRepository {
+func NewUserMongoRepository(mongoDBHandler *dshandlers.MongoDBHandler) UserRepository {
 	return &UserRepositoryImpl{
-		BaseRepositoryMongo: *dbservices.NewBaseRepositoryMongo[models.User](models.User{}, mongoDBHandler),
+		BaseRepositoryMongo: *baserepos.NewBaseRepositoryMongo[models.User](models.User{}, mongoDBHandler),
 	}
 }

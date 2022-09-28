@@ -7,27 +7,28 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/routing"
 )
 
 type UserController interface {
-	webservices.Controller
+	controller.Controller
 }
 
 type userControllerImpl struct {
 	userService    services.UserService
 	authMiddleware middlewares.AuthMiddleware
-	ginCtxService  webservices.GinCtxService
+	ginCtxService  ginservices.GinCtxService
 }
 
 func (u userControllerImpl) AddRoutes(r *gin.Engine) {
-	userGroupV1 := r.Group(web.APIPath(1, "user"), u.authMiddleware.Authentication())
+	userGroupV1 := r.Group(routing.APIPath(1, "user"), u.authMiddleware.Authentication())
 
 	userGroupV1.POST("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+			readValFromBodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 			addUserSrc := single.FlatMap(readValFromBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.AddUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
@@ -39,7 +40,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1.PUT("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			readValFromBodySrc := webservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+			readValFromBodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 			updateUserSrc := single.FlatMap(readValFromBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
 					return u.userService.UpdateUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
@@ -77,7 +78,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 func NewUserController(
 	authMiddleware middlewares.AuthMiddleware,
 	userService services.UserService,
-	ginCtxService webservices.GinCtxService,
+	ginCtxService ginservices.GinCtxService,
 ) UserController {
 	return &userControllerImpl{
 		authMiddleware: authMiddleware,

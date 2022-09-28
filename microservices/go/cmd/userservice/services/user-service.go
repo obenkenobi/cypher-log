@@ -7,13 +7,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
@@ -36,10 +36,10 @@ type UserService interface {
 
 type userServiceImpl struct {
 	userMsgSendService    UserMsgSendService
-	crudDBHandler         dbservices.CrudDBHandler
+	crudDSHandler         dshandlers.CrudDSHandler
 	userRepository        repositories.UserRepository
 	userBr                businessrules.UserBr
-	errorService          errorservices.ErrorService
+	errorService          sharedservices.ErrorService
 	authServerMgmtService AuthServerMgmtService
 }
 
@@ -178,15 +178,15 @@ func (u userServiceImpl) GetById(ctx context.Context, userId string) single.Sing
 
 func NewUserService(
 	userMsgSendService UserMsgSendService,
-	crudDBHandler dbservices.CrudDBHandler,
+	crudDBHandler dshandlers.CrudDSHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
-	errorService errorservices.ErrorService,
+	errorService sharedservices.ErrorService,
 	authServerMgmtService AuthServerMgmtService,
 ) UserService {
 	return &userServiceImpl{
 		userMsgSendService:    userMsgSendService,
-		crudDBHandler:         crudDBHandler,
+		crudDSHandler:         crudDBHandler,
 		userRepository:        userRepository,
 		userBr:                userBr,
 		errorService:          errorService,

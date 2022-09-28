@@ -2,13 +2,13 @@ package listeners
 
 import (
 	"context"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"github.com/wagslane/go-rabbitmq"
 )
@@ -19,7 +19,7 @@ type RmqListener interface {
 
 type rmqListenerImpl struct {
 	connector   rmqservices.RabbitConnector
-	userService services.UserService
+	userService sharedservices.UserService
 	ctx         context.Context
 }
 
@@ -66,6 +66,6 @@ func (r rmqListenerImpl) Run() {
 	<-forever
 }
 
-func NewRmqListener(connector rmqservices.RabbitConnector, userService services.UserService) RmqListener {
+func NewRmqListener(connector rmqservices.RabbitConnector, userService sharedservices.UserService) RmqListener {
 	return &rmqListenerImpl{ctx: context.Background(), connector: connector, userService: userService}
 }

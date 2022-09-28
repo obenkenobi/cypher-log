@@ -6,8 +6,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb/userpbmapper"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
 )
 
 type UserServiceServerImpl struct {
@@ -19,7 +19,7 @@ func (u UserServiceServerImpl) GetUserById(ctx context.Context, request *userpb.
 	userFindSrc := u.userService.GetById(ctx, request.GetId())
 	userReplySrc := single.Map(userFindSrc, func(userDto userdtos.UserDto) *userpb.UserReply {
 		userReply := &userpb.UserReply{}
-		userpbmapper.MapUserDtoToUserReply(&userDto, userReply)
+		grpcmappers.MapUserDtoToUserReply(&userDto, userReply)
 		return userReply
 	})
 	res, err := single.RetrieveValue(ctx, userReplySrc)
@@ -33,7 +33,7 @@ func (u UserServiceServerImpl) GetUserByAuthId(
 	userFindSrc := u.userService.GetByAuthId(ctx, request.GetAuthId())
 	userReplySrc := single.Map(userFindSrc, func(userDto userdtos.UserDto) *userpb.UserReply {
 		userReply := &userpb.UserReply{}
-		userpbmapper.MapUserDtoToUserReply(&userDto, userReply)
+		grpcmappers.MapUserDtoToUserReply(&userDto, userReply)
 		return userReply
 	})
 	res, err := single.RetrieveValue(ctx, userReplySrc)

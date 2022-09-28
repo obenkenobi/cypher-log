@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	adapter "github.com/gwatts/gin-adapter"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 	"net/http"
 )
 

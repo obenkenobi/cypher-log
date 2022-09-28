@@ -2,21 +2,22 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 )
 
 type TestController interface {
-	webservices.Controller
+	controller.Controller
 }
 
 type testControllerImpl struct {
-	userService    services.UserService
+	userService    sharedservices.UserService
 	authMiddleware middlewares.AuthMiddleware
-	ginCtxService  webservices.GinCtxService
+	ginCtxService  ginservices.GinCtxService
 }
 
 func (u testControllerImpl) AddRoutes(r *gin.Engine) {
@@ -33,8 +34,8 @@ func (u testControllerImpl) AddRoutes(r *gin.Engine) {
 
 func NewTestController(
 	authMiddleware middlewares.AuthMiddleware,
-	userService services.UserService,
-	ginCtxService webservices.GinCtxService,
+	userService sharedservices.UserService,
+	ginCtxService ginservices.GinCtxService,
 ) TestController {
 	return &testControllerImpl{
 		authMiddleware: authMiddleware,

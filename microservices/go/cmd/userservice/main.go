@@ -6,20 +6,20 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/grpcservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gservices/gserveroptions"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/servers"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/webservices"
 	"google.golang.org/grpc"
 )
 
@@ -31,14 +31,14 @@ func main() {
 	serverConf := conf.NewServerConf()
 	auth0Conf := authconf.NewAuth0SecurityConf()
 	mongoCOnf := conf.NewMongoConf()
-	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
+	mongoHandler := dshandlers.NewMongoHandler(mongoCOnf)
 	tlsConf := conf.NewTlsConf()
 	rabbitMqConf := conf.NewRabbitMQConf()
 	rabbitMqConnector := rmqservices.NewRabbitConnector(rabbitMqConf)
 	defer rabbitMqConnector.Close()
 	userMsgSendService := services.NewUserMessageServiceImpl(rabbitMqConnector)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
-	errorService := errorservices.NewErrorService()
+	errorService := sharedservices.NewErrorService()
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0Conf)
 	userService := services.NewUserService(
@@ -54,11 +54,11 @@ func main() {
 	var taskRunners []taskrunner.TaskRunner
 
 	if environment.ActivateAppServer() { // Add app server
-		ginCtxService := webservices.NewGinCtxService(errorService)
+		ginCtxService := ginservices.NewGinCtxService(errorService)
 		apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
 		authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
 		userController := controllers.NewUserController(authMiddleware, userService, ginCtxService)
-		appServer := webservices.NewAppServer(serverConf, tlsConf, userController)
+		appServer := servers.NewAppServer(serverConf, tlsConf, userController)
 		taskRunners = append(taskRunners, appServer)
 	}
 
@@ -74,7 +74,7 @@ func main() {
 				credentialsOptionCreator.CreateCredentialsOption(),
 			)
 		}
-		grpcServer := gservices.NewGrpcServer(
+		grpcServer := servers.NewGrpcServer(
 			serverConf,
 			func(s *grpc.Server) {
 				userpb.RegisterUserServiceServer(s, grpcservers.NewUserServiceServer(userService))

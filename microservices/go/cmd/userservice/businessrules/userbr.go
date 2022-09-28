@@ -5,12 +5,12 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 )
 
 type UserBr interface {
@@ -28,9 +28,9 @@ type UserBr interface {
 }
 
 type UserBrImpl struct {
-	crudDBHandler  dbservices.CrudDBHandler
+	crudDBHandler  dshandlers.CrudDSHandler
 	userRepository repositories.UserRepository
-	errorService   errorservices.ErrorService
+	errorService   sharedservices.ErrorService
 }
 
 func (u UserBrImpl) ValidateUserCreate(
@@ -73,9 +73,9 @@ func (u UserBrImpl) validateUserNameNotTaken(
 }
 
 func NewUserBrImpl(
-	crudDBHandler dbservices.CrudDBHandler,
+	crudDBHandler dshandlers.CrudDSHandler,
 	userRepository repositories.UserRepository,
-	errorMessageService errorservices.ErrorService,
+	errorMessageService sharedservices.ErrorService,
 ) UserBr {
 	return &UserBrImpl{crudDBHandler: crudDBHandler, userRepository: userRepository, errorService: errorMessageService}
 }

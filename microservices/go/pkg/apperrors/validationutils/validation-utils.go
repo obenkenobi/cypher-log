@@ -3,13 +3,13 @@ package validationutils
 import (
 	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
 func ValidateValueIsNotPresent[V any](
-	errorService errorservices.ErrorService,
+	errorService sharedservices.ErrorService,
 	valSrc single.Single[option.Maybe[V]],
 	notPresentErrorCode string,
 ) single.Single[[]apperrors.RuleError] {
@@ -22,7 +22,7 @@ func ValidateValueIsNotPresent[V any](
 }
 
 func ValidateValueIsPresent[V any](
-	errorService errorservices.ErrorService,
+	errorService sharedservices.ErrorService,
 	valSrc single.Single[option.Maybe[V]],
 	notPresentErrorCode string,
 ) single.Single[[]apperrors.RuleError] {
