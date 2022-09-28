@@ -1,6 +1,9 @@
 package models
 
-import "github.com/kamva/mgm/v3"
+import (
+	"github.com/kamva/mgm/v3"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
+)
 
 type User struct {
 	// DefaultModel adds _id, created_at and updated_at fields to the Model
@@ -22,4 +25,13 @@ func (u User) IsIdEmpty() bool {
 
 func (u *User) CollectionName() string {
 	return "users"
+}
+
+func (u User) IsChangedFromExternalDto(extUserDto userdtos.UserDto) bool {
+	return extUserDto.Id != u.UserId ||
+		extUserDto.UserName != u.UserName ||
+		extUserDto.DisplayName != u.DisplayName ||
+		extUserDto.CreatedAt != u.UserCreatedAt ||
+		extUserDto.UpdatedAt != u.UserCreatedAt
+
 }

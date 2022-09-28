@@ -34,8 +34,12 @@ func (u userServiceImpl) SaveUserAndGetBO(ctx context.Context, userDto userdtos.
 		userFindSrc,
 		func(userMaybe option.Maybe[models.User]) single.Single[models.User] {
 			return option.Map(userMaybe, func(user models.User) single.Single[models.User] {
-				mappers.MapUserDtoToUser(userDto, &user)
-				return u.userRepository.Update(ctx, user)
+				if user.IsChangedFromExternalDto(userDto) {
+					mappers.MapUserDtoToUser(userDto, &user)
+					return u.userRepository.Update(ctx, user)
+				} else {
+					return single.Just(user)
+				}
 			}).OrElseGet(func() single.Single[models.User] {
 				user := models.User{}
 				mappers.MapUserDtoToUser(userDto, &user)
