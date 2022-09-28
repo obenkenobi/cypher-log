@@ -29,6 +29,7 @@ type UserService interface {
 	) single.Single[userdtos.UserDto]
 	DeleteUser(ctx context.Context, identity security.Identity) single.Single[userdtos.UserDto]
 	GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto]
+	GetById(ctx context.Context, userId string) single.Single[userdtos.UserDto]
 	GetUserIdentity(ctx context.Context, identity security.Identity) single.Single[userdtos.UserIdentityDto]
 }
 
@@ -143,6 +144,16 @@ func (u userServiceImpl) GetUserIdentity(
 
 func (u userServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserDto] {
 	userSearchSrc := u.userRepository.FindByAuthId(ctx, authId)
+	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserDto {
+		user := userMaybe.OrElse(models.User{})
+		userDto := userdtos.UserDto{}
+		mappers.MapUserToUserDto(user, &userDto)
+		return userDto
+	})
+}
+
+func (u userServiceImpl) GetById(ctx context.Context, userId string) single.Single[userdtos.UserDto] {
+	userSearchSrc := u.userRepository.FindById(ctx, userId)
 	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserDto {
 		user := userMaybe.OrElse(models.User{})
 		userDto := userdtos.UserDto{}

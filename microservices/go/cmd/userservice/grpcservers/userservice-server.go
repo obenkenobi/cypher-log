@@ -15,6 +15,17 @@ type UserServiceServerImpl struct {
 	userService services.UserService
 }
 
+func (u UserServiceServerImpl) GetUserById(ctx context.Context, request *userpb.IdRequest) (*userpb.UserReply, error) {
+	userFindSrc := u.userService.GetById(ctx, request.GetId())
+	userReplySrc := single.Map(userFindSrc, func(userDto userdtos.UserDto) *userpb.UserReply {
+		userReply := &userpb.UserReply{}
+		userpbmapper.MapUserDtoToUserReply(&userDto, userReply)
+		return userReply
+	})
+	res, err := single.RetrieveValue(ctx, userReplySrc)
+	return res, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
+}
+
 func (u UserServiceServerImpl) GetUserByAuthId(
 	ctx context.Context,
 	request *userpb.AuthIdRequest,
