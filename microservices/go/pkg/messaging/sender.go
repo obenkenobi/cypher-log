@@ -5,5 +5,5 @@ import (
 )
 
 type Sender[T any] interface {
-	Send(T) single.Single[T]
+	Send(body T) single.Single[T]
 }

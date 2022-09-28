@@ -2,11 +2,10 @@ package middlewares
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
-	ginlogrus "github.com/toorop/gin-logrus"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+	ginLog "github.com/toorop/gin-logrus"
 )
 
 func AddGlobalMiddleWares(r *gin.Engine) {
-	log := logging.NewLogger()
-	r.Use(ginlogrus.Logger(log), gin.Recovery())
+	r.Use(ginLog.Logger(logger.Log), gin.Recovery())
 }

@@ -3,8 +3,8 @@ package gtools
 import (
 	"encoding/json"
 	"github.com/akrennmair/slice"
-	apperrors "github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
-	log "github.com/sirupsen/logrus"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -54,7 +54,7 @@ func ProcessErrorToGrpcStatusError(procedureType GrpcAction, err error) error {
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		return processBadReqErr(procedureType, badReqErr)
 	}
-	log.Error(err)
+	logger.Log.Error(err)
 	return status.Error(codes.Internal, "internal error")
 }
 

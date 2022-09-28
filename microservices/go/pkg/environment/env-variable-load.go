@@ -2,13 +2,13 @@ package environment
 
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
 )
 
 func GetEnvVariable(key string) string {
@@ -60,11 +60,17 @@ func GetEnvVarAsTimeDurationOrDefault(key string, defaultValue time.Duration) ti
 	return value
 }
 
+var _envFilesRead = false
+
 func ReadEnvFiles(envFilesNames ...string) {
+	if _envFilesRead {
+		return
+	}
 	for _, envFileName := range envFilesNames {
 		err := godotenv.Load(envFileName)
 		if err != nil {
-			log.Infof("Did not load environment file %v", envFileName)
+			log.Debugf("Did not load environment file %v", envFileName)
 		}
 	}
+	_envFilesRead = true
 }

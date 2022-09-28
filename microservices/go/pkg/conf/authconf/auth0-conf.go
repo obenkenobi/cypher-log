@@ -3,7 +3,7 @@ package authconf
 import (
 	"fmt"
 	environment2 "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	log "github.com/sirupsen/logrus"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"net/url"
 )
 
@@ -53,7 +53,7 @@ func NewAuth0SecurityConf() Auth0SecurityConf {
 	issuerUrlStr := fmt.Sprintf("https://%v/", environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Domain))
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {
-		log.Fatalf("Failed to parse issuer url %v", issuerUrlStr)
+		logger.Log.Fatalf("Failed to parse issuer url %v", issuerUrlStr)
 	}
 	return &Auth0RouteSecurityConfImpl{
 		issuerUrl:               issuerUrl,

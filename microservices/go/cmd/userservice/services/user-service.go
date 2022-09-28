@@ -10,10 +10,10 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
-	log "github.com/sirupsen/logrus"
 )
 
 type UserService interface {
@@ -33,6 +33,7 @@ type UserService interface {
 }
 
 type userServiceImpl struct {
+	userMsgSendService    UserMsgSendService
 	crudDBHandler         dbservices.CrudDBHandler
 	userRepository        repositories.UserRepository
 	userBr                businessrules.UserBr
@@ -52,12 +53,13 @@ func (u userServiceImpl) AddUser(
 		user.AuthId = identity.GetAuthId()
 		return u.userRepository.Create(ctx, user)
 	})
-	return single.Map(userCreateSrc, func(user models.User) userdtos.UserDto {
+	return single.FlatMap(userCreateSrc, func(user models.User) single.Single[userdtos.UserDto] {
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
-		log.Debug("Created user ", userDto)
-		return userDto
+		logger.Log.Debugf("Created user %v", userDto)
+		return u.userMsgSendService.UserCreateSender().Send(userDto)
 	})
+
 }
 
 func (u userServiceImpl) UpdateUser(
@@ -86,11 +88,11 @@ func (u userServiceImpl) UpdateUser(
 		mappers.MapUserSaveDtoToUser(userSaveDto, &user)
 		return u.userRepository.Update(ctx, user)
 	})
-	return single.Map(userSavedSrc, func(user models.User) userdtos.UserDto {
+	return single.FlatMap(userSavedSrc, func(user models.User) single.Single[userdtos.UserDto] {
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
-		log.Debug("Saved user ", userDto)
-		return userDto
+		logger.Log.Debug("Saved user ", userDto)
+		return u.userMsgSendService.UserUpdateSender().Send(userDto)
 	})
 }
 
@@ -118,11 +120,11 @@ func (u userServiceImpl) DeleteUser(ctx context.Context, identity security.Ident
 				func(_ bool) models.User { return user })
 		},
 	)
-	return single.Map(userDeletedAuthServerSrc, func(user models.User) userdtos.UserDto {
+	return single.FlatMap(userDeletedAuthServerSrc, func(user models.User) single.Single[userdtos.UserDto] {
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
-		log.Debug("Deleted user ", userDto)
-		return userDto
+		logger.Log.Debug("Deleted user ", userDto)
+		return u.userMsgSendService.UserDeleteSender().Send(userDto)
 	})
 }
 
@@ -150,6 +152,7 @@ func (u userServiceImpl) GetByAuthId(ctx context.Context, authId string) single.
 }
 
 func NewUserService(
+	userMsgSendService UserMsgSendService,
 	crudDBHandler dbservices.CrudDBHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
@@ -157,6 +160,7 @@ func NewUserService(
 	authServerMgmtService AuthServerMgmtService,
 ) UserService {
 	return &userServiceImpl{
+		userMsgSendService:    userMsgSendService,
 		crudDBHandler:         crudDBHandler,
 		userRepository:        userRepository,
 		userBr:                userBr,

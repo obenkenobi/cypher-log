@@ -1,53 +1,38 @@
 package rmq
 
-import amqp "github.com/rabbitmq/amqp091-go"
+import (
+	"github.com/wagslane/go-rabbitmq"
+)
 
-type ExchangeOptions[T any] struct {
+type Exchange[T any] struct {
 	Name        string
 	Kind        string
 	Durable     bool
 	AutoDeleted bool
 	Internal    bool
 	NoWait      bool
-	Args        amqp.Table
 }
 
-type QueueOptions struct {
-	Name       string
-	Durable    bool
-	AutoDelete bool
-	Exclusive  bool
-	NoWait     bool
-	Args       amqp.Table
+func (e Exchange[T]) GetConsumeOptions() []func(*rabbitmq.ConsumeOptions) {
+	consumeOpts := []func(*rabbitmq.ConsumeOptions){
+		rabbitmq.WithConsumeOptionsBindingExchangeName(e.Name),
+		rabbitmq.WithConsumeOptionsBindingExchangeKind(e.Kind),
+	}
+	if e.Durable {
+		consumeOpts = append(consumeOpts, rabbitmq.WithConsumeOptionsBindingExchangeDurable)
+	}
+	if e.AutoDeleted {
+		consumeOpts = append(consumeOpts, rabbitmq.WithConsumeOptionsBindingExchangeAutoDelete)
+	}
+	if e.Internal {
+		consumeOpts = append(consumeOpts, rabbitmq.WithConsumeOptionsBindingExchangeInternal)
+	}
+	if e.NoWait {
+		consumeOpts = append(consumeOpts, rabbitmq.WithConsumeOptionsBindingExchangeNoWait)
+	}
+	return consumeOpts
 }
 
-type ConsumeOptions struct {
-	Consumer  string
-	AutoAck   bool
-	Exclusive bool
-	NoLocal   bool
-	NoWait    bool
-	Args      amqp.Table
-}
-
-type BindingOptions struct {
-	RoutingKey string
-	BindNoWait bool
-	BindArgs   amqp.Table
-}
-
-type ReceiverOptions[T any] struct {
-	ExchangeOpts       ExchangeOptions[T]
-	QueueOptions       QueueOptions
-	ConsumeOptions     ConsumeOptions
-	BindingOptionsList []BindingOptions
-	Uri                string
-}
-
-type SenderOptions[T any] struct {
-	ExchangeOpts ExchangeOptions[T]
-	RoutingKey   string
-	Mandatory    bool
-	Immediate    bool
-	Uri          string
+func (e Exchange[T]) GetPublishOptions() []func(options *rabbitmq.PublishOptions) {
+	return []func(*rabbitmq.PublishOptions){rabbitmq.WithPublishOptionsExchange(e.Name)}
 }

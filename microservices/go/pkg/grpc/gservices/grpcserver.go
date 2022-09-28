@@ -3,8 +3,8 @@ package gservices
 import (
 	"fmt"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -20,11 +20,11 @@ type grpcServerImpl struct {
 func (g grpcServerImpl) Run() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", g.serverConf.GetGrpcServerPort()))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Log.Fatalf("failed to listen: %v", err)
 	}
-	log.Printf("server listening at %v", lis.Addr())
+	logger.Log.Printf("server listening at %v", lis.Addr())
 	if err := g.server.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		logger.Log.Fatalf("failed to serve: %v", err)
 	}
 }
 

@@ -6,8 +6,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/errorservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -47,7 +47,7 @@ func (h GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError
 		})
 		return apperrors.NewBadReqErrorFromValidationErrors(appValErrors)
 	}
-	log.WithError(err).Info("Unable to bind json")
+	logger.Log.WithError(err).Info("Unable to bind json")
 	cannotBindJsonRuleErr := h.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson)
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
 }
@@ -56,7 +56,7 @@ func (h GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		c.JSON(http.StatusBadRequest, badReqErr)
 	} else {
-		log.Error(err)
+		logger.Log.Error(err)
 		c.Status(http.StatusInternalServerError)
 	}
 }

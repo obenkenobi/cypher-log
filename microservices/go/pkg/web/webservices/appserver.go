@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
-	log "github.com/sirupsen/logrus"
 )
 
 // AppServer represents an interface acts as a general application server that can be run as a task.
@@ -31,7 +31,7 @@ func (s appServerGinImpl) Run() {
 		err = s.router.Run(s.getFormattedPort())
 	}
 	if err != nil {
-		log.WithError(err).Fatal("AppServer failed to run")
+		logger.Log.WithError(err).Fatal("AppServer failed to run")
 		return
 	}
 }

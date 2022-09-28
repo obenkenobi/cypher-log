@@ -3,7 +3,7 @@ package gserveroptions
 import (
 	"crypto/tls"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
-	log "github.com/sirupsen/logrus"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -23,7 +23,7 @@ func (c CredentialsOptionCreatorImpl) CreateCredentialsOption() grpc.ServerOptio
 func (c CredentialsOptionCreatorImpl) loadTLSCredentials() credentials.TransportCredentials {
 	serverCert, err := tls.LoadX509KeyPair(c.tlsConf.ServerCertPath(), c.tlsConf.ServerKeyPath())
 	if err != nil {
-		log.Fatal("cannot load TLS credentials: ", err)
+		logger.Log.Fatal("cannot load TLS credentials: ", err)
 	}
 
 	// Create the credentials and return it

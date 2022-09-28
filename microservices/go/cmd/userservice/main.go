@@ -14,7 +14,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gservices/gserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logging"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security/securityservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
@@ -24,7 +24,6 @@ import (
 
 func main() {
 	environment.ReadEnvFiles(".env", "userservice.env") // Load env files
-	logging.ConfigureGlobalLogging()                    // Configure logging
 
 	// Main dependency graph
 	serverConf := conf.NewServerConf()
@@ -32,11 +31,22 @@ func main() {
 	mongoCOnf := conf.NewMongoConf()
 	mongoHandler := dbservices.NewMongoHandler(mongoCOnf)
 	tlsConf := conf.NewTlsConf()
+	rabbitMqConf := conf.NewRabbitMQConf()
+	rabbitMqConnector := rmqservices.NewRabbitConnector(rabbitMqConf)
+	defer rabbitMqConnector.Close()
+	userMsgSendService := services.NewUserMessageServiceImpl(rabbitMqConnector)
 	userRepository := repositories.NewUserMongoRepository(mongoHandler)
 	errorService := errorservices.NewErrorService()
 	userBr := businessrules.NewUserBrImpl(mongoHandler, userRepository, errorService)
 	authServerMgmtService := services.NewAuthServerMgmtService(auth0Conf)
-	userService := services.NewUserService(mongoHandler, userRepository, userBr, errorService, authServerMgmtService)
+	userService := services.NewUserService(
+		userMsgSendService,
+		mongoHandler,
+		userRepository,
+		userBr,
+		errorService,
+		authServerMgmtService,
+	)
 
 	// Add task dependencies
 	var taskRunners []taskrunner.TaskRunner

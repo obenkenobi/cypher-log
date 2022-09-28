@@ -8,7 +8,7 @@ const EnvVarKeyAppEnvironment = "ENVIRONMENT"
 
 const EnvVarKeyActivateAppServer = "ACTIVATE_APP_SERVER"
 const EnvVarKeyActivateGrpcServer = "ACTIVATE_GRPC_SERVER"
-const EnvVarActivateRabbitMQConsumer = "ACTIVATE_RABBITMQ_CONSUMER"
+const EnvVarActivateRabbitMQListener = "ACTIVATE_RABBITMQ_LISTENER"
 const EnvVarActivateAppServerTLS = "ACTIVATE_APP_SERVER_TLS"
 const EnvVarActivateGRPCAuth = "ACTIVATE_GRPC_AUTH"
 
