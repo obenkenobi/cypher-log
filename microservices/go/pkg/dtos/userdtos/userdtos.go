@@ -15,6 +15,11 @@ type UserDto struct {
 	UpdatedAt   int64  `json:"updatedAt"`
 }
 
+type DistributedUserDto struct {
+	AuthId string  `json:"authId"`
+	User   UserDto `json:"user"`
+}
+
 type UserSaveDto struct {
 	UserName    string `json:"userName" binding:"required"`
 	DisplayName string `json:"displayName" binding:"required"`

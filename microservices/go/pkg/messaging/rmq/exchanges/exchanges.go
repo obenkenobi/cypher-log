@@ -5,7 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 )
 
-var UserSaveExchange = rmq.Exchange[userdtos.UserDto]{
+var UserSaveExchange = rmq.Exchange[userdtos.DistributedUserDto]{
 	Name:        "user_save",
 	Kind:        rmq.ExchangeTypeFanout,
 	Durable:     true,
@@ -14,7 +14,7 @@ var UserSaveExchange = rmq.Exchange[userdtos.UserDto]{
 	NoWait:      false,
 }
 
-var UserDeleteExchange = rmq.Exchange[userdtos.UserDto]{
+var UserDeleteExchange = rmq.Exchange[userdtos.DistributedUserDto]{
 	Name:        "user_delete",
 	Kind:        rmq.ExchangeTypeFanout,
 	Durable:     true,

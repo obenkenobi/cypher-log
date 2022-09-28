@@ -20,11 +20,25 @@ func MapUserToUserDto(source models.User, dest *userdtos.UserDto) {
 	dest.UpdatedAt = source.UpdatedAt.UnixMilli()
 }
 
-func MapToUserDtoAndIdentityToUserIdentityDto(userDto userdtos.UserDto, identity security.Identity,
-	dest *userdtos.UserIdentityDto) {
+func MapToUserDtoAndIdentityToUserIdentityDto(
+	userDto userdtos.UserDto,
+	identity security.Identity,
+	dest *userdtos.UserIdentityDto,
+) {
 	*dest = userdtos.UserIdentityDto{
 		AuthId:      identity.GetAuthId(),
 		Authorities: identity.GetAuthorities(),
 		User:        userDto,
+	}
+}
+
+func MapToUserDtoAndIdentityToDistUserDto(
+	userDto userdtos.UserDto,
+	identity security.Identity,
+	dest *userdtos.DistributedUserDto,
+) {
+	*dest = userdtos.DistributedUserDto{
+		AuthId: identity.GetAuthId(),
+		User:   userDto,
 	}
 }

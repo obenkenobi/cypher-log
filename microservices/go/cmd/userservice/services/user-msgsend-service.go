@@ -9,20 +9,20 @@ import (
 )
 
 type UserMsgSendService interface {
-	UserSaveSender() msg.Sender[userdtos.UserDto]
-	UserDeleteSender() msg.Sender[userdtos.UserDto]
+	UserSaveSender() msg.Sender[userdtos.DistributedUserDto]
+	UserDeleteSender() msg.Sender[userdtos.DistributedUserDto]
 }
 
 type UserMessageServiceImpl struct {
-	userSaveSender   msg.Sender[userdtos.UserDto]
-	userDeleteSender msg.Sender[userdtos.UserDto]
+	userSaveSender   msg.Sender[userdtos.DistributedUserDto]
+	userDeleteSender msg.Sender[userdtos.DistributedUserDto]
 }
 
-func (u UserMessageServiceImpl) UserSaveSender() msg.Sender[userdtos.UserDto] {
+func (u UserMessageServiceImpl) UserSaveSender() msg.Sender[userdtos.DistributedUserDto] {
 	return u.userSaveSender
 }
 
-func (u UserMessageServiceImpl) UserDeleteSender() msg.Sender[userdtos.UserDto] {
+func (u UserMessageServiceImpl) UserDeleteSender() msg.Sender[userdtos.DistributedUserDto] {
 	return u.userDeleteSender
 }
 

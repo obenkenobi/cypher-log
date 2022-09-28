@@ -34,8 +34,8 @@ func (r rmqListenerImpl) ListenUserSave() {
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
-	userCreateReceiver.Listen(func(userDto userdtos.UserDto) error {
-		_, err := single.RetrieveValue(r.ctx, r.userService.SaveUserAndGetBO(r.ctx, userDto))
+	userCreateReceiver.Listen(func(userDto userdtos.DistributedUserDto) error {
+		_, err := single.RetrieveValue(r.ctx, r.userService.SaveUser(r.ctx, userDto))
 		return err
 	}, true)
 	logger.Log.Info("Listening for user saves")
@@ -52,8 +52,8 @@ func (r rmqListenerImpl) ListenUserDelete() {
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
-	userCreateReceiver.Listen(func(userDto userdtos.UserDto) error {
-		_, err := single.RetrieveValue(r.ctx, r.userService.DeleteUserIfFoundAndGetBO(r.ctx, userDto))
+	userCreateReceiver.Listen(func(userDto userdtos.DistributedUserDto) error {
+		_, err := single.RetrieveValue(r.ctx, r.userService.DeleteUser(r.ctx, userDto))
 		return err
 	}, true)
 	logger.Log.Info("Listening for user deletions")

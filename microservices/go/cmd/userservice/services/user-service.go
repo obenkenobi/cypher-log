@@ -11,6 +11,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/database/dbservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
@@ -42,6 +43,19 @@ type userServiceImpl struct {
 	authServerMgmtService AuthServerMgmtService
 }
 
+func (u userServiceImpl) sendUserChange(
+	sender messaging.Sender[userdtos.DistributedUserDto],
+	userDto userdtos.UserDto,
+	identity security.Identity,
+) single.Single[userdtos.UserDto] {
+	distUserDto := userdtos.DistributedUserDto{}
+	mappers.MapToUserDtoAndIdentityToDistUserDto(userDto, identity, &distUserDto)
+	return single.Map(sender.Send(distUserDto), func(_ userdtos.DistributedUserDto) userdtos.UserDto {
+		return userDto
+	},
+	)
+}
+
 func (u userServiceImpl) AddUser(
 	ctx context.Context,
 	identity security.Identity,
@@ -58,7 +72,7 @@ func (u userServiceImpl) AddUser(
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
 		logger.Log.Debugf("Created user %v", userDto)
-		return u.userMsgSendService.UserSaveSender().Send(userDto)
+		return u.sendUserChange(u.userMsgSendService.UserSaveSender(), userDto, identity)
 	})
 
 }
@@ -93,7 +107,7 @@ func (u userServiceImpl) UpdateUser(
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
 		logger.Log.Debug("Saved user ", userDto)
-		return u.userMsgSendService.UserSaveSender().Send(userDto)
+		return u.sendUserChange(u.userMsgSendService.UserSaveSender(), userDto, identity)
 	})
 }
 
@@ -125,7 +139,7 @@ func (u userServiceImpl) DeleteUser(ctx context.Context, identity security.Ident
 		userDto := userdtos.UserDto{}
 		mappers.MapUserToUserDto(user, &userDto)
 		logger.Log.Debug("Deleted user ", userDto)
-		return u.userMsgSendService.UserDeleteSender().Send(userDto)
+		return u.sendUserChange(u.userMsgSendService.UserDeleteSender(), userDto, identity)
 	})
 }
 

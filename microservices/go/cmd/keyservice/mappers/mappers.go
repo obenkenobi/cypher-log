@@ -6,7 +6,12 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 )
 
-func MapUserDtoToUser(userDto userdtos.UserDto, user *models.User) {
+func MapDistUserToUser(distUser userdtos.DistributedUserDto, user *models.User) {
+	MapAuthIdAndUserDtoToUser(distUser.AuthId, distUser.User, user)
+}
+
+func MapAuthIdAndUserDtoToUser(authId string, userDto userdtos.UserDto, user *models.User) {
+	user.AuthId = authId
 	user.UserId = userDto.Id
 	user.UserName = userDto.UserName
 	user.DisplayName = userDto.DisplayName

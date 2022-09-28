@@ -13,6 +13,7 @@ import (
 type UserRepository interface {
 	dbservices.CRUDRepository[models.User, string]
 	FindByUserId(ctx context.Context, userId string) single.Single[option.Maybe[models.User]]
+	FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]]
 }
 
 type UserRepositoryImpl struct {
@@ -52,6 +53,14 @@ func (u UserRepositoryImpl) FindByUserId(ctx context.Context, userId string) sin
 	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		user := models.User{}
 		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"userId": userId}, &user)
+		return user, err
+	})
+}
+
+func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[models.User]] {
+	return dbservices.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
+		user := models.User{}
+		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"authId": authId}, &user)
 		return user, err
 	})
 }
