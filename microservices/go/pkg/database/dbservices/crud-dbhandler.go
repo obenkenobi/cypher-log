@@ -55,10 +55,11 @@ func (d MongoDBHandler) ExecTransaction(transactionFunc func(Session, context.Co
 }
 
 func NewMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
-	if err := mgm.SetDefaultConfig(
+	err := mgm.SetDefaultConfig(
 		&mgm.Config{CtxTimeout: mongoConf.GetConnectionTimeout()},
 		mongoConf.GetDBName(),
-		options.Client().ApplyURI(mongoConf.GetUri())); err != nil {
+		options.Client().ApplyURI(mongoConf.GetUri()))
+	if err != nil {
 		logger.Log.WithError(err).Fatal("Failed to set mongodb config")
 	}
 	return &MongoDBHandler{mongoConf: mongoConf}
