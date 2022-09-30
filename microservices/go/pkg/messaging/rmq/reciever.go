@@ -23,6 +23,7 @@ func readBody[T any](delivery rabbitmq.Delivery) (T, error) {
 		var err error = nil
 		if !ok {
 			err = fmt.Errorf("failed to read consumed value as string")
+			logger.Log.Error(err)
 		}
 		return body, err
 	}
@@ -40,7 +41,7 @@ type Receiver[T any] struct {
 	consumeOpts  []func(options *rabbitmq.ConsumeOptions)
 }
 
-func (r Receiver[T]) Listen(listener func(body T) error, resendIfErr bool) {
+func (r Receiver[T]) Listen(listener func(delivery messaging.Delivery[T]) messaging.ReceiverAction) {
 	consumeOpts := append(r.exchange.GetConsumeOptions(), r.consumeOpts...)
 	if utils.StringIsNotBlank(r.consumerName) {
 		consumeOpts = append(consumeOpts, rabbitmq.WithConsumeOptionsConsumerName(r.consumerName))
@@ -48,18 +49,20 @@ func (r Receiver[T]) Listen(listener func(body T) error, resendIfErr bool) {
 	err := r.consumer.StartConsuming(
 		func(d rabbitmq.Delivery) rabbitmq.Action {
 			body, err := readBody[T](d)
-			if err == nil {
-				err = listener(body)
-			}
 			if err != nil {
-				logger.Log.Error(err)
-				if resendIfErr {
-					return rabbitmq.NackRequeue
-				}
 				return rabbitmq.NackDiscard
 			}
-			logger.Log.Debugf("consumed: %v", string(d.Body))
-			return rabbitmq.Ack
+			action := listener(messaging.NewDelivery(body))
+			switch action {
+			case messaging.Commit:
+				return rabbitmq.Ack
+			case messaging.Discard:
+				return rabbitmq.NackDiscard
+			case messaging.Resend:
+				return rabbitmq.NackRequeue
+			default:
+				return rabbitmq.Action(action)
+			}
 		},
 		r.queue,
 		r.routingKeys,
