@@ -30,7 +30,24 @@ credentials, either set up your own Auth0 realm or use an existing one.
 
 ### Docker Dev Dependencies
 This project requires dependencies such as MongoDB and Redis. To quickly install such files, a docker compose file 
-exists in `dev/`. Go to `dev/` and run `docker-compose up` to run your dependencies. Add the `-d` argument to run in 
-detach mode. Alternatively you can use your IDE to run `docker-compose`.
+exists in `dev/docker`. Go to `dev/docker` and run `docker-compose up` to run your dependencies. 
+Add the `-d` argument to run in detach mode. Alternatively you can use your IDE to run `docker-compose`.
+
+#### MongoDB hosts
+MongoDB replica sets in docker require your hosts to be updated.
+
+If you use windows, open the file `C:\Windows\System32\drivers\etc\hosts`
+and add `127.0.0.1 mongo0 mongo1 mongo` to the file.
+
+If on a linux server, use the hostname provided by the docker compose file <br>
+e.g. `HOSTNAME = mongo1, mongo2, mongo3`
+
+If on MacOS add the following to your `/etc/hosts` file and use localhost as the HOSTNAME.
+```
+127.0.0.1  mongo1
+127.0.0.1  mongo2
+127.0.0.1  mongo3
+```
+
 
 ### Todo: Add migrations and Go run instructions

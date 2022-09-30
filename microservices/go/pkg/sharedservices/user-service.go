@@ -50,11 +50,11 @@ func (u userServiceImpl) DeleteUser(
 	userSavedSrc := single.FlatMap(
 		userFindSrc,
 		func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
-			return option.Map(userMaybe, func(user cModels.User) single.Single[cModels.User] {
+			if user, isPresent := userMaybe.Get(); isPresent {
 				return u.userRepository.Delete(ctx, user)
-			}).OrElseGet(func() single.Single[cModels.User] {
+			} else {
 				return single.Just(cModels.User{})
-			})
+			}
 		},
 	)
 	return single.Map(userSavedSrc, func(u cModels.User) userbos.UserBo {
@@ -67,7 +67,9 @@ func (u userServiceImpl) DeleteUser(
 func (u userServiceImpl) RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo] {
 	userFindSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
 	userSrc := single.FlatMap(userFindSrc, func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
-		return option.Map(userMaybe, single.Just[cModels.User]).OrElseGet(func() single.Single[cModels.User] {
+		if user, isPresent := userMaybe.Get(); isPresent {
+			return single.Just(user)
+		} else {
 			// If user is not stored locally in the database
 			extUserFindSrc := u.extUserService.GetByAuthId(ctx, identity.GetAuthId())
 			return single.FlatMap(extUserFindSrc, func(extUserDto userdtos.UserReadDto) single.Single[cModels.User] {
@@ -77,7 +79,7 @@ func (u userServiceImpl) RequireUser(ctx context.Context, identity security.Iden
 				}
 				return u.saveUserDataAndGetModel(ctx, identity.GetAuthId(), extUserDto.BaseUserPublicDto)
 			})
-		})
+		}
 	})
 	return single.Map(userSrc, func(user cModels.User) userbos.UserBo {
 		userBo := userbos.UserBo{}
@@ -95,14 +97,16 @@ func (u userServiceImpl) saveUserDataAndGetModel(
 	return single.FlatMap(
 		userFindSrc,
 		func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
-			return option.Map(userMaybe, func(user cModels.User) single.Single[cModels.User] {
-				sharedmappers.AuthIdAndUserPublicDtoToUserModel(authId, userPublicDto, &user)
+			user, isPresent := userMaybe.Get()
+			if !isPresent {
+				user = cModels.User{}
+			}
+			sharedmappers.AuthIdAndUserPublicDtoToUserModel(authId, userPublicDto, &user)
+			if isPresent {
 				return u.userRepository.Update(ctx, user)
-			}).OrElseGet(func() single.Single[cModels.User] {
-				user := cModels.User{}
-				sharedmappers.AuthIdAndUserPublicDtoToUserModel(authId, userPublicDto, &user)
+			} else {
 				return u.userRepository.Create(ctx, user)
-			})
+			}
 		},
 	)
 }

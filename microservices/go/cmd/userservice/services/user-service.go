@@ -44,98 +44,119 @@ type userServiceImpl struct {
 }
 
 func (u userServiceImpl) AddUser(
-	ctx context.Context,
+	_ context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserReadDto] {
-	userCreateValidationSrc := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
-	userCreateSrc := single.FlatMap(userCreateValidationSrc, func([]apperrors.RuleError) single.Single[models.User] {
-		user := models.User{}
-		mappers.UserSaveDtoToUser(userSaveDto, &user)
-		user.AuthId = identity.GetAuthId()
-		return u.userRepository.Create(ctx, user)
-	})
-	return single.FlatMap(userCreateSrc, func(user models.User) single.Single[userdtos.UserReadDto] {
-		userDto := userdtos.UserReadDto{}
-		mappers.UserToUserDto(user, &userDto)
-		logger.Log.Debugf("Created user %v", userDto)
-		return u.sendUserSave(userDto, identity)
-	})
+	return dshandlers.TransactionalSingle(
+		u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
+			userCreateValidationSrc := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
+			userCreateSrc := single.FlatMap(
+				userCreateValidationSrc,
+				func([]apperrors.RuleError) single.Single[models.User] {
+					user := models.User{}
+					mappers.UserSaveDtoToUser(userSaveDto, &user)
+					user.AuthId = identity.GetAuthId()
+					return u.userRepository.Create(ctx, user)
+				},
+			)
+			return single.FlatMap(userCreateSrc, func(user models.User) single.Single[userdtos.UserReadDto] {
+				userDto := userdtos.UserReadDto{}
+				mappers.UserToUserDto(user, &userDto)
+				logger.Log.Debugf("Created user %v", userDto)
+				return u.sendUserSave(userDto, identity)
+			})
+		},
+	)
 
 }
 
 func (u userServiceImpl) UpdateUser(
-	ctx context.Context,
+	_ context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserReadDto] {
-	userSearchSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
-	userExistsSrc := single.MapWithError(
-		userSearchSrc,
-		func(userMaybe option.Maybe[models.User]) (models.User, error) {
-			if user, ok := userMaybe.Get(); ok {
-				return user, nil
-			} else {
-				err := apperrors.NewBadReqErrorFromRuleError(
-					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
-				return user, err
-			}
-		},
-	)
-	userValidatedSrc := single.FlatMap(userExistsSrc, func(existingUser models.User) single.Single[models.User] {
-		validationSrc := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
-		return single.Map(validationSrc, func([]apperrors.RuleError) models.User { return existingUser })
-	})
-	userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
-		mappers.UserSaveDtoToUser(userSaveDto, &user)
-		return u.userRepository.Update(ctx, user)
-	})
-	return single.FlatMap(userSavedSrc, func(user models.User) single.Single[userdtos.UserReadDto] {
-		userDto := userdtos.UserReadDto{}
-		mappers.UserToUserDto(user, &userDto)
-		logger.Log.Debug("Saved user ", userDto)
-
-		return u.sendUserSave(userDto, identity)
-	})
-}
-
-func (u userServiceImpl) DeleteUser(ctx context.Context, identity security.Identity) single.Single[userdtos.UserReadDto] {
-	userSearchSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
-	userExistsSrc := single.MapWithError(
-		userSearchSrc,
-		func(userMaybe option.Maybe[models.User]) (models.User, error) {
-			if user, ok := userMaybe.Get(); ok {
-				return user, nil
-			} else {
-				err := apperrors.NewBadReqErrorFromRuleError(
-					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
-				return user, err
-			}
-		},
-	)
-	userDeletedLocalDBSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
-		return u.userRepository.Delete(ctx, user)
-	})
-	userDeletedAuthServerSrc := single.FlatMap(
-		userDeletedLocalDBSrc,
-		func(user models.User) single.Single[models.User] {
-			return single.Map(u.authServerMgmtService.DeleteUser(identity.GetAuthId()),
-				func(_ bool) models.User { return user })
-		},
-	)
-	return single.FlatMap(userDeletedAuthServerSrc, func(user models.User) single.Single[userdtos.UserReadDto] {
-		logger.Log.Debug("Deleted user ", user)
-		userDeleteDto := userdtos.DistUserDeleteDto{}
-		mappers.UserToDistUserDeleteDto(user, &userDeleteDto)
-		return single.Map(
-			u.userMsgSendService.UserDeleteSender().Send(userDeleteDto),
-			func(_ userdtos.DistUserDeleteDto) userdtos.UserReadDto {
+	return dshandlers.TransactionalSingle(
+		u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
+			userSearchSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
+			userExistsSrc := single.MapWithError(
+				userSearchSrc,
+				func(userMaybe option.Maybe[models.User]) (models.User, error) {
+					if user, isPresent := userMaybe.Get(); isPresent {
+						return user, nil
+					} else {
+						err := apperrors.NewBadReqErrorFromRuleError(
+							u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
+						return user, err
+					}
+				},
+			)
+			userValidatedSrc := single.FlatMap(
+				userExistsSrc,
+				func(existingUser models.User) single.Single[models.User] {
+					validationSrc := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
+					return single.Map(validationSrc, func([]apperrors.RuleError) models.User { return existingUser })
+				},
+			)
+			userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
+				mappers.UserSaveDtoToUser(userSaveDto, &user)
+				return u.userRepository.Update(ctx, user)
+			})
+			return single.FlatMap(userSavedSrc, func(user models.User) single.Single[userdtos.UserReadDto] {
 				userDto := userdtos.UserReadDto{}
 				mappers.UserToUserDto(user, &userDto)
-				return userDto
-			},
-		)
-	})
+				logger.Log.Debug("Saved user ", userDto)
+
+				return u.sendUserSave(userDto, identity)
+			})
+		},
+	)
+
+}
+
+func (u userServiceImpl) DeleteUser(_ context.Context, identity security.Identity) single.Single[userdtos.UserReadDto] {
+	return dshandlers.TransactionalSingle(
+		u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
+			userSearchSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
+			userExistsSrc := single.MapWithError(
+				userSearchSrc,
+				func(userMaybe option.Maybe[models.User]) (models.User, error) {
+					if user, isPresent := userMaybe.Get(); isPresent {
+						return user, nil
+					} else {
+						err := apperrors.NewBadReqErrorFromRuleError(
+							u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
+						return user, err
+					}
+				},
+			)
+			userDeletedLocalDBSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
+				return u.userRepository.Delete(ctx, user)
+			})
+			userDeletedAuthServerSrc := single.FlatMap(
+				userDeletedLocalDBSrc,
+				func(user models.User) single.Single[models.User] {
+					return single.Map(u.authServerMgmtService.DeleteUser(identity.GetAuthId()),
+						func(_ bool) models.User { return user })
+				},
+			)
+			return single.FlatMap(userDeletedAuthServerSrc, func(user models.User) single.Single[userdtos.UserReadDto] {
+				logger.Log.Debug("Deleted user ", user)
+				userDeleteDto := userdtos.DistUserDeleteDto{}
+				mappers.UserToDistUserDeleteDto(user, &userDeleteDto)
+				return single.Map(
+					u.userMsgSendService.UserDeleteSender().Send(userDeleteDto),
+					func(_ userdtos.DistUserDeleteDto) userdtos.UserReadDto {
+						userDto := userdtos.UserReadDto{}
+						mappers.UserToUserDto(user, &userDto)
+						return userDto
+					},
+				)
+			})
+		})
 }
 
 func (u userServiceImpl) GetUserIdentity(
