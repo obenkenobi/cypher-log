@@ -2,16 +2,15 @@ package mappers
 
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 )
 
-func MapUserSaveDtoToUser(source userdtos.UserSaveDto, dest *models.User) {
+func UserSaveDtoToUser(source userdtos.UserSaveDto, dest *models.User) {
 	dest.UserName = source.UserName
 	dest.DisplayName = source.DisplayName
 }
 
-func MapUserToUserDto(source models.User, dest *userdtos.UserDto) {
+func UserToUserDto(source models.User, dest *userdtos.UserReadDto) {
 	dest.Id = source.GetIdStr()
 	dest.Exists = !source.IsIdEmpty()
 	dest.UserName = source.UserName
@@ -20,25 +19,6 @@ func MapUserToUserDto(source models.User, dest *userdtos.UserDto) {
 	dest.UpdatedAt = source.UpdatedAt.UnixMilli()
 }
 
-func MapToUserDtoAndIdentityToUserIdentityDto(
-	userDto userdtos.UserDto,
-	identity security.Identity,
-	dest *userdtos.UserIdentityDto,
-) {
-	*dest = userdtos.UserIdentityDto{
-		AuthId:      identity.GetAuthId(),
-		Authorities: identity.GetAuthorities(),
-		User:        userDto,
-	}
-}
-
-func MapToUserDtoAndIdentityToDistUserDto(
-	userDto userdtos.UserDto,
-	identity security.Identity,
-	dest *userdtos.DistributedUserDto,
-) {
-	*dest = userdtos.DistributedUserDto{
-		AuthId: identity.GetAuthId(),
-		User:   userDto,
-	}
+func UserToDistUserDeleteDto(source models.User, dest *userdtos.DistUserDeleteDto) {
+	dest.Id = source.GetIdStr()
 }

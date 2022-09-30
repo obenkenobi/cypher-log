@@ -3,10 +3,10 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/routing"
@@ -30,7 +30,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			readValFromBodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 			addUserSrc := single.FlatMap(readValFromBodySrc,
-				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
+				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
 					return u.userService.AddUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			userDto, err := single.RetrieveValue(c, addUserSrc)
@@ -42,7 +42,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			readValFromBodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 			updateUserSrc := single.FlatMap(readValFromBodySrc,
-				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserDto] {
+				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
 					return u.userService.UpdateUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			userDto, err := single.RetrieveValue(c, updateUserSrc)

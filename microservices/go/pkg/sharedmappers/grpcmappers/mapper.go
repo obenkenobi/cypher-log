@@ -1,11 +1,11 @@
 package grpcmappers
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 )
 
-func MapUserDtoToUserReply(dto *userdtos.UserDto, reply *userpb.UserReply) {
+func MapUserReadDtoToUserReply(dto *userdtos.UserReadDto, reply *userpb.UserReply) {
 	reply.Id = dto.Id
 	reply.Exists = dto.Exists
 	reply.UserName = dto.UserName
@@ -14,7 +14,7 @@ func MapUserDtoToUserReply(dto *userdtos.UserDto, reply *userpb.UserReply) {
 	reply.UpdatedAt = dto.UpdatedAt
 }
 
-func MapUserReplyToUserDto(reply *userpb.UserReply, dto *userdtos.UserDto) {
+func MapUserReplyToUserReadDto(reply *userpb.UserReply, dto *userdtos.UserReadDto) {
 	dto.Id = reply.Id
 	dto.Exists = reply.Exists
 	dto.UserName = reply.UserName

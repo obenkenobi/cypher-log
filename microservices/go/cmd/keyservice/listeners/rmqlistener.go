@@ -2,11 +2,11 @@ package listeners
 
 import (
 	"context"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
@@ -34,7 +34,7 @@ func (r rmqListenerImpl) ListenUserSave() {
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
-	userCreateReceiver.Listen(func(userDto userdtos.DistributedUserDto) error {
+	userCreateReceiver.Listen(func(userDto userdtos.DistUserSaveDto) error {
 		_, err := single.RetrieveValue(r.ctx, r.userService.SaveUser(r.ctx, userDto))
 		return err
 	}, true)
@@ -52,7 +52,7 @@ func (r rmqListenerImpl) ListenUserDelete() {
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
-	userCreateReceiver.Listen(func(userDto userdtos.DistributedUserDto) error {
+	userCreateReceiver.Listen(func(userDto userdtos.DistUserDeleteDto) error {
 		_, err := single.RetrieveValue(r.ctx, r.userService.DeleteUser(r.ctx, userDto))
 		return err
 	}, true)

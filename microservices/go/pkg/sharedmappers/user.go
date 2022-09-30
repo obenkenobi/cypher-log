@@ -1,16 +1,18 @@
 package sharedmappers
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedbusinessobjects"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmodels"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/businessobjects/userbos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded/embeddeduser"
 )
 
-func MapDistUserToUser(distUser userdtos.DistributedUserDto, user *sharedmodels.User) {
-	MapAuthIdAndUserDtoToUser(distUser.AuthId, distUser.User, user)
+func DistUserSaveDtoToUser(distUser userdtos.DistUserSaveDto, user *sharedmodels.User) {
+	AuthIdAndUserPublicDtoToUserModel(distUser.AuthId, distUser.BaseUserPublicDto, user)
 }
 
-func MapAuthIdAndUserDtoToUser(authId string, userDto userdtos.UserDto, user *sharedmodels.User) {
+func AuthIdAndUserPublicDtoToUserModel(authId string, userDto embeddeduser.BaseUserPublicDto, user *sharedmodels.User) {
 	user.AuthId = authId
 	user.UserId = userDto.Id
 	user.UserName = userDto.UserName
@@ -19,10 +21,29 @@ func MapAuthIdAndUserDtoToUser(authId string, userDto userdtos.UserDto, user *sh
 	user.UserUpdatedAt = userDto.UpdatedAt
 }
 
-func MapUserToUserBo(user sharedmodels.User, userBo *sharedbusinessobjects.UserBo) {
-	userBo.UserId = user.UserId
+func UserModelToUserBo(user sharedmodels.User, userBo *userbos.UserBo) {
+	userBo.Id = user.UserId
 	userBo.UserName = user.UserName
 	userBo.DisplayName = user.DisplayName
-	userBo.UserCreatedAt = user.UserCreatedAt
-	userBo.UserUpdatedAt = user.UserUpdatedAt
+	userBo.CreatedAt = user.UserCreatedAt
+	userBo.UpdatedAt = user.UserUpdatedAt
+}
+
+func UserReadDtoAndIdentityToUserIdentityDto(
+	userDto userdtos.UserReadDto,
+	identity security.Identity,
+	dest *userdtos.UserIdentityDto,
+) {
+	dest.AuthId = identity.GetAuthId()
+	dest.Authorities = identity.GetAuthorities()
+	dest.UserReadDto = userDto
+}
+
+func UserDtoAndIdentityToDistUserSaveDto(
+	userDto userdtos.UserReadDto,
+	identity security.Identity,
+	dest *userdtos.DistUserSaveDto,
+) {
+	dest.AuthId = identity.GetAuthId()
+	dest.BaseUserPublicDto = userDto.BaseUserPublicDto
 }

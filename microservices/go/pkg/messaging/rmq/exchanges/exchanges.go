@@ -1,11 +1,11 @@
 package exchanges
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 )
 
-var UserSaveExchange = rmq.Exchange[userdtos.DistributedUserDto]{
+var UserSaveExchange = rmq.Exchange[userdtos.DistUserSaveDto]{
 	Name:        "user_save",
 	Kind:        rmq.ExchangeTypeFanout,
 	Durable:     true,
@@ -14,7 +14,7 @@ var UserSaveExchange = rmq.Exchange[userdtos.DistributedUserDto]{
 	NoWait:      false,
 }
 
-var UserDeleteExchange = rmq.Exchange[userdtos.DistributedUserDto]{
+var UserDeleteExchange = rmq.Exchange[userdtos.DistUserDeleteDto]{
 	Name:        "user_delete",
 	Kind:        rmq.ExchangeTypeFanout,
 	Durable:     true,

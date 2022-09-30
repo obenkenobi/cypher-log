@@ -45,7 +45,7 @@ func main() {
 	userRepository := sharedrepos.NewUserMongoRepository(mongoHandler)
 	errorService := sharedservices.NewErrorService()
 	ginCtxService := ginservices.NewGinCtxService(errorService)
-	userService := sharedservices.NewUserService(userRepository, extUserService)
+	userService := sharedservices.NewUserService(userRepository, extUserService, errorService)
 
 	// Add task dependencies
 	var taskRunners []taskrunner.TaskRunner
