@@ -15,9 +15,10 @@ type Single[T any] struct {
 
 func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
 
-// ScheduleAsync takes a single and returns a new Single that is scheduled to be
-// evaluated asynchronously up until point of execution of the returning single.
-func (s Single[T]) ScheduleAsync(ctx context.Context) Single[T] {
+// ScheduleEagerAsync takes a single and returns a new Single that is scheduled
+// to be evaluated eagerly and asynchronously up until point of execution of the
+// returning single.
+func (s Single[T]) ScheduleEagerAsync(ctx context.Context) Single[T] {
 	ch, errCh := ToChannels(ctx, s)
 	return FromChannels(ch, errCh)
 }

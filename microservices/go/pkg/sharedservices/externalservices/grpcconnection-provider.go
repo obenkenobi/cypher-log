@@ -21,11 +21,11 @@ type CoreGrpcConnProviderImpl struct {
 func (u CoreGrpcConnProviderImpl) CreateConnectionSingle(ctx context.Context, address string) single.Single[*grpc.ClientConn] {
 	var dialOptSources []single.Single[grpc.DialOption]
 	if environment.ActivateGRPCAuth() {
-		oathTokenSrc := single.FromSupplier(u.systemAccessTokenClient.GetGRPCAccessToken).ScheduleAsync(ctx)
+		oathTokenSrc := single.FromSupplier(u.systemAccessTokenClient.GetGRPCAccessToken).ScheduleEagerAsync(ctx)
 		if u.tlsConf.WillLoadCACert() {
 			tlsOptSrc := single.FromSupplier(func() (grpc.DialOption, error) {
 				return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
-			}).ScheduleAsync(ctx)
+			}).ScheduleEagerAsync(ctx)
 			dialOptSources = append(dialOptSources, tlsOptSrc)
 		}
 		oathOptSrc := single.Map(oathTokenSrc, gtools.OathAccessOption)
