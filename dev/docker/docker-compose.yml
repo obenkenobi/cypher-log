@@ -2,7 +2,7 @@ version: '3.7'
 services:
   mongo-setup:
     container_name: mongo-setup
-    image: mongo
+    image: mongo:5.0.9-focal
     restart: on-failure
     networks:
       default:
@@ -17,7 +17,7 @@ services:
   mongo1:
     hostname: mongo1
     container_name: localmongo1
-    image: mongo
+    image: mongo:5.0.9-focal
     expose:
       - 27017
     ports:
@@ -30,7 +30,7 @@ services:
   mongo2:
     hostname: mongo2
     container_name: localmongo2
-    image: mongo
+    image: mongo:5.0.9-focal
     expose:
       - 27017
     ports:
@@ -43,7 +43,7 @@ services:
   mongo3:
     hostname: mongo3
     container_name: localmongo3
-    image: mongo
+    image: mongo:5.0.9-focal
     expose:
       - 27017
     ports:
@@ -54,16 +54,21 @@ services:
       - ./volumes/mongo/data3/db:/data/db
       - ./volumes/mongo/data3/configdb:/data/configdb
   redis:
-    image: bitnami/redis:latest
+    image: bitnami/redis:7.0-debian-11
     environment:
       REDIS_PASSWORD: password
     ports:
       - '6379:6379'
+    volumes:
+      - ./volumes/bitnami/redis:/bitnami
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
     ports:
       - "5672:5672"
       - "15672:15672"
+    volumes:
+      - ./volumes/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./volumes/rabbitmq/log/:/var/log/rabbitmq
