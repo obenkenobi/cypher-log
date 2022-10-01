@@ -2,7 +2,9 @@ package mappers
 
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded/embeddeduser"
 )
 
 func UserSaveDtoToUser(source userdtos.UserSaveDto, dest *models.User) {
@@ -11,14 +13,17 @@ func UserSaveDtoToUser(source userdtos.UserSaveDto, dest *models.User) {
 }
 
 func UserToUserDto(source models.User, dest *userdtos.UserReadDto) {
-	dest.Id = source.GetIdStr()
 	dest.Exists = !source.IsIdEmpty()
-	dest.UserName = source.UserName
-	dest.DisplayName = source.DisplayName
-	dest.CreatedAt = source.CreatedAt.UnixMilli()
-	dest.UpdatedAt = source.UpdatedAt.UnixMilli()
+	userToUserPublicDto(source, &dest.BaseUserPublicDto)
 }
 
-func UserToDistUserDeleteDto(source models.User, dest *userdtos.DistUserDeleteDto) {
-	dest.Id = source.GetIdStr()
+func UserToUserChangeEventDto(source models.User, dest *userdtos.UserChangeEventDto) {
+	dest.AuthId = source.AuthId
+	userToUserPublicDto(source, &dest.BaseUserPublicDto)
+}
+
+func userToUserPublicDto(source models.User, dest *embeddeduser.BaseUserPublicDto) {
+	sharedmappers.MapMongoModelToBaseCrudObject(&source, &dest.BaseCRUDObject)
+	dest.UserName = source.UserName
+	dest.DisplayName = source.DisplayName
 }

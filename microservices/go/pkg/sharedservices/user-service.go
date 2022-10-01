@@ -18,8 +18,8 @@ import (
 
 type UserService interface {
 	RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo]
-	SaveUser(ctx context.Context, distUserDto userdtos.DistUserSaveDto) single.Single[userbos.UserBo]
-	DeleteUser(ctx context.Context, distUserDto userdtos.DistUserDeleteDto) single.Single[userbos.UserBo]
+	SaveUser(ctx context.Context, distUserDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
+	DeleteUser(ctx context.Context, distUserDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
 }
 
 type userServiceImpl struct {
@@ -30,10 +30,10 @@ type userServiceImpl struct {
 
 func (u userServiceImpl) SaveUser(
 	ctx context.Context,
-	distUserDto userdtos.DistUserSaveDto,
+	userEventDto userdtos.UserChangeEventDto,
 ) single.Single[userbos.UserBo] {
-	logger.Log.Debugf("saving user %v", distUserDto)
-	userSavedSrc := u.saveUserDataAndGetModel(ctx, distUserDto.AuthId, distUserDto.BaseUserPublicDto)
+	logger.Log.Debugf("saving user %v", userEventDto)
+	userSavedSrc := u.saveUserDataAndGetModel(ctx, userEventDto.AuthId, userEventDto.BaseUserPublicDto)
 	return single.Map(userSavedSrc, func(u cModels.User) userbos.UserBo {
 		userBo := userbos.UserBo{}
 		sharedmappers.UserModelToUserBo(u, &userBo)
@@ -43,10 +43,10 @@ func (u userServiceImpl) SaveUser(
 
 func (u userServiceImpl) DeleteUser(
 	ctx context.Context,
-	distUserDto userdtos.DistUserDeleteDto,
+	userEventDto userdtos.UserChangeEventDto,
 ) single.Single[userbos.UserBo] {
-	logger.Log.Debugf("deleting user %v", distUserDto)
-	userFindSrc := u.userRepository.FindByUserId(ctx, distUserDto.Id)
+	logger.Log.Debugf("deleting user %v", userEventDto)
+	userFindSrc := u.userRepository.FindByUserId(ctx, userEventDto.Id)
 	userSavedSrc := single.FlatMap(
 		userFindSrc,
 		func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {

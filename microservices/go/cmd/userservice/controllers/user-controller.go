@@ -52,7 +52,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1.DELETE("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			updateUserSrc := u.userService.DeleteUser(c, security.GetIdentityFromGinContext(c))
+			updateUserSrc := u.userService.StartDeleteUser(c, security.GetIdentityFromGinContext(c))
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})

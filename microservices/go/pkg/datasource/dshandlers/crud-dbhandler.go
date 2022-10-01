@@ -77,11 +77,11 @@ func TransactionalSingle[T any](
 	})
 }
 
-// TransactionalEagerAsyncObservable creates a deferred Observable that waits for
+// TransactionalObservable creates a deferred Observable that waits for
 // a transaction to be completed. The supplier function runs within the
 // transaction scope. The returned observable from the supplier is evaluated
 // asynchronously and eagerly within the transaction scope.
-func TransactionalEagerAsyncObservable[T any](
+func TransactionalObservable[T any](
 	d CrudDSHandler,
 	supplier func(Session, context.Context) stream.Observable[T],
 ) stream.Observable[T] {

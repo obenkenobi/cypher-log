@@ -8,3 +8,8 @@ type BaseTimestamp struct {
 	CreatedAt int64 `json:"createdAt"`
 	UpdatedAt int64 `json:"updatedAt"`
 }
+
+type BaseCRUDObject struct {
+	BaseId
+	BaseTimestamp
+}

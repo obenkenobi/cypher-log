@@ -1,7 +1,6 @@
 package userdtos
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded/embeddeduser"
 )
 
@@ -16,13 +15,17 @@ type UserReadDto struct {
 	Exists bool `json:"exists"`
 }
 
-type DistUserSaveDto struct {
+type UserChangeAction bool
+
+const (
+	UserSave   UserChangeAction = true
+	UserDelete UserChangeAction = false
+)
+
+type UserChangeEventDto struct {
 	embeddeduser.BaseUserPublicDto
 	embeddeduser.BaseUserAuthId
-}
-
-type DistUserDeleteDto struct {
-	embedded.BaseId
+	Action UserChangeAction `json:"action"`
 }
 
 type UserSaveDto struct {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/background"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/grpcservers"
@@ -83,6 +84,8 @@ func main() {
 		)
 		taskRunners = append(taskRunners, grpcServer)
 	}
+
+	taskRunners = append(taskRunners, background.NewCronRunner(userService)) // Add Cron runner
 
 	// Run taskRunners
 	taskrunner.RunAndWait(taskRunners...)

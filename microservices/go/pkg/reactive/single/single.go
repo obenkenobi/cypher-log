@@ -2,6 +2,7 @@ package single
 
 import (
 	"context"
+	"github.com/akrennmair/slice"
 	"github.com/joamaki/goreactive/stream"
 	"sync"
 )
@@ -13,6 +14,9 @@ type Single[T any] struct {
 	src stream.Observable[T]
 }
 
+// ToObservable turns the Single into an observable. (Warning: the provided
+// single can no longer reliably be used to read values as they may be used up by
+// the observable instead.)
 func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
 
 // ScheduleEagerAsync takes a single and returns a new Single that is scheduled
@@ -63,6 +67,11 @@ func (a *singleChanReadObservable[T]) Observe(ctx context.Context, next func(T) 
 	return next(value)
 }
 
+func FromObservableAsList[T any](obs stream.Observable[T]) Single[[]T] {
+	listObs := stream.Reduce(obs, []T{}, func(res []T, v T) []T { return append(res, v) })
+	return fromSingleObservable(listObs)
+}
+
 // FromChannel Creates a single that listens to a single value from a channel.
 // Recommended for channels that only emmit one value. If a channel emits
 // multiple values, it is recommended you use observables instead.
@@ -77,10 +86,10 @@ func FromChannels[T any](ch <-chan T, chErr <-chan error) Single[T] {
 }
 
 // Just creates a single from a single item
-func Just[T any](val T) Single[T] { return fromObservable(stream.Just(val)) }
+func Just[T any](val T) Single[T] { return fromSingleObservable(stream.Just(val)) }
 
 // Error creates a single that fails immediately with the given error
-func Error[T any](err error) Single[T] { return fromObservable(stream.Error[T](err)) }
+func Error[T any](err error) Single[T] { return fromSingleObservable(stream.Error[T](err)) }
 
 // FromSupplier
 //creates a single out of a supplier function that returns a value or an error
@@ -98,17 +107,17 @@ func FromSupplier[T any](supplier func() (T, error)) Single[T] {
 		}
 		return next(val)
 	})
-	return fromObservable(src)
+	return fromSingleObservable(src)
 }
 
 // Map applies a function onto a Single
 func Map[A any, B any](src Single[A], apply func(A) B) Single[B] {
-	return fromObservable[B](stream.Map(src.ToObservable(), func(a A) B { return apply(a) }))
+	return fromSingleObservable[B](stream.Map(src.ToObservable(), func(a A) B { return apply(a) }))
 }
 
 // MapWithError applies a function onto a Single where if an error is returned, the Single fails
 func MapWithError[A any, B any](src Single[A], apply func(A) (B, error)) Single[B] {
-	return fromObservable[B](
+	return fromSingleObservable[B](
 		stream.FuncObservable[B](func(ctx context.Context, next func(B) error) error {
 			return src.ToObservable().Observe(
 				ctx,
@@ -126,7 +135,14 @@ func MapWithError[A any, B any](src Single[A], apply func(A) (B, error)) Single[
 // Zip2 Takes 2 Singles and returns a Single that emits a tuple of each of the
 // singles in the order they are supplied
 func Zip2[V1 any, V2 any](src1 Single[V1], src2 Single[V2]) Single[stream.Tuple2[V1, V2]] {
-	return fromObservable(stream.Zip2(src1.ToObservable(), src2.ToObservable()))
+	return fromSingleObservable(stream.Zip2(src1.ToObservable(), src2.ToObservable()))
+}
+
+func MergeSingles[T any](singles []Single[T]) stream.Observable[T] {
+	observables := slice.Map(singles, func(s Single[T]) stream.Observable[T] {
+		return s.ToObservable()
+	})
+	return stream.Merge(observables...)
 }
 
 // FlatMap applies a function that returns a single of V2 to the source single of V1.
@@ -148,6 +164,6 @@ func ToChannels[T any](ctx context.Context, src Single[T]) (<-chan T, <-chan err
 	return stream.ToChannels(ctx, src.ToObservable())
 }
 
-func fromObservable[T any](src stream.Observable[T]) Single[T] {
+func fromSingleObservable[T any](src stream.Observable[T]) Single[T] {
 	return Single[T]{src: src}
 }

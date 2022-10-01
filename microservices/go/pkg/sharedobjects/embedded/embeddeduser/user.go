@@ -13,6 +13,5 @@ type BaseUserAuthId struct {
 
 type BaseUserPublicDto struct {
 	BaseUserCommon
-	embedded.BaseTimestamp
-	embedded.BaseId
+	embedded.BaseCRUDObject
 }

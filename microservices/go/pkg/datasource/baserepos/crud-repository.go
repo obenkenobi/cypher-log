@@ -11,7 +11,7 @@ type CRUDRepository[VModel any, VID any] interface {
 	// Create saves a new model to a data store. The model is updated with the saved
 	// values from the database onto the same model and then is emitted by a Single.
 	// The model should be a pointer.
-	Create(ctx context.Context, modelRef VModel) single.Single[VModel]
+	Create(ctx context.Context, model VModel) single.Single[VModel]
 
 	// Update saves an existing model to a data store. The model is updated with the
 	// saved values from the data store onto the same model and then is emitted by a

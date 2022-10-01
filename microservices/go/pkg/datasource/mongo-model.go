@@ -1,6 +1,9 @@
 package datasource
 
-import "github.com/kamva/mgm/v3"
+import (
+	"github.com/kamva/mgm/v3"
+	"time"
+)
 
 // MongoModel An interface representing functionalities MongoDB model structures must have
 type MongoModel interface {
@@ -11,4 +14,6 @@ type MongoModel interface {
 	GetIdStr() string
 	// IsIdEmpty Checks if the ID is not set
 	IsIdEmpty() bool
+	GetCreatedAt() time.Time
+	GetUpdatedAt() time.Time
 }

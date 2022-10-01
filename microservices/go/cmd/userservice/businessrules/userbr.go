@@ -41,7 +41,7 @@ func (u UserBrImpl) ValidateUserCreate(
 	userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto).ScheduleEagerAsync(ctx)
 	userNotCreatedValidationSrc := validationutils.ValidateValueIsNotPresent(
 		u.errorService,
-		u.userRepository.FindByAuthId(ctx, identity.GetAuthId()).ScheduleEagerAsync(ctx),
+		u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId()).ScheduleEagerAsync(ctx),
 		apperrors.ErrCodeResourceAlreadyCreated,
 	)
 	ruleErrorsSrc := validationutils.ConcatSinglesOfRuleErrs(userNameNotTakenValidationSrc, userNotCreatedValidationSrc)
@@ -67,7 +67,7 @@ func (u UserBrImpl) validateUserNameNotTaken(
 ) single.Single[[]apperrors.RuleError] {
 	return validationutils.ValidateValueIsNotPresent(
 		u.errorService,
-		u.userRepository.FindByUsername(ctx, dto.UserName),
+		u.userRepository.FindByUsernameAndNotToBeDeleted(ctx, dto.UserName),
 		apperrors.ErrCodeUsernameTaken,
 	)
 }

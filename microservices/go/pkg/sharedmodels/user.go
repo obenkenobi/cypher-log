@@ -2,6 +2,7 @@ package sharedmodels
 
 import (
 	"github.com/kamva/mgm/v3"
+	"time"
 )
 
 type User struct {
@@ -25,4 +26,12 @@ func (u User) IsIdEmpty() bool {
 
 func (u *User) CollectionName() string {
 	return "users"
+}
+
+func (u User) GetCreatedAt() time.Time {
+	return u.CreatedAt
+}
+
+func (u User) GetUpdatedAt() time.Time {
+	return u.UpdatedAt
 }

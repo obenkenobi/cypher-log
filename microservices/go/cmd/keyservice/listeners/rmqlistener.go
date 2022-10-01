@@ -7,6 +7,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
@@ -24,50 +25,38 @@ type rmqListenerImpl struct {
 	ctx         context.Context
 }
 
-func (r rmqListenerImpl) ListenUserSave() {
+func (r rmqListenerImpl) ListenUserChange() {
 	userCreateReceiver := rmq.NewReceiver(
 		r.connector.GetConsumer(),
-		"key_service_user_save",
+		"key_service_user_change",
 		rmq.RoutingKeysDefault,
-		"",
-		exchanges.UserSaveExchange,
+		rmq.ConsumerDefault,
+		exchanges.UserChangeExchange,
 		rabbitmq.WithConsumeOptionsConcurrency(10),
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
-	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.DistUserSaveDto]) msg.ReceiverAction {
-		if _, err := single.RetrieveValue(r.ctx, r.userService.SaveUser(r.ctx, d.Body())); err != nil {
+	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.UserChangeEventDto]) msg.ReceiverAction {
+		var userActionSrc single.Single[userbos.UserBo]
+		switch d.Body().Action {
+		case userdtos.UserSave:
+			userActionSrc = r.userService.SaveUser(r.ctx, d.Body())
+		case userdtos.UserDelete:
+			userActionSrc = r.userService.DeleteUser(r.ctx, d.Body())
+		default:
+			return d.Discard()
+		}
+		if _, err := single.RetrieveValue(r.ctx, userActionSrc); err != nil {
 			d.Resend()
 		}
 		return d.Commit()
 	})
-	logger.Log.Info("Listening for user saves")
-}
-
-func (r rmqListenerImpl) ListenUserDelete() {
-	userCreateReceiver := rmq.NewReceiver(
-		r.connector.GetConsumer(),
-		"key_service_user_delete",
-		rmq.RoutingKeysDefault,
-		"",
-		exchanges.UserDeleteExchange,
-		rabbitmq.WithConsumeOptionsConcurrency(10),
-		rabbitmq.WithConsumeOptionsQueueDurable,
-		rabbitmq.WithConsumeOptionsQuorum,
-	)
-	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.DistUserDeleteDto]) msg.ReceiverAction {
-		if _, err := single.RetrieveValue(r.ctx, r.userService.DeleteUser(r.ctx, d.Body())); err != nil {
-			d.Resend()
-		}
-		return d.Commit()
-	})
-	logger.Log.Info("Listening for user deletions")
+	logger.Log.Info("Listening for user changes")
 }
 
 func (r rmqListenerImpl) Run() {
+	r.ListenUserChange()
 	forever := make(chan any)
-	r.ListenUserSave()
-	r.ListenUserDelete()
 	<-forever
 }
 

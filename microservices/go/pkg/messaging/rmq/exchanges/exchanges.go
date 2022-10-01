@@ -5,17 +5,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 )
 
-var UserSaveExchange = rmq.Exchange[userdtos.DistUserSaveDto]{
-	Name:        "user_save",
-	Kind:        rmq.ExchangeTypeFanout,
-	Durable:     true,
-	AutoDeleted: false,
-	Internal:    false,
-	NoWait:      false,
-}
-
-var UserDeleteExchange = rmq.Exchange[userdtos.DistUserDeleteDto]{
-	Name:        "user_delete",
+var UserChangeExchange = rmq.Exchange[userdtos.UserChangeEventDto]{
+	Name:        "user_change",
 	Kind:        rmq.ExchangeTypeFanout,
 	Durable:     true,
 	AutoDeleted: false,

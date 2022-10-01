@@ -8,7 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded/embeddeduser"
 )
 
-func DistUserSaveDtoToUser(distUser userdtos.DistUserSaveDto, user *sharedmodels.User) {
+func UserChangeEventDtoToUser(distUser userdtos.UserChangeEventDto, user *sharedmodels.User) {
 	AuthIdAndUserPublicDtoToUserModel(distUser.AuthId, distUser.BaseUserPublicDto, user)
 }
 
@@ -37,13 +37,4 @@ func UserReadDtoAndIdentityToUserIdentityDto(
 	dest.AuthId = identity.GetAuthId()
 	dest.Authorities = identity.GetAuthorities()
 	dest.UserReadDto = userDto
-}
-
-func UserDtoAndIdentityToDistUserSaveDto(
-	userDto userdtos.UserReadDto,
-	identity security.Identity,
-	dest *userdtos.DistUserSaveDto,
-) {
-	dest.AuthId = identity.GetAuthId()
-	dest.BaseUserPublicDto = userDto.BaseUserPublicDto
 }
