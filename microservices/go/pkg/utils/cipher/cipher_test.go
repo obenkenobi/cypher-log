@@ -25,6 +25,7 @@ func TestPasswordBasedEncryption(t *testing.T) {
 
 		cv.Convey("Expect the derived key can encrypt and decrypt a message", func() {
 			testKeyCanEncryptAndDecrypt(key, startTimeMilli)
+			logWithTimestamp("Tested key can encrypt & decrypt", startTimeMilli)
 		})
 		cv.Convey("Create a newly generated key from the password and generated salt", func() {
 			newKey, _, err := cipher.DeriveKey([]byte(password), keyDerivationSalt)
@@ -33,6 +34,7 @@ func TestPasswordBasedEncryption(t *testing.T) {
 
 			cv.Convey("Expect the new key can encrypt and decrypt a message", func() {
 				testKeyCanEncryptAndDecrypt(newKey, startTimeMilli)
+				logWithTimestamp("Tested new key can encrypt & decrypt", startTimeMilli)
 
 				cv.Convey("Expect the new key will match the key hash", func(c cv.C) {
 					isVerified, err := cipher.VerifyKeyHash(keyHash, newKey)
