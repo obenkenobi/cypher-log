@@ -31,7 +31,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			readValFromBodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 			addUserSrc := single.FlatMap(readValFromBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
-					return u.userService.AddUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
+					return u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			userDto, err := single.RetrieveValue(c, addUserSrc)
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
@@ -43,7 +43,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 			readValFromBodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 			updateUserSrc := single.FlatMap(readValFromBodySrc,
 				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
-					return u.userService.UpdateUser(c, security.GetIdentityFromGinContext(c), userSaveDto)
+					return u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto)
 				})
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
@@ -52,7 +52,7 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1.DELETE("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			updateUserSrc := u.userService.StartDeleteUser(c, security.GetIdentityFromGinContext(c))
+			updateUserSrc := u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
 			userDto, err := single.RetrieveValue(c, updateUserSrc)
 			u.ginCtxService.RespondJsonOkOrError(c, userDto, err)
 		})

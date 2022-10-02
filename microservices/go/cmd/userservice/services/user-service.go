@@ -20,17 +20,17 @@ import (
 )
 
 type UserService interface {
-	AddUser(
+	AddUserTransaction(
 		ctx context.Context,
 		identity security.Identity,
 		userSaveDto userdtos.UserSaveDto,
 	) single.Single[userdtos.UserReadDto]
-	UpdateUser(
+	UpdateUserTransaction(
 		ctx context.Context,
 		identity security.Identity,
 		userSaveDto userdtos.UserSaveDto,
 	) single.Single[userdtos.UserReadDto]
-	StartDeleteUser(ctx context.Context, identity security.Identity) single.Single[userdtos.UserReadDto]
+	BeginDeletingUserTransaction(ctx context.Context, identity security.Identity) single.Single[userdtos.UserReadDto]
 	GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserReadDto]
 	GetById(ctx context.Context, userId string) single.Single[userdtos.UserReadDto]
 	GetUserIdentity(ctx context.Context, identity security.Identity) single.Single[userdtos.UserIdentityDto]
@@ -46,12 +46,13 @@ type userServiceImpl struct {
 	authServerMgmtService AuthServerMgmtService
 }
 
-func (u userServiceImpl) AddUser(
-	_ context.Context,
+func (u userServiceImpl) AddUserTransaction(
+	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserReadDto] {
 	return dshandlers.TransactionalSingle(
+		ctx,
 		u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
 			userCreateValidationSrc := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
@@ -75,12 +76,13 @@ func (u userServiceImpl) AddUser(
 
 }
 
-func (u userServiceImpl) UpdateUser(
-	_ context.Context,
+func (u userServiceImpl) UpdateUserTransaction(
+	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserReadDto] {
 	return dshandlers.TransactionalSingle(
+		ctx,
 		u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
 			userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
@@ -118,8 +120,12 @@ func (u userServiceImpl) UpdateUser(
 
 }
 
-func (u userServiceImpl) StartDeleteUser(_ context.Context, identity security.Identity) single.Single[userdtos.UserReadDto] {
+func (u userServiceImpl) BeginDeletingUserTransaction(
+	ctx context.Context,
+	identity security.Identity,
+) single.Single[userdtos.UserReadDto] {
 	return dshandlers.TransactionalSingle(
+		ctx,
 		u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
 			userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
@@ -183,9 +189,9 @@ func (u userServiceImpl) UsersChangeTask(ctx context.Context) {
 	for user := range usersCh {
 		var src single.Single[any]
 		if user.ToBeDeleted {
-			src = single.Map(u.deleteUserTransaction(user), utils.CastToAny[userdtos.UserChangeEventDto])
+			src = single.Map(u.deleteUserTransaction(ctx, user), utils.CastToAny[userdtos.UserChangeEventDto])
 		} else {
-			src = single.Map(u.distributeUserChange(user), utils.CastToAny[userdtos.UserChangeEventDto])
+			src = single.Map(u.distributeUserChangeTransaction(ctx, user), utils.CastToAny[userdtos.UserChangeEventDto])
 		}
 		actionSingles = append(actionSingles, src.ScheduleEagerAsync(ctx))
 	}
@@ -201,20 +207,18 @@ func (u userServiceImpl) UsersChangeTask(ctx context.Context) {
 
 }
 
-func (u userServiceImpl) deleteUserTransaction(user models.User) single.Single[userdtos.UserChangeEventDto] {
+func (u userServiceImpl) deleteUserTransaction(
+	ctx context.Context,
+	user models.User,
+) single.Single[userdtos.UserChangeEventDto] {
 	return dshandlers.TransactionalSingle(
+		ctx,
 		u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
-			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserDelete).ScheduleEagerAsync(ctx)
-			userDeletedLocalDBSrc := u.userRepository.Delete(ctx, user).ScheduleEagerAsync(ctx)
-			userDeletedInAppSrc := single.Map(
-				single.Zip2(userDeletedLocalDBSrc, sendUserChangeSrc),
-				func(t stream.Tuple2[models.User, userdtos.UserChangeEventDto]) models.User {
-					return t.V1
-				})
-
+			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserDelete)
+			userDeletedLocalDBSrc := u.userRepository.Delete(ctx, user)
 			userDeletedAuthServerSrc := single.FlatMap(
-				userDeletedInAppSrc,
+				userDeletedLocalDBSrc,
 				func(user models.User) single.Single[models.User] {
 					return single.Map(u.authServerMgmtService.DeleteUser(user.AuthId),
 						func(_ bool) models.User { return user })
@@ -230,8 +234,12 @@ func (u userServiceImpl) deleteUserTransaction(user models.User) single.Single[u
 		})
 }
 
-func (u userServiceImpl) distributeUserChange(user models.User) single.Single[userdtos.UserChangeEventDto] {
+func (u userServiceImpl) distributeUserChangeTransaction(
+	ctx context.Context,
+	user models.User,
+) single.Single[userdtos.UserChangeEventDto] {
 	return dshandlers.TransactionalSingle(
+		ctx,
 		u.crudDSHandler,
 		func(session dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
 			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserSave)

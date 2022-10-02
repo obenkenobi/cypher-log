@@ -38,10 +38,10 @@ func (u UserBrImpl) ValidateUserCreate(
 	identity security.Identity,
 	dto userdtos.UserSaveDto,
 ) single.Single[[]apperrors.RuleError] {
-	userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto).ScheduleEagerAsync(ctx)
+	userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto)
 	userNotCreatedValidationSrc := validationutils.ValidateValueIsNotPresent(
 		u.errorService,
-		u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId()).ScheduleEagerAsync(ctx),
+		u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId()),
 		apperrors.ErrCodeResourceAlreadyCreated,
 	)
 	ruleErrorsSrc := validationutils.ConcatSinglesOfRuleErrs(userNameNotTakenValidationSrc, userNotCreatedValidationSrc)

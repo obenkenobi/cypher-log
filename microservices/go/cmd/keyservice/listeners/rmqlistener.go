@@ -2,14 +2,13 @@ package listeners
 
 import (
 	"context"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	msg "github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"github.com/wagslane/go-rabbitmq"
@@ -20,9 +19,9 @@ type RmqListener interface {
 }
 
 type rmqListenerImpl struct {
-	connector   rmqservices.RabbitConnector
-	userService sharedservices.UserService
-	ctx         context.Context
+	connector              rmqservices.RabbitConnector
+	userChangeEventService services.UserChangeEventService
+	ctx                    context.Context
 }
 
 func (r rmqListenerImpl) ListenUserChange() {
@@ -37,19 +36,15 @@ func (r rmqListenerImpl) ListenUserChange() {
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
 	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.UserChangeEventDto]) msg.ReceiverAction {
-		var userActionSrc single.Single[userbos.UserBo]
-		switch d.Body().Action {
-		case userdtos.UserSave:
-			userActionSrc = r.userService.SaveUser(r.ctx, d.Body())
-		case userdtos.UserDelete:
-			userActionSrc = r.userService.DeleteUser(r.ctx, d.Body())
-		default:
+		resSrc := r.userChangeEventService.HandleUserChangeEventTransaction(r.ctx, d.Body())
+		res, err := single.RetrieveValue(r.ctx, resSrc)
+		if err != nil {
+			return d.Resend()
+		} else if res.Discarded {
 			return d.Discard()
+		} else {
+			return d.Commit()
 		}
-		if _, err := single.RetrieveValue(r.ctx, userActionSrc); err != nil {
-			d.Resend()
-		}
-		return d.Commit()
 	})
 	logger.Log.Info("Listening for user changes")
 }
@@ -60,6 +55,13 @@ func (r rmqListenerImpl) Run() {
 	<-forever
 }
 
-func NewRmqListener(connector rmqservices.RabbitConnector, userService sharedservices.UserService) RmqListener {
-	return &rmqListenerImpl{ctx: context.Background(), connector: connector, userService: userService}
+func NewRmqListener(
+	connector rmqservices.RabbitConnector,
+	userChangeEventService services.UserChangeEventService,
+) RmqListener {
+	return &rmqListenerImpl{
+		ctx:                    context.Background(),
+		connector:              connector,
+		userChangeEventService: userChangeEventService,
+	}
 }

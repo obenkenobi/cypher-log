@@ -18,8 +18,8 @@ import (
 
 type UserService interface {
 	RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo]
-	SaveUser(ctx context.Context, distUserDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
-	DeleteUser(ctx context.Context, distUserDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
+	SaveUser(ctx context.Context, userEventDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
+	DeleteUser(ctx context.Context, userEventDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
 }
 
 type userServiceImpl struct {

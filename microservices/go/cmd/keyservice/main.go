@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
@@ -43,9 +45,11 @@ func main() {
 	mongoCOnf := conf.NewMongoConf()
 	mongoHandler := dshandlers.NewMongoHandler(mongoCOnf)
 	userRepository := sharedrepos.NewUserMongoRepository(mongoHandler)
+	userKeyRepository := repositories.NewUserKeyRepository(mongoHandler)
 	errorService := sharedservices.NewErrorService()
 	ginCtxService := ginservices.NewGinCtxService(errorService)
 	userService := sharedservices.NewUserService(userRepository, extUserService, errorService)
+	userChangeEventService := services.NewUserChangeEventService(userService, userKeyRepository, mongoHandler)
 
 	// Add task dependencies
 	var taskRunners []taskrunner.TaskRunner
@@ -58,7 +62,7 @@ func main() {
 		taskRunners = append(taskRunners, appServer)
 	}
 	if environment.ActivateRabbitMqListener() {
-		rmqListener := listeners.NewRmqListener(rabbitMqConnector, userService)
+		rmqListener := listeners.NewRmqListener(rabbitMqConnector, userChangeEventService)
 		taskRunners = append(taskRunners, rmqListener)
 	}
 

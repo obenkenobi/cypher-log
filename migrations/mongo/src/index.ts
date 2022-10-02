@@ -1,7 +1,9 @@
 import { mongoMigrateCli } from 'mongo-migrate-ts';
 import * as dotenv from 'dotenv'
 
-dotenv.config()
+if (process.env.IGNORE_ENV !== "true") {
+    dotenv.config()
+}
 
 console.log(process.env.MIGRATION_DIRECTORY)
 mongoMigrateCli({

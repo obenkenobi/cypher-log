@@ -15,17 +15,21 @@ type UserReadDto struct {
 	Exists bool `json:"exists"`
 }
 
-type UserChangeAction bool
+type UserChangeAction int64
 
 const (
-	UserSave   UserChangeAction = true
-	UserDelete UserChangeAction = false
+	UserSave UserChangeAction = iota
+	UserDelete
 )
 
 type UserChangeEventDto struct {
 	embeddeduser.BaseUserPublicDto
 	embeddeduser.BaseUserAuthId
 	Action UserChangeAction `json:"action"`
+}
+
+type UserChangeEventResponseDto struct {
+	Discarded bool
 }
 
 type UserSaveDto struct {
