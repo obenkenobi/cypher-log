@@ -8,6 +8,8 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+const KeyLength = 32
+
 // Encrypt encrypts your data
 func Encrypt(key, data []byte) ([]byte, error) {
 	blockCipher, err := aes.NewCipher(key)
@@ -64,7 +66,7 @@ func DeriveKey(password, salt []byte) (derivedKey []byte, passwordSalt []byte, e
 		}
 	}
 
-	key, err := scrypt.Key(password, salt, 32768, 8, 1, 32)
+	key, err := scrypt.Key(password, salt, 32768, 8, 1, KeyLength)
 	if err != nil {
 		return nil, nil, err
 	}

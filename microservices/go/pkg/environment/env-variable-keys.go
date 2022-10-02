@@ -11,6 +11,7 @@ const EnvVarKeyActivateGrpcServer = "ACTIVATE_GRPC_SERVER"
 const EnvVarActivateRabbitMQListener = "ACTIVATE_RABBITMQ_LISTENER"
 const EnvVarActivateAppServerTLS = "ACTIVATE_APP_SERVER_TLS"
 const EnvVarActivateGRPCAuth = "ACTIVATE_GRPC_AUTH"
+const EnvVarActivateCronRunner = "ACTIVATE_CRON_RUNNER"
 
 // SSL/TLS
 

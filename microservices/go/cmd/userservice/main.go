@@ -11,13 +11,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gserveroptions"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/grpcserveropts"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
@@ -67,8 +67,8 @@ func main() {
 		var grpcOpts []grpc.ServerOption
 		if environment.ActivateGRPCAuth() {
 			grpcAuth0JwtValidateService := securityservices.NewGrpcAuth0JwtValidateService(auth0Conf)
-			authInterceptorCreator := gserveroptions.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
-			credentialsOptionCreator := gserveroptions.NewCredentialsOptionCreator(tlsConf)
+			authInterceptorCreator := grpcserveropts.NewAuthInterceptorCreator(grpcAuth0JwtValidateService)
+			credentialsOptionCreator := grpcserveropts.NewCredentialsOptionCreator(tlsConf)
 			grpcOpts = append(
 				grpcOpts,
 				authInterceptorCreator.CreateUnaryInterceptor(),
@@ -85,7 +85,9 @@ func main() {
 		taskRunners = append(taskRunners, grpcServer)
 	}
 
-	taskRunners = append(taskRunners, background.NewCronRunner(userService)) // Add Cron runner
+	if environment.ActivateCronRunner() { // Add Cron runner
+		taskRunners = append(taskRunners, background.NewCronRunner(userService))
+	}
 
 	// Run taskRunners
 	taskrunner.RunAndWait(taskRunners...)

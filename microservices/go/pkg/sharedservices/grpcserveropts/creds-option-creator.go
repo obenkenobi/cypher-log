@@ -1,4 +1,4 @@
-package gserveroptions
+package grpcserveropts
 
 import (
 	"crypto/tls"

@@ -1,7 +1,13 @@
 package environment
 
-func ActivateAppServer() bool  { return GetEnvVarAsBoolOrDefault(EnvVarKeyActivateAppServer, true) }
-func ActivateGrpcServer() bool { return GetEnvVarAsBoolOrDefault(EnvVarKeyActivateGrpcServer, true) }
+func ActivateAppServer() bool {
+	return GetEnvVarAsBoolOrDefault(EnvVarKeyActivateAppServer, true)
+}
+
+func ActivateGrpcServer() bool {
+	return GetEnvVarAsBoolOrDefault(EnvVarKeyActivateGrpcServer, true)
+}
+
 func ActivateRabbitMqListener() bool {
 	return GetEnvVarAsBoolOrDefault(EnvVarActivateRabbitMQListener, true)
 }
@@ -12,4 +18,8 @@ func ActivateGRPCAuth() bool {
 
 func ActivateAppServerTLS() bool {
 	return GetEnvVarAsBoolOrDefault(EnvVarActivateAppServerTLS, true)
+}
+
+func ActivateCronRunner() bool {
+	return GetEnvVarAsBoolOrDefault(EnvVarActivateCronRunner, true)
 }
