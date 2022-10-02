@@ -6,7 +6,7 @@ import (
 )
 
 func getTextFormatter() *log.TextFormatter {
-	return &log.TextFormatter{DisableColors: false, FullTimestamp: true}
+	return &log.TextFormatter{DisableColors: false, ForceColors: true, FullTimestamp: true}
 }
 
 func getJsonFormatter() *log.JSONFormatter { return &log.JSONFormatter{} }
@@ -27,6 +27,13 @@ func configureLoggerFromEnv(logger *log.Logger) {
 	}
 }
 
-var Log = log.New()
+func newLogger() *log.Logger {
+	logger := log.New()
+	logger.SetFormatter(getTextFormatter())
+	logger.SetLevel(log.DebugLevel)
+	return logger
+}
+
+var Log = newLogger()
 
 func ConfigureLoggerFromEnv() { configureLoggerFromEnv(Log) }

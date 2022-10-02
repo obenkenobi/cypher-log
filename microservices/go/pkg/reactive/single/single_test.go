@@ -2,7 +2,6 @@ package single_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	cv "github.com/smartystreets/goconvey/convey"
@@ -22,33 +21,24 @@ func TestSingleFromSupplierAsync(t *testing.T) {
 			twoExpected, threeExpected := 2, 3
 			tupleExpected := stream.Tuple2[int, int]{V1: twoExpected, V2: threeExpected}
 
-			cv.Convey(
-				fmt.Sprintf(
-					"Expect zipping twoSrc and threeSrc successfully results in a tuple of (%v, %v)",
-					twoExpected,
-					threeExpected,
-				),
-				func() {
-					zipped := single.Zip2(twoSrc, threeSrc)
-					value, err := single.RetrieveValue(ctx, zipped)
-					cv.So(err, cv.ShouldBeNil)
-					cv.So(tupleExpected, cv.ShouldResemble, value)
-				},
-			)
+			cv.Convey("Expect zipping twoSrc and threeSrc successfully results in the expected tuples", func() {
+				zipped := single.Zip2(twoSrc, threeSrc)
+				value, err := single.RetrieveValue(ctx, zipped)
+				cv.So(err, cv.ShouldBeNil)
+				cv.So(tupleExpected, cv.ShouldResemble, value)
+			})
 
-			cv.Convey(fmt.Sprintf("Expect twoSrc returns %v when the value is retrieved", twoExpected), func() {
+			cv.Convey("Expect twoSrc returns the expected value when the value is retrieved", func() {
 				value, err := single.RetrieveValue(ctx, twoSrc)
 				cv.So(err, cv.ShouldBeNil)
 				cv.So(twoExpected, cv.ShouldResemble, value)
 			})
 
-			cv.Convey(
-				fmt.Sprintf("Expect threeSrc returns %v when the value is retrieved", threeExpected),
-				func() {
-					value, err := single.RetrieveValue(ctx, threeSrc)
-					cv.So(err, cv.ShouldBeNil)
-					cv.So(threeExpected, cv.ShouldResemble, value)
-				},
+			cv.Convey("Expect threeSrc returns the expected value when the value is retrieved", func() {
+				value, err := single.RetrieveValue(ctx, threeSrc)
+				cv.So(err, cv.ShouldBeNil)
+				cv.So(threeExpected, cv.ShouldResemble, value)
+			},
 			)
 		})
 	})
