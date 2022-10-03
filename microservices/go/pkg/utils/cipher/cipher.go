@@ -54,6 +54,15 @@ func Decrypt(key, data []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
+// GenerateRandomKey generates a random 32 byte encryption key
+func GenerateRandomKey() ([]byte, error) {
+	key := make([]byte, KeyLength)
+	if _, err := rand.Read(key); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
 // DeriveKey generates an encryption key with a password. Salt can be passed as
 // nil if no salt is provided as a new salt will be returned alongside the new
 // key. If a salt already exists, just pass the existing one, and it will be used

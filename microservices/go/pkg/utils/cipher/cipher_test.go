@@ -61,6 +61,17 @@ func TestPasswordBasedEncryption(t *testing.T) {
 
 }
 
+func TestRandomKeyEncryption(t *testing.T) {
+	startTimeMilli := time.Now().UnixMilli()
+	cv.Convey("When given an randomly generated key", t, func() {
+		key, err := cipher.GenerateRandomKey()
+		cv.So(err, cv.ShouldBeNil)
+		cv.Convey("Expect the key can encrypt and decrypt", func() {
+			testKeyCanEncryptAndDecrypt(key, startTimeMilli)
+		})
+	})
+}
+
 func testKeyCanEncryptAndDecrypt(key []byte, startTimeMilli int64) {
 	messageToEncrypt := "Hello world"
 
