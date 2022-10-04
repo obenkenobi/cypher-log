@@ -1,11 +1,10 @@
 //go:build wireinject
 // +build wireinject
 
-package wiredeps
+package app
 
 import (
 	"github.com/google/wire"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/app"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/background"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/controllers"
@@ -25,7 +24,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
-func InitializeApp() *app.App {
+func InitializeApp() *App {
 	// wire_gen will not be imported but instead have InitializeApp be copied over to main.go
 	wire.Build(
 		conf.NewServerConfImpl,
@@ -76,7 +75,7 @@ func InitializeApp() *app.App {
 		wire.Bind(new(servers.GrpcServer), new(*servers.GrpcServerImpl)),
 		background.NewCronRunnerImpl,
 		wire.Bind(new(background.CronRunner), new(*background.CronRunnerImpl)),
-		app.NewApp,
+		NewApp,
 	)
-	return &app.App{}
+	return &App{}
 }

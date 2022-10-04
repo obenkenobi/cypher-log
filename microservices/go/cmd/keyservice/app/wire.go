@@ -1,8 +1,10 @@
-package wiredeps
+//go:build wireinject
+// +build wireinject
+
+package app
 
 import (
 	"github.com/google/wire"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/app"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
@@ -20,7 +22,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
-func InitializeApp() *app.App { // This go file is not to be ran o
+func InitializeApp() *App { // This go file is not to be ran o
 	wire.Build(
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),
@@ -80,7 +82,7 @@ func InitializeApp() *app.App { // This go file is not to be ran o
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
 		listeners.NewRmqListenerImpl,
 		wire.Bind(new(listeners.RmqListener), new(*listeners.RmqListenerImpl)),
-		app.NewApp,
+		NewApp,
 	)
-	return &app.App{}
+	return &App{}
 }
