@@ -1,11 +1,106 @@
 package services
 
-import "github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
-
-// Todo: implement AppSecretService
+import (
+	"context"
+	"errors"
+	"github.com/google/uuid"
+	"github.com/joamaki/goreactive/stream"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/cipherutils"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
+)
 
 type AppSecretService interface {
-	GetAppSecret(kid string) models.AppSecret // Gets the app secret marked by the KID
-	GetPrimaryAppSecret() models.AppSecret    // Get the main app secret
-	RotatePrimaryAppSecret() models.AppSecret // Sets the n
+	GetAppSecret(ctx context.Context, kid string) single.Single[models.AppSecret] // Gets the app secret marked by the KID
+	GetPrimaryAppSecret() single.Single[models.AppSecret]                         // Get the main app secret
+	GeneratePrimaryAppSecret() single.Single[models.AppSecret]                    // Sets the n
+}
+
+type AppSecretServiceImpl struct {
+	primaryAppSecretRefRepository repositories.PrimaryAppSecretRefRepository
+	appSecretRepository           repositories.AppSecretRepository
+	keyConf                       conf.KeyConf
+	errorService                  sharedservices.ErrorService
+}
+
+func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) single.Single[models.AppSecret] {
+	appSecretFindSrc := a.appSecretRepository.Get(ctx, kid)
+	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (models.AppSecret, error) {
+		return appSecretServiceReadMaybeModel(a, maybe)
+	})
+}
+
+func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) single.Single[models.AppSecret] {
+	refFindSrc := a.primaryAppSecretRefRepository.Get(ctx)
+	refSrc := single.FlatMap(refFindSrc,
+		func(maybe option.Maybe[models.PrimaryAppSecretRef]) single.Single[models.PrimaryAppSecretRef] {
+			if val, ok := maybe.Get(); ok {
+				return single.Just(val)
+			}
+			return a.GeneratePrimaryAppSecret(ctx)
+		},
+	)
+	appSecretFindSrc := single.FlatMap(refSrc,
+		func(ref models.PrimaryAppSecretRef) single.Single[option.Maybe[models.AppSecret]] {
+			return a.appSecretRepository.Get(ctx, ref.Kid)
+		},
+	)
+	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (models.AppSecret, error) {
+		return appSecretServiceReadMaybeModel(a, maybe)
+	})
+}
+
+func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) single.Single[models.PrimaryAppSecretRef] {
+	kidGuidSrc := single.FromSupplier(uuid.NewRandom)
+	kidSrc := single.MapWithError(kidGuidSrc, func(kidGuid uuid.UUID) (string, error) {
+		newKid := kidGuid.String()
+		if utils.StringIsBlank(newKid) {
+			return newKid, errors.New("generated KID is blank")
+		}
+		return newKid, nil
+	})
+	newKeySrc := single.FromSupplier(cipherutils.GenerateRandomKey)
+	kidKeySrc := single.Zip2(kidSrc, newKeySrc)
+	return single.FlatMap(kidKeySrc, func(t stream.Tuple2[string, []byte]) single.Single[models.PrimaryAppSecretRef] {
+		ref := models.PrimaryAppSecretRef{Kid: t.V1}
+		appSecret := models.AppSecret{SecretKey: t.V2}
+		secretSaveSrc := a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration())
+		return single.FlatMap(
+			secretSaveSrc,
+			func(_ models.AppSecret) single.Single[models.PrimaryAppSecretRef] {
+				return a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration())
+			},
+		)
+	})
+}
+
+func appSecretServiceReadMaybeModel[T any](a AppSecretServiceImpl, maybe option.Maybe[T]) (T, error) {
+	val, ok := maybe.Get()
+	var err error = nil
+	if !ok {
+		err = apperrors.NewBadReqErrorFromRuleError(
+			a.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound),
+		)
+	}
+	return val, err
+}
+
+func NewAppSecretServiceImpl(
+	primaryAppSecretRefRepository repositories.PrimaryAppSecretRefRepository,
+	appSecretRepository repositories.AppSecretRepository,
+	keyConf conf.KeyConf,
+	errorService sharedservices.ErrorService,
+) *AppSecretServiceImpl {
+	return &AppSecretServiceImpl{
+		primaryAppSecretRefRepository: primaryAppSecretRefRepository,
+		appSecretRepository:           appSecretRepository,
+		keyConf:                       keyConf,
+		errorService:                  errorService,
+	}
 }

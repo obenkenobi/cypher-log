@@ -72,6 +72,8 @@ func InitializeApp() *App { // This go file is not to be ran o
 		wire.Bind(new(sharedservices.UserService), new(*sharedservices.UserServiceImpl)),
 		services.NewUserChangeEventServiceImpl,
 		wire.Bind(new(services.UserChangeEventService), new(*services.UserChangeEventServiceImpl)),
+		//services.NewAppSecretServiceImpl,
+		//wire.Bind(new(services.AppSecretService), new(services.AppSecretServiceImpl)),
 		securityservices.NewJwtValidateWebAppServiceImpl,
 		wire.Bind(new(securityservices.JwtValidateWebAppService), new(*securityservices.JwtValidateWebAppServiceImpl)),
 		middlewares.NewAuthMiddlewareImpl,
