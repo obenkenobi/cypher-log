@@ -40,6 +40,8 @@ func InitializeApp() *App { // This go file is not to be ran o
 		wire.Bind(new(conf.RabbitMQConf), new(*conf.RabbitMQConfImpl)),
 		rmqservices.NewRabbitMQConsumerImpl,
 		wire.Bind(new(rmqservices.RabbitMQConsumer), new(*rmqservices.RabbitMQConsumerImpl)),
+		//appConf.NewKeyConfImpl,
+		//wire.Bind(new(appConf.KeyConf), new(appConf.KeyConfImpl)),
 		externalservices.NewHTTPClientProviderImpl,
 		wire.Bind(new(externalservices.HttpClientProvider), new(*externalservices.HttpClientProviderImpl)),
 		externalservices.NewSysAccessTokenClientAuth0Impl,

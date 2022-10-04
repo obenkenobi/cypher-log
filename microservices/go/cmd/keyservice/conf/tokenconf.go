@@ -9,19 +9,19 @@ type KeyConf interface {
 	GetPrimaryAppSecretDuration() time.Duration
 }
 
-type keyConfImpl struct {
+type KeyConfImpl struct {
 	tokenSessionDuration     time.Duration
 	secretDuration           time.Duration
 	keyRefreshInterval       time.Duration
 	primaryAppSecretDuration time.Duration
 }
 
-func NewKeyConfImpl() *keyConfImpl {
+func NewKeyConfImpl() *KeyConfImpl {
 	tokenSessionDuration := 30 * time.Minute
 	secretDuration := 6 * tokenSessionDuration
 	keyRefreshInterval := 3 * tokenSessionDuration
 	primaryAppSecretDuration := 4 * tokenSessionDuration
-	return &keyConfImpl{
+	return &KeyConfImpl{
 		tokenSessionDuration:     tokenSessionDuration,
 		secretDuration:           secretDuration,
 		keyRefreshInterval:       keyRefreshInterval,
