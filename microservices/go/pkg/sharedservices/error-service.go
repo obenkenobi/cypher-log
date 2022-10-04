@@ -9,25 +9,25 @@ type ErrorService interface {
 	RuleErrorFromCode(code string, args ...any) apperrors.RuleError
 }
 
-type errorMessageServiceImpl struct {
+type ErrorServiceImpl struct {
 	errorCodeToMsgMap map[string]string
 }
 
-func (e errorMessageServiceImpl) getMsgStrFromCode(code string, args ...any) string {
+func (e ErrorServiceImpl) getMsgStrFromCode(code string, args ...any) string {
 	if msg, ok := e.errorCodeToMsgMap[code]; ok {
 		return fmt.Sprintf(msg, args...)
 	}
 	return code
 }
 
-func (e errorMessageServiceImpl) RuleErrorFromCode(code string, args ...any) apperrors.RuleError {
+func (e ErrorServiceImpl) RuleErrorFromCode(code string, args ...any) apperrors.RuleError {
 	return apperrors.RuleError{
 		Code:    code,
 		Message: e.getMsgStrFromCode(code, args...),
 	}
 }
 
-func NewErrorService() ErrorService {
+func NewErrorServiceImpl() *ErrorServiceImpl {
 	errorCodeToMsgMap := map[string]string{
 		apperrors.ErrCodeReqResourcesNotFound:   "Requested resources not found",
 		apperrors.ErrCodeCannotBindJson:         "Unable to bind json",
@@ -35,5 +35,5 @@ func NewErrorService() ErrorService {
 		apperrors.ErrCodeUsernameTaken:          "Username is taken",
 		apperrors.ErrCodeUserRequireFail:        "User is not found or incomplete",
 	}
-	return &errorMessageServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
+	return &ErrorServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

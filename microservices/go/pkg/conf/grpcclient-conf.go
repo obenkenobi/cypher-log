@@ -12,7 +12,7 @@ type GrpcClientConfImpl struct {
 
 func (g GrpcClientConfImpl) UserServiceAddress() string { return g.userServiceAddr }
 
-func NewGrpcClientConf() GrpcClientConf {
+func NewGrpcClientConfImpl() *GrpcClientConfImpl {
 	return &GrpcClientConfImpl{
 		userServiceAddr: environment.GetEnvVariable(environment.EnvVarKeyGrpcUserServiceAddress),
 	}

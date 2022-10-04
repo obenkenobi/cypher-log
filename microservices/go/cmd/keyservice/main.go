@@ -1,24 +1,24 @@
 package main
 
 import (
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/app"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedrepos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 )
 
 func main() {
@@ -26,47 +26,41 @@ func main() {
 	logger.ConfigureLoggerFromEnv()
 
 	// Dependency graph
-	serverConf := conf.NewServerConf()
-	tlsConf := conf.NewTlsConf()
-	httpclientConf := conf.NewHttpClientConf()
-	grpcClientConf := conf.NewGrpcClientConf()
-	auth0Conf := authconf.NewAuth0SecurityConf()
-	rabbitMqConf := conf.NewRabbitMQConf()
-	rabbitMqConnector := rmqservices.NewRabbitConnector(rabbitMqConf)
-	defer rabbitMqConnector.Close()
-	httpClientProvider := externalservices.NewHTTPClientProvider(httpclientConf)
-	auth0SysAccessTokenClient := externalservices.NewAuth0SysAccessTokenClient(
+	serverConf := conf.NewServerConfImpl()
+	tlsConf := conf.NewTlsConfImpl()
+	httpclientConf := conf.NewHttpClientConfImpl()
+	grpcClientConf := conf.NewGrpcClientConfImpl()
+	auth0Conf := authconf.NewAuth0SecurityConfImpl()
+	rabbitMqConf := conf.NewRabbitMQConfImpl()
+	rabbitConsumer := rmqservices.NewRabbitMQConsumerImpl(rabbitMqConf)
+	httpClientProvider := externalservices.NewHTTPClientProviderImpl(httpclientConf)
+	auth0SysAccessTokenClient := externalservices.NewSysAccessTokenClientAuth0Impl(
 		httpclientConf,
 		auth0Conf,
 		httpClientProvider,
 	)
-	coreGrpcConnProvider := externalservices.NewCoreGrpcConnProvider(auth0SysAccessTokenClient, tlsConf)
-	extUserService := externalservices.NewExtUserService(coreGrpcConnProvider, grpcClientConf)
-	mongoCOnf := conf.NewMongoConf()
-	mongoHandler := dshandlers.NewMongoHandler(mongoCOnf)
-	userRepository := sharedrepos.NewUserMongoRepository(mongoHandler)
-	userKeyRepository := repositories.NewUserKeyRepository(mongoHandler)
-	errorService := sharedservices.NewErrorService()
-	ginCtxService := ginservices.NewGinCtxService(errorService)
-	userService := sharedservices.NewUserService(userRepository, extUserService, errorService)
-	userChangeEventService := services.NewUserChangeEventService(userService, userKeyRepository, mongoHandler)
+	coreGrpcConnProvider := externalservices.NewCoreGrpcConnProviderImpl(auth0SysAccessTokenClient, tlsConf)
+	extUserService := externalservices.NewExtUserServiceImpl(coreGrpcConnProvider, grpcClientConf)
+	mongoCOnf := conf.NewMongoConfImpl()
+	redisConf := conf.NewRedisConfImpl()
+	mongoHandler := dshandlers.NewMongoDBHandler(mongoCOnf)
+	redisHandler := dshandlers.NewRedisKeyValueTimedDBHandler(redisConf)
+	userRepository := sharedrepos.NewUserRepositoryImpl(mongoHandler)
+	userKeyRepository := repositories.NewUserKeyRepositoryImpl(mongoHandler)
+	_ = repositories.NewAppSecretRepositoryImpl(redisHandler)
+	_ = repositories.NewPrimaryAppSecretRefRepositoryImpl(redisHandler)
+	errorService := sharedservices.NewErrorServiceImpl()
+	ginCtxService := ginservices.NewGinCtxServiceImpl(errorService)
+	userService := sharedservices.NewUserServiceImpl(userRepository, extUserService, errorService)
+	userChangeEventService := services.NewUserChangeEventServiceImpl(userService, userKeyRepository, mongoHandler)
+	ginRouterProvider := ginservices.NewGinEngineServiceImpl()
+	apiAuth0JwtValidateService := securityservices.NewExternalOath2ValidateServiceAuth0Impl(auth0Conf)
+	authMiddleware := middlewares.NewAuthMiddlewareImpl(apiAuth0JwtValidateService)
+	_ = controllers.NewTestControllerImpl(ginRouterProvider, authMiddleware, userService, ginCtxService)
+	appServer := commonservers.NewAppServerImpl(ginRouterProvider, serverConf, tlsConf)
+	rmqListener := listeners.NewRmqListenerImpl(rabbitConsumer, userChangeEventService)
 
-	// Add task dependencies
-	var taskRunners []taskrunner.TaskRunner
-
-	if environment.ActivateAppServer() { // Add app server
-		apiAuth0JwtValidateService := securityservices.NewAPIAuth0JwtValidateService(auth0Conf)
-		authMiddleware := middlewares.NewAuthMiddleware(apiAuth0JwtValidateService)
-		userController := controllers.NewTestController(authMiddleware, userService, ginCtxService)
-		appServer := servers.NewAppServer(serverConf, tlsConf, userController)
-		taskRunners = append(taskRunners, appServer)
-	}
-	if environment.ActivateRabbitMqListener() {
-		rmqListener := listeners.NewRmqListener(rabbitMqConnector, userChangeEventService)
-		taskRunners = append(taskRunners, rmqListener)
-	}
-
-	// Run tasks
-	taskrunner.RunAndWait(taskRunners...)
+	application := app.NewApp(rabbitConsumer, appServer, rmqListener)
+	application.Start()
 
 }

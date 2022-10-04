@@ -35,8 +35,10 @@ type AuthMiddlewareImpl struct {
 	authorizationHandler gin.HandlerFunc
 }
 
-// NewAuthMiddleware creates an AuthMiddleware instance
-func NewAuthMiddleware(externalOath2ValidateService securityservices.ExternalOath2ValidateService) AuthMiddleware {
+// NewAuthMiddlewareImpl creates an AuthMiddleware instance
+func NewAuthMiddlewareImpl(
+	externalOath2ValidateService securityservices.ExternalOath2ValidateService,
+) *AuthMiddlewareImpl {
 
 	jwtMiddleware := jwtmiddleware.New(externalOath2ValidateService.GetJwtValidator().ValidateToken)
 	authorizationHandler := adapter.Wrap(jwtMiddleware.CheckJWT)

@@ -108,7 +108,7 @@ func (u UserRepositoryImpl) SampleUndistributedUsers(ctx context.Context, size i
 	return src
 }
 
-func NewUserMongoRepository(mongoDBHandler *dshandlers.MongoDBHandler) UserRepository {
+func NewUserRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserRepositoryImpl {
 	return &UserRepositoryImpl{
 		BaseRepositoryMongo: *baserepos.NewBaseRepositoryMongo[models.User](models.User{}, mongoDBHandler),
 	}

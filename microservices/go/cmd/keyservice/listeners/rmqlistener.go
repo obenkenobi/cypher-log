@@ -19,14 +19,14 @@ type RmqListener interface {
 }
 
 type rmqListenerImpl struct {
-	connector              rmqservices.RabbitConnector
+	consumer               rmqservices.RabbitMQConsumer
 	userChangeEventService services.UserChangeEventService
 	ctx                    context.Context
 }
 
 func (r rmqListenerImpl) ListenUserChange() {
 	userCreateReceiver := rmq.NewReceiver(
-		r.connector.GetConsumer(),
+		r.consumer.GetConsumer(),
 		"key_service_user_change",
 		rmq.RoutingKeysDefault,
 		rmq.ConsumerDefault,
@@ -55,13 +55,13 @@ func (r rmqListenerImpl) Run() {
 	<-forever
 }
 
-func NewRmqListener(
-	connector rmqservices.RabbitConnector,
+func NewRmqListenerImpl(
+	consumer rmqservices.RabbitMQConsumer,
 	userChangeEventService services.UserChangeEventService,
-) RmqListener {
+) *rmqListenerImpl {
 	return &rmqListenerImpl{
 		ctx:                    context.Background(),
-		connector:              connector,
+		consumer:               consumer,
 		userChangeEventService: userChangeEventService,
 	}
 }

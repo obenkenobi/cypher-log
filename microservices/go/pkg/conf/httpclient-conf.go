@@ -12,6 +12,6 @@ func (h HttpClientConfImpl) GetRetryCount() int { return 10 }
 
 func (h HttpClientConfImpl) GetJSONContentType() string { return "application/json" }
 
-func NewHttpClientConf() *HttpClientConfImpl {
+func NewHttpClientConfImpl() *HttpClientConfImpl {
 	return &HttpClientConfImpl{}
 }

@@ -19,6 +19,6 @@ func (h HttpClientProviderImpl) Client() *retryablehttp.Client {
 	return retryClient
 }
 
-func NewHTTPClientProvider(httpClientConf conf.HttpClientConf) HttpClientProvider {
+func NewHTTPClientProviderImpl(httpClientConf conf.HttpClientConf) *HttpClientProviderImpl {
 	return &HttpClientProviderImpl{httpClientConf: httpClientConf}
 }

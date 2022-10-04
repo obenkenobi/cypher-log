@@ -49,7 +49,7 @@ func (a Auth0RouteSecurityConfImpl) GetApiAudience() string {
 	return a.apiAudience
 }
 
-func NewAuth0SecurityConf() Auth0SecurityConf {
+func NewAuth0SecurityConfImpl() *Auth0RouteSecurityConfImpl {
 	issuerUrlStr := fmt.Sprintf("https://%v/", environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Domain))
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {

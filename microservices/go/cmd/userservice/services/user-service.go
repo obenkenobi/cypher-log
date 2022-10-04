@@ -37,7 +37,7 @@ type UserService interface {
 	UsersChangeTask(ctx context.Context)
 }
 
-type userServiceImpl struct {
+type UserServiceImpl struct {
 	userMsgSendService    UserMsgSendService
 	crudDSHandler         dshandlers.CrudDSHandler
 	userRepository        repositories.UserRepository
@@ -46,7 +46,7 @@ type userServiceImpl struct {
 	authServerMgmtService AuthServerMgmtService
 }
 
-func (u userServiceImpl) AddUserTransaction(
+func (u UserServiceImpl) AddUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
@@ -76,7 +76,7 @@ func (u userServiceImpl) AddUserTransaction(
 
 }
 
-func (u userServiceImpl) UpdateUserTransaction(
+func (u UserServiceImpl) UpdateUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
@@ -120,7 +120,7 @@ func (u userServiceImpl) UpdateUserTransaction(
 
 }
 
-func (u userServiceImpl) BeginDeletingUserTransaction(
+func (u UserServiceImpl) BeginDeletingUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
 ) single.Single[userdtos.UserReadDto] {
@@ -153,7 +153,7 @@ func (u userServiceImpl) BeginDeletingUserTransaction(
 		})
 }
 
-func (u userServiceImpl) GetUserIdentity(
+func (u UserServiceImpl) GetUserIdentity(
 	ctx context.Context,
 	identity security.Identity,
 ) single.Single[userdtos.UserIdentityDto] {
@@ -166,7 +166,7 @@ func (u userServiceImpl) GetUserIdentity(
 
 }
 
-func (u userServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserReadDto] {
+func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserReadDto] {
 	userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, authId)
 	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserReadDto {
 		user := userMaybe.OrElse(models.User{})
@@ -174,7 +174,7 @@ func (u userServiceImpl) GetByAuthId(ctx context.Context, authId string) single.
 	})
 }
 
-func (u userServiceImpl) GetById(ctx context.Context, userId string) single.Single[userdtos.UserReadDto] {
+func (u UserServiceImpl) GetById(ctx context.Context, userId string) single.Single[userdtos.UserReadDto] {
 	userSearchSrc := u.userRepository.FindById(ctx, userId)
 	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserReadDto {
 		user := userMaybe.Filter(models.User.WillNotDeleted).OrElse(models.User{})
@@ -182,7 +182,7 @@ func (u userServiceImpl) GetById(ctx context.Context, userId string) single.Sing
 	})
 }
 
-func (u userServiceImpl) UsersChangeTask(ctx context.Context) {
+func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
 	userSampleSrc := u.userRepository.SampleUndistributedUsers(ctx, 100)
 	usersCh, errCh := stream.ToChannels(ctx, userSampleSrc)
 	var actionSingles []single.Single[any]
@@ -207,7 +207,7 @@ func (u userServiceImpl) UsersChangeTask(ctx context.Context) {
 
 }
 
-func (u userServiceImpl) deleteUserTransaction(
+func (u UserServiceImpl) deleteUserTransaction(
 	ctx context.Context,
 	user models.User,
 ) single.Single[userdtos.UserChangeEventDto] {
@@ -234,7 +234,7 @@ func (u userServiceImpl) deleteUserTransaction(
 		})
 }
 
-func (u userServiceImpl) distributeUserChangeTransaction(
+func (u UserServiceImpl) distributeUserChangeTransaction(
 	ctx context.Context,
 	user models.User,
 ) single.Single[userdtos.UserChangeEventDto] {
@@ -261,7 +261,7 @@ func (u userServiceImpl) distributeUserChangeTransaction(
 	)
 }
 
-func (u userServiceImpl) sendUserChange(
+func (u UserServiceImpl) sendUserChange(
 	user models.User,
 	action userdtos.UserChangeAction,
 ) single.Single[userdtos.UserChangeEventDto] {
@@ -277,15 +277,15 @@ func userToUserReadDto(user models.User) userdtos.UserReadDto {
 	return userDto
 }
 
-func NewUserService(
+func NewUserServiceImpl(
 	userMsgSendService UserMsgSendService,
 	crudDBHandler dshandlers.CrudDSHandler,
 	userRepository repositories.UserRepository,
 	userBr businessrules.UserBr,
 	errorService sharedservices.ErrorService,
 	authServerMgmtService AuthServerMgmtService,
-) UserService {
-	return &userServiceImpl{
+) *UserServiceImpl {
+	return &UserServiceImpl{
 		userMsgSendService:    userMsgSendService,
 		crudDSHandler:         crudDBHandler,
 		userRepository:        userRepository,

@@ -40,6 +40,6 @@ func (u UserServiceServerImpl) GetUserByAuthId(
 	return res, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
 }
 
-func NewUserServiceServer(userService services.UserService) userpb.UserServiceServer {
+func NewUserServiceServerImpl(userService services.UserService) *UserServiceServerImpl {
 	return &UserServiceServerImpl{userService: userService}
 }

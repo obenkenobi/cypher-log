@@ -5,16 +5,21 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"time"
 )
 
 // CronRunner runs cron tasks in the background
-type CronRunner struct {
+type CronRunner interface {
+	taskrunner.TaskRunner
+}
+
+type CronRunnerImpl struct {
 	userService services.UserService
 	ctx         context.Context
 }
 
-func (c CronRunner) Run() {
+func (c CronRunnerImpl) Run() {
 	s := gocron.NewScheduler(time.UTC)
 
 	userChangeJob, err := s.Every(1).Second().Do(func() { c.userService.UsersChangeTask(c.ctx) })
@@ -26,6 +31,6 @@ func (c CronRunner) Run() {
 	s.StartBlocking()
 }
 
-func NewCronRunner(userService services.UserService) *CronRunner {
-	return &CronRunner{userService: userService, ctx: context.Background()}
+func NewCronRunnerImpl(userService services.UserService) *CronRunnerImpl {
+	return &CronRunnerImpl{userService: userService, ctx: context.Background()}
 }

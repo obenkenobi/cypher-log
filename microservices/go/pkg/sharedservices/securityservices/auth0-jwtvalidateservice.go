@@ -22,15 +22,19 @@ func (o ExternalOath2ValidateServiceImpl) GetJwtValidator() *validator.Validator
 	return o.jwtValidator
 }
 
-func NewAPIAuth0JwtValidateService(auth0RouteSecurityConf authconf.Auth0SecurityConf) ExternalOath2ValidateService {
+func NewExternalOath2ValidateServiceAuth0Impl(
+	auth0RouteSecurityConf authconf.Auth0SecurityConf,
+) *ExternalOath2ValidateServiceImpl {
 	return createOath2ValidateService(auth0RouteSecurityConf.GetIssuerUrl(), auth0RouteSecurityConf.GetApiAudience())
 }
 
-func NewGrpcAuth0JwtValidateService(auth0RouteSecurityConf authconf.Auth0SecurityConf) ExternalOath2ValidateService {
+func NewExternalOath2ValidateServiceImpl(
+	auth0RouteSecurityConf authconf.Auth0SecurityConf,
+) *ExternalOath2ValidateServiceImpl {
 	return createOath2ValidateService(auth0RouteSecurityConf.GetIssuerUrl(), auth0RouteSecurityConf.GetGrpcAudience())
 }
 
-func createOath2ValidateService(issuerURL *url.URL, audience string) ExternalOath2ValidateService {
+func createOath2ValidateService(issuerURL *url.URL, audience string) *ExternalOath2ValidateServiceImpl {
 	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
 	jwtValidator, _ := validator.New(provider.KeyFunc,
 		validator.RS256,

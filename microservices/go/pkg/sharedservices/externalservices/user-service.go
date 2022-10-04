@@ -54,10 +54,10 @@ func (u ExtUserServiceImpl) GetByAuthId(ctx context.Context, authId string) sing
 	})
 }
 
-func NewExtUserService(
+func NewExtUserServiceImpl(
 	coreGrpcConnProvider CoreGrpcConnProvider,
 	grpcClientConf conf.GrpcClientConf,
-) ExtUserService {
+) *ExtUserServiceImpl {
 	return &ExtUserServiceImpl{
 		coreGrpcConnProvider: coreGrpcConnProvider,
 		grpcClientConf:       grpcClientConf,

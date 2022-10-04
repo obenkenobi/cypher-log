@@ -69,8 +69,8 @@ func (h GinCtxServiceImpl) RespondJsonOkOrError(c *gin.Context, model any, err e
 	c.JSON(http.StatusOK, model)
 }
 
-// NewGinCtxService creates a new GinCtxService instance
-func NewGinCtxService(errorService sharedservices.ErrorService) GinCtxService {
+// NewGinCtxServiceImpl creates a new GinCtxService instance
+func NewGinCtxServiceImpl(errorService sharedservices.ErrorService) *GinCtxServiceImpl {
 	return &GinCtxServiceImpl{errorMessageService: errorService}
 }
 

@@ -9,17 +9,17 @@ type ServerConf interface {
 	GetGrpcServerPort() string
 }
 
-type serverConfImpl struct {
+type ServerConfImpl struct {
 	appServerPort  string
 	grpcServerPort string
 }
 
-func (s serverConfImpl) GetGrpcServerPort() string { return s.grpcServerPort }
+func (s ServerConfImpl) GetGrpcServerPort() string { return s.grpcServerPort }
 
-func (s serverConfImpl) GetAppServerPort() string { return s.appServerPort }
+func (s ServerConfImpl) GetAppServerPort() string { return s.appServerPort }
 
-func NewServerConf() ServerConf {
-	return &serverConfImpl{
+func NewServerConfImpl() *ServerConfImpl {
+	return &ServerConfImpl{
 		appServerPort:  environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyAppServerPort, "8080"),
 		grpcServerPort: environment2.GetEnvVariableOrDefault(environment2.EnvVarKeyGrpcServerPort, "50051"),
 	}

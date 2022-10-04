@@ -51,8 +51,8 @@ func (a AuthInterceptorCreatorImpl) CreateUnaryInterceptor() grpc.ServerOption {
 	return grpc.UnaryInterceptor(a.authenticate)
 }
 
-func NewAuthInterceptorCreator(
+func NewAuthInterceptorCreatorImpl(
 	grpcAuth0JwtValidateService securityservices.ExternalOath2ValidateService,
-) AuthInterceptorCreator {
+) *AuthInterceptorCreatorImpl {
 	return &AuthInterceptorCreatorImpl{grpcAuth0JwtValidateService: grpcAuth0JwtValidateService}
 }

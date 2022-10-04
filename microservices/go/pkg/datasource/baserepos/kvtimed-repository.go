@@ -18,7 +18,7 @@ type KeyValueTimedRepository[Value any] interface {
 
 // KeyValueTimedRepositoryRedis is a Redis implementation of KeyValueTimedRepository
 type KeyValueTimedRepositoryRedis[Value any] struct {
-	redisDBHandler dshandlers.RedisKeyValueTimedDBHandler
+	redisDBHandler *dshandlers.RedisKeyValueTimedDBHandler
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) Get(ctx context.Context, key string) single.Single[option.Maybe[Value]] {
@@ -67,7 +67,7 @@ func (k KeyValueTimedRepositoryRedis[Value]) runSet(
 }
 
 func NewKeyValueTimedRepositoryRedis[Value any](
-	redisDBHandler dshandlers.RedisKeyValueTimedDBHandler,
+	redisDBHandler *dshandlers.RedisKeyValueTimedDBHandler,
 ) KeyValueTimedRepository[Value] {
 	return &KeyValueTimedRepositoryRedis[Value]{redisDBHandler: redisDBHandler}
 }

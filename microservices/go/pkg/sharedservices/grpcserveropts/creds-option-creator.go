@@ -35,6 +35,6 @@ func (c CredentialsOptionCreatorImpl) loadTLSCredentials() credentials.Transport
 	return credentials.NewTLS(config)
 }
 
-func NewCredentialsOptionCreator(tlsConf conf.TLSConf) CredentialsOptionCreator {
+func NewCredentialsOptionCreatorImpl(tlsConf conf.TLSConf) *CredentialsOptionCreatorImpl {
 	return &CredentialsOptionCreatorImpl{tlsConf: tlsConf}
 }

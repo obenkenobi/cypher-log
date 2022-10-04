@@ -74,7 +74,7 @@ func (u UserKeyRepositoryImpl) DeleteByUserIdAndGetCount(ctx context.Context, us
 
 }
 
-func NewUserKeyRepository(mongoDBHandler *dshandlers.MongoDBHandler) UserKeyRepository {
+func NewUserKeyRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserKeyRepositoryImpl {
 	return &UserKeyRepositoryImpl{
 		BaseRepositoryMongo: *baserepos.NewBaseRepositoryMongo[models.UserKey](models.UserKey{}, mongoDBHandler),
 	}

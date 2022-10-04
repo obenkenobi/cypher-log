@@ -1,4 +1,4 @@
-package servers
+package commonservers
 
 import (
 	"fmt"
@@ -9,15 +9,15 @@ import (
 	"net"
 )
 
-// GrpcServer represents an interface for a grpc server that can be run.
-type GrpcServer interface{ taskrunner.TaskRunner }
+// CoreGrpcServer represents an interface for a grpc server that can be run.
+type CoreGrpcServer interface{ taskrunner.TaskRunner }
 
-type grpcServerImpl struct {
+type coreGrpcServerImpl struct {
 	server     *grpc.Server
 	serverConf conf.ServerConf
 }
 
-func (g grpcServerImpl) Run() {
+func (g coreGrpcServerImpl) Run() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", g.serverConf.GetGrpcServerPort()))
 	if err != nil {
 		logger.Log.Fatalf("failed to listen: %v", err)
@@ -28,13 +28,13 @@ func (g grpcServerImpl) Run() {
 	}
 }
 
-func NewGrpcServer(
+func NewCoreGrpcServer(
 	serverConf conf.ServerConf,
 	registerServers func(server *grpc.Server),
 	serverOptions ...grpc.ServerOption,
-) GrpcServer {
+) CoreGrpcServer {
 	server := grpc.NewServer(serverOptions...)
 	registerServers(server)
-	grpcServerImpl := &grpcServerImpl{serverConf: serverConf, server: server}
+	grpcServerImpl := &coreGrpcServerImpl{serverConf: serverConf, server: server}
 	return grpcServerImpl
 }

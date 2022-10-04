@@ -38,6 +38,6 @@ func (a AuthServerMgmtServiceImpl) runDeleteUser(authId string) (bool, error) {
 	return true, nil
 }
 
-func NewAuthServerMgmtService(auth0ClientCredentialsConf authconf.Auth0SecurityConf) AuthServerMgmtService {
+func NewAuthServerMgmtServiceImpl(auth0ClientCredentialsConf authconf.Auth0SecurityConf) *AuthServerMgmtServiceImpl {
 	return &AuthServerMgmtServiceImpl{auth0SecurityConf: auth0ClientCredentialsConf}
 }

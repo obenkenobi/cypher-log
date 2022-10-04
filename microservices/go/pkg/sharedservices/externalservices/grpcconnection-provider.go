@@ -37,10 +37,10 @@ func (u CoreGrpcConnProviderImpl) CreateConnectionSingle(ctx context.Context, ad
 	})
 }
 
-func NewCoreGrpcConnProvider(
+func NewCoreGrpcConnProviderImpl(
 	systemAccessTokenClient SysAccessTokenClient,
 	tlsConf conf.TLSConf,
-) CoreGrpcConnProvider {
+) *CoreGrpcConnProviderImpl {
 	return &CoreGrpcConnProviderImpl{
 		systemAccessTokenClient: systemAccessTokenClient,
 		tlsConf:                 tlsConf,

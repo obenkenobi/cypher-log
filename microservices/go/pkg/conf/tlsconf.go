@@ -9,23 +9,23 @@ type TLSConf interface {
 	WillLoadCACert() bool
 }
 
-type tlsConfImpl struct {
+type TlsConfImpl struct {
 	serverCertPath string
 	serverKeyPath  string
 	caCertPath     string
 	loadCACert     bool
 }
 
-func (t tlsConfImpl) ServerCertPath() string { return t.serverCertPath }
+func (t TlsConfImpl) ServerCertPath() string { return t.serverCertPath }
 
-func (t tlsConfImpl) ServerKeyPath() string { return t.serverKeyPath }
+func (t TlsConfImpl) ServerKeyPath() string { return t.serverKeyPath }
 
-func (t tlsConfImpl) CACertPath() string { return t.caCertPath }
+func (t TlsConfImpl) CACertPath() string { return t.caCertPath }
 
-func (t tlsConfImpl) WillLoadCACert() bool { return t.loadCACert }
+func (t TlsConfImpl) WillLoadCACert() bool { return t.loadCACert }
 
-func NewTlsConf() TLSConf {
-	return &tlsConfImpl{
+func NewTlsConfImpl() *TlsConfImpl {
+	return &TlsConfImpl{
 		serverCertPath: env.GetEnvVariable(env.EnvVarKeyServerCertPath),
 		serverKeyPath:  env.GetEnvVariable(env.EnvVarKeyServerKeyPath),
 		caCertPath:     env.GetEnvVariable(env.EnvVarKeyCACertPath),

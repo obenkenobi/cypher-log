@@ -22,13 +22,13 @@ type UserService interface {
 	DeleteUser(ctx context.Context, userEventDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
 }
 
-type userServiceImpl struct {
+type UserServiceImpl struct {
 	userRepository sharedrepos.UserRepository
 	extUserService externalservices.ExtUserService
 	errorService   ErrorService
 }
 
-func (u userServiceImpl) SaveUser(
+func (u UserServiceImpl) SaveUser(
 	ctx context.Context,
 	userEventDto userdtos.UserChangeEventDto,
 ) single.Single[userbos.UserBo] {
@@ -41,7 +41,7 @@ func (u userServiceImpl) SaveUser(
 	})
 }
 
-func (u userServiceImpl) DeleteUser(
+func (u UserServiceImpl) DeleteUser(
 	ctx context.Context,
 	userEventDto userdtos.UserChangeEventDto,
 ) single.Single[userbos.UserBo] {
@@ -64,7 +64,7 @@ func (u userServiceImpl) DeleteUser(
 	})
 }
 
-func (u userServiceImpl) RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo] {
+func (u UserServiceImpl) RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo] {
 	userFindSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
 	userSrc := single.FlatMap(userFindSrc, func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
 		if user, isPresent := userMaybe.Get(); isPresent {
@@ -88,7 +88,7 @@ func (u userServiceImpl) RequireUser(ctx context.Context, identity security.Iden
 	})
 }
 
-func (u userServiceImpl) saveUserDataAndGetModel(
+func (u UserServiceImpl) saveUserDataAndGetModel(
 	ctx context.Context,
 	authId string,
 	userPublicDto embeddeduser.BaseUserPublicDto,
@@ -111,10 +111,10 @@ func (u userServiceImpl) saveUserDataAndGetModel(
 	)
 }
 
-func NewUserService(
+func NewUserServiceImpl(
 	userRepository sharedrepos.UserRepository,
 	extUserService externalservices.ExtUserService,
 	errorService ErrorService,
-) UserService {
-	return &userServiceImpl{userRepository: userRepository, extUserService: extUserService, errorService: errorService}
+) *UserServiceImpl {
+	return &UserServiceImpl{userRepository: userRepository, extUserService: extUserService, errorService: errorService}
 }

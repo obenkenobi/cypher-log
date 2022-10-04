@@ -16,13 +16,14 @@ type UserController interface {
 	controller.Controller
 }
 
-type userControllerImpl struct {
-	userService    services.UserService
-	authMiddleware middlewares.AuthMiddleware
-	ginCtxService  ginservices.GinCtxService
+type UserControllerImpl struct {
+	ginRouterProvider ginservices.GinRouterProvider
+	userService       services.UserService
+	authMiddleware    middlewares.AuthMiddleware
+	ginCtxService     ginservices.GinCtxService
 }
 
-func (u userControllerImpl) AddRoutes(r *gin.Engine) {
+func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1 := r.Group(routing.APIPath(1, "user"), u.authMiddleware.Authentication())
 
 	userGroupV1.POST("",
@@ -75,14 +76,17 @@ func (u userControllerImpl) AddRoutes(r *gin.Engine) {
 		})
 }
 
-func NewUserController(
+func NewUserControllerImpl(
+	ginRouterProvider ginservices.GinRouterProvider,
 	authMiddleware middlewares.AuthMiddleware,
 	userService services.UserService,
 	ginCtxService ginservices.GinCtxService,
-) UserController {
-	return &userControllerImpl{
+) *UserControllerImpl {
+	c := &UserControllerImpl{
 		authMiddleware: authMiddleware,
 		userService:    userService,
 		ginCtxService:  ginCtxService,
 	}
+	ginRouterProvider.AccessRouter(c.AddRoutes)
+	return c
 }

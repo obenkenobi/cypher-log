@@ -6,22 +6,18 @@ import (
 	"github.com/wagslane/go-rabbitmq"
 )
 
-type RabbitConnector interface {
-	GetConsumer() rabbitmq.Consumer
+type RabbitMQPublisher interface {
 	GetPublisher() *rabbitmq.Publisher
 	Close()
 }
 
-type rabbitConnectorImpl struct {
+type RabbitMQPublisherImpl struct {
 	publisher *rabbitmq.Publisher
-	consumer  rabbitmq.Consumer
 }
 
-func (r rabbitConnectorImpl) GetConsumer() rabbitmq.Consumer { return r.consumer }
+func (r RabbitMQPublisherImpl) GetPublisher() *rabbitmq.Publisher { return r.publisher }
 
-func (r rabbitConnectorImpl) GetPublisher() *rabbitmq.Publisher { return r.publisher }
-
-func (r *rabbitConnectorImpl) Close() {
+func (r *RabbitMQPublisherImpl) Close() {
 	if r != nil {
 		defer func(publisher *rabbitmq.Publisher) {
 			if publisher == nil {
@@ -32,17 +28,10 @@ func (r *rabbitConnectorImpl) Close() {
 				logger.Log.Error(err)
 			}
 		}(r.publisher)
-		defer func(consumer rabbitmq.Consumer) {
-			err := consumer.Close()
-			if err != nil {
-				logger.Log.Error(err)
-			}
-		}(r.consumer)
-
 	}
 }
 
-func NewRabbitConnector(rabbitMQConf conf.RabbitMQConf) RabbitConnector {
+func NewRabbitPublisherImpl(rabbitMQConf conf.RabbitMQConf) *RabbitMQPublisherImpl {
 	publisher, err := rabbitmq.NewPublisher(
 		rabbitMQConf.GetURI(),
 		rabbitmq.Config{},
@@ -52,6 +41,32 @@ func NewRabbitConnector(rabbitMQConf conf.RabbitMQConf) RabbitConnector {
 	if err != nil {
 		logger.Log.Fatal(err)
 	}
+	return &RabbitMQPublisherImpl{publisher: publisher}
+}
+
+type RabbitMQConsumer interface {
+	GetConsumer() rabbitmq.Consumer
+	Close()
+}
+
+type RabbitMQConsumerImpl struct {
+	consumer rabbitmq.Consumer
+}
+
+func (r RabbitMQConsumerImpl) GetConsumer() rabbitmq.Consumer { return r.consumer }
+
+func (r *RabbitMQConsumerImpl) Close() {
+	if r != nil {
+		defer func(consumer rabbitmq.Consumer) {
+			err := consumer.Close()
+			if err != nil {
+				logger.Log.Error(err)
+			}
+		}(r.consumer)
+	}
+}
+
+func NewRabbitMQConsumerImpl(rabbitMQConf conf.RabbitMQConf) *RabbitMQConsumerImpl {
 	consumer, err := rabbitmq.NewConsumer(
 		rabbitMQConf.GetURI(),
 		rabbitmq.Config{},
@@ -61,5 +76,5 @@ func NewRabbitConnector(rabbitMQConf conf.RabbitMQConf) RabbitConnector {
 	if err != nil {
 		logger.Log.Fatal(err)
 	}
-	return &rabbitConnectorImpl{publisher: publisher, consumer: consumer}
+	return &RabbitMQConsumerImpl{consumer: consumer}
 }

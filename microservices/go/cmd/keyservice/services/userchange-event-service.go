@@ -57,10 +57,14 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 
 }
 
-func NewUserChangeEventService(
+func NewUserChangeEventServiceImpl(
 	userService sharedservices.UserService,
 	userKeyRepository repositories.UserKeyRepository,
 	crudDSHandler dshandlers.CrudDSHandler,
-) UserChangeEventService {
-	return &UserChangeEventServiceImpl{userService: userService, userKeyRepository: userKeyRepository, crudDSHandler: crudDSHandler}
+) *UserChangeEventServiceImpl {
+	return &UserChangeEventServiceImpl{
+		userService:       userService,
+		userKeyRepository: userKeyRepository,
+		crudDSHandler:     crudDSHandler,
+	}
 }

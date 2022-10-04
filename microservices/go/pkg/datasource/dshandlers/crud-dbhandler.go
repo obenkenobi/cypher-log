@@ -112,7 +112,7 @@ func (d MongoDBHandler) ExecTransaction(ctx context.Context, transactionFunc fun
 	)
 }
 
-func NewMongoHandler(mongoConf conf.MongoConf) *MongoDBHandler {
+func NewMongoDBHandler(mongoConf conf.MongoConf) *MongoDBHandler {
 	err := mgm.SetDefaultConfig(
 		&mgm.Config{CtxTimeout: mongoConf.GetConnectionTimeout()},
 		mongoConf.GetDBName(),

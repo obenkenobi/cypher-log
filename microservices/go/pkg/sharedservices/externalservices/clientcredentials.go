@@ -53,11 +53,11 @@ func (a Auth0SysAccessTokenClient) getAccessToken(audience string) (oauth2.Token
 	return token, err
 }
 
-func NewAuth0SysAccessTokenClient(
+func NewSysAccessTokenClientAuth0Impl(
 	httpClientConf conf.HttpClientConf,
 	auth0SecurityConf authconf.Auth0SecurityConf,
 	clientProvider HttpClientProvider,
-) SysAccessTokenClient {
+) *Auth0SysAccessTokenClient {
 	return &Auth0SysAccessTokenClient{
 		httpClientConf:    httpClientConf,
 		auth0SecurityConf: auth0SecurityConf,

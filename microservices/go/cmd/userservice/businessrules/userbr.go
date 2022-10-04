@@ -76,6 +76,6 @@ func NewUserBrImpl(
 	crudDBHandler dshandlers.CrudDSHandler,
 	userRepository repositories.UserRepository,
 	errorMessageService sharedservices.ErrorService,
-) UserBr {
+) *UserBrImpl {
 	return &UserBrImpl{crudDBHandler: crudDBHandler, userRepository: userRepository, errorService: errorMessageService}
 }

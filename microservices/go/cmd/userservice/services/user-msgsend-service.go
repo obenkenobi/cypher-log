@@ -20,8 +20,8 @@ func (u UserMessageServiceImpl) UserSaveSender() msg.Sender[userdtos.UserChangeE
 	return u.userSaveSender
 }
 
-func NewUserMessageServiceImpl(connector rmqservices.RabbitConnector) UserMsgSendService {
+func NewUserMessageServiceImpl(publisher rmqservices.RabbitMQPublisher) *UserMessageServiceImpl {
 	return &UserMessageServiceImpl{
-		userSaveSender: rmq.NewSender(connector.GetPublisher(), exchanges.UserChangeExchange, rmq.RoutingKeysDefault),
+		userSaveSender: rmq.NewSender(publisher.GetPublisher(), exchanges.UserChangeExchange, rmq.RoutingKeysDefault),
 	}
 }

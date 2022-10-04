@@ -6,12 +6,12 @@ type RabbitMQConf interface {
 	GetURI() string
 }
 
-type rabbitMQConfImpl struct {
+type RabbitMQConfImpl struct {
 	uri string
 }
 
-func (r rabbitMQConfImpl) GetURI() string { return r.uri }
+func (r RabbitMQConfImpl) GetURI() string { return r.uri }
 
-func NewRabbitMQConf() *rabbitMQConfImpl {
-	return &rabbitMQConfImpl{uri: environment.GetEnvVariable(environment.EnvVarRabbitMQUri)}
+func NewRabbitMQConfImpl() *RabbitMQConfImpl {
+	return &RabbitMQConfImpl{uri: environment.GetEnvVariable(environment.EnvVarRabbitMQUri)}
 }

@@ -66,7 +66,7 @@ func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) sin
 	})
 }
 
-func NewUserMongoRepository(mongoDBHandler *dshandlers.MongoDBHandler) UserRepository {
+func NewUserRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserRepositoryImpl {
 	return &UserRepositoryImpl{
 		BaseRepositoryMongo: *baserepos.NewBaseRepositoryMongo[sharedmodels.User](sharedmodels.User{}, mongoDBHandler),
 	}
