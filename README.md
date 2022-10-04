@@ -1,5 +1,5 @@
 # Cypher Log
-A passcode based encrypted note taking app.
+A passcode based encrypted note-taking app.
 
 ## Getting Started
 
@@ -13,10 +13,12 @@ A passcode based encrypted note taking app.
 - VS Code or Goland
 
 ### Install Go Plugins
-In order to support GRPC code generation, install the following plugins:
+In order to support code generation and other features for developing in Go, install the following plugins:
 ```shell
 $ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+$ go install github.com/smartystreets/goconvey
+$ go install github.com/google/wire/cmd/wire@latest
 ```
 ### Generate Development TLS Certificates and Keys
 To generate self-signed certificates for your backend,
@@ -50,4 +52,4 @@ If on MacOS add the following to your `/etc/hosts` file and use localhost as the
 ```
 
 
-### Todo: Add migrations and Go run instructions
+### Todo: Add migrations and Go build/run instructions

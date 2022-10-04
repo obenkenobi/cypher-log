@@ -43,6 +43,11 @@ endef
 list-microservices:
 	ls $(CMD_DIR)
 
+.PHONY: wire
+wire:
+	cd $(SELECTED_SERVICE_DIR)/wiredeps; \
+	go run github.com/google/wire/cmd/wire gen
+
 .PHONY: run
 run:
 	go run $(SELECTED_SERVICE_DIR)

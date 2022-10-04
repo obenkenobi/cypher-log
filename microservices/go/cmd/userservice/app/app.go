@@ -3,7 +3,6 @@ package app
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/background"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/servers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
@@ -12,7 +11,7 @@ import (
 type App struct {
 	rmqPublisher rmqservices.RabbitMQPublisher
 	grpcServer   servers.GrpcServer
-	appServer    commonservers.AppServer
+	appServer    servers.AppServer
 	cronRunner   background.CronRunner
 }
 
@@ -37,7 +36,7 @@ func (a App) Start() {
 func NewApp(
 	rmqPublisher rmqservices.RabbitMQPublisher,
 	grpcServer servers.GrpcServer,
-	appServer commonservers.AppServer,
+	appServer servers.AppServer,
 	cronRunner background.CronRunner,
 ) *App {
 	return &App{rmqPublisher: rmqPublisher, grpcServer: grpcServer, appServer: appServer, cronRunner: cronRunner}

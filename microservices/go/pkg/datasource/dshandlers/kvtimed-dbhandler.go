@@ -9,23 +9,23 @@ type KeyValueTimedDSHandler interface {
 	DataSourceHandler
 }
 
-type RedisKeyValueTimedDBHandler struct {
+type RedisDBHandler struct {
 	redisClient *redis.Client
 }
 
-func (r RedisKeyValueTimedDBHandler) GetRedisClient() *redis.Client {
+func (r RedisDBHandler) GetRedisClient() *redis.Client {
 	return r.redisClient
 }
 
-func (r RedisKeyValueTimedDBHandler) IsNotFoundError(err error) bool {
+func (r RedisDBHandler) IsNotFoundError(err error) bool {
 	return err == redis.Nil
 }
 
-func NewRedisKeyValueTimedDBHandler(redisConf conf.RedisConf) *RedisKeyValueTimedDBHandler {
+func NewRedisDBHandler(redisConf conf.RedisConf) *RedisDBHandler {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     redisConf.GetAddress(),
 		Password: redisConf.GetPassword(),
 		DB:       redisConf.GetDB(),
 	})
-	return &RedisKeyValueTimedDBHandler{redisClient: rdb}
+	return &RedisDBHandler{redisClient: rdb}
 }

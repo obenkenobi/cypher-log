@@ -33,7 +33,7 @@ func (a AppSecretRepositoryImpl) Set(
 	return a.baseRepo.Set(ctx, kvstoreutils.CombineKeySections(a.prefix, key), value, expiration)
 }
 
-func NewAppSecretRepositoryImpl(redisDBHandler *dshandlers.RedisKeyValueTimedDBHandler) *AppSecretRepositoryImpl {
+func NewAppSecretRepositoryImpl(redisDBHandler *dshandlers.RedisDBHandler) *AppSecretRepositoryImpl {
 	prefix := kvstoreutils.CombineKeySections(kvStoreKeyPrefix, "appSecret")
 	baseRepo := baserepos.NewKeyValueTimedRepositoryRedis[models.AppSecret](redisDBHandler)
 	return &AppSecretRepositoryImpl{prefix: prefix, baseRepo: baseRepo}

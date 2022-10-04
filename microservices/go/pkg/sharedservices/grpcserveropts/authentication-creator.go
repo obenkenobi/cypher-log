@@ -15,7 +15,7 @@ type AuthInterceptorCreator interface {
 }
 
 type AuthInterceptorCreatorImpl struct {
-	grpcAuth0JwtValidateService securityservices.ExternalOath2ValidateService
+	grpcAuth0JwtValidateService securityservices.BaseJwtValidateService
 }
 
 // valid validates the authorization.
@@ -52,7 +52,7 @@ func (a AuthInterceptorCreatorImpl) CreateUnaryInterceptor() grpc.ServerOption {
 }
 
 func NewAuthInterceptorCreatorImpl(
-	grpcAuth0JwtValidateService securityservices.ExternalOath2ValidateService,
+	grpcAuth0JwtValidateService securityservices.JwtValidateGrpcService,
 ) *AuthInterceptorCreatorImpl {
 	return &AuthInterceptorCreatorImpl{grpcAuth0JwtValidateService: grpcAuth0JwtValidateService}
 }

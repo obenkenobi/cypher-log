@@ -34,7 +34,7 @@ func (a PrimaryAppSecretRefRepositoryImpl) Set(
 }
 
 func NewPrimaryAppSecretRefRepositoryImpl(
-	redisDBHandler *dshandlers.RedisKeyValueTimedDBHandler,
+	redisDBHandler *dshandlers.RedisDBHandler,
 ) *PrimaryAppSecretRefRepositoryImpl {
 	appSecretKeyPrefix := kvstoreutils.CombineKeySections(kvStoreKeyPrefix, "mainAppSecretRef")
 	baseRepo := baserepos.NewKeyValueTimedRepositoryRedis[models.PrimaryAppSecretRef](redisDBHandler)

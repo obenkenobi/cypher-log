@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
@@ -11,7 +11,7 @@ import (
 type App struct {
 	rabbitConsumer rmqservices.RabbitMQConsumer
 	rmqListener    listeners.RmqListener
-	appServer      commonservers.AppServer
+	appServer      servers.AppServer
 }
 
 func (a App) Start() {
@@ -31,7 +31,7 @@ func (a App) Start() {
 
 func NewApp(
 	rabbitConsumer rmqservices.RabbitMQConsumer,
-	appServer commonservers.AppServer,
+	appServer servers.AppServer,
 	rmqListener listeners.RmqListener,
 ) *App {
 	return &App{rabbitConsumer: rabbitConsumer, appServer: appServer, rmqListener: rmqListener}

@@ -7,50 +7,54 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 )
 
-// AppServer represents an interface acts as a general application server that can be run as a task.
-type AppServer interface{ taskrunner.TaskRunner }
+// CoreAppServer represents an interface acts as a general application server that can be run as a task.
+type CoreAppServer interface{ taskrunner.TaskRunner }
 
-type AppServerImpl struct {
-	ginRouterProvider ginservices.GinRouterProvider
-	serverConf        conf.ServerConf
-	tlsConf           conf.TLSConf
+type CoreAppServerImpl struct {
+	router     *gin.Engine
+	serverConf conf.ServerConf
+	tlsConf    conf.TLSConf
 }
 
-func (s AppServerImpl) Run() {
-	s.ginRouterProvider.AccessRouter(func(r *gin.Engine) {
-		var err error
-		if environment.ActivateAppServerTLS() {
-			err = r.RunTLS(
-				s.getFormattedPort(),
-				s.tlsConf.ServerCertPath(),
-				s.tlsConf.ServerKeyPath(),
-			)
-		} else {
-			err = r.Run(s.getFormattedPort())
-		}
-		if err != nil {
-			logger.Log.WithError(err).Fatal("AppServer failed to run")
-			return
-		}
-	})
-
+func (s CoreAppServerImpl) Run() {
+	var err error
+	if environment.ActivateAppServerTLS() {
+		err = s.router.RunTLS(
+			s.getFormattedPort(),
+			s.tlsConf.ServerCertPath(),
+			s.tlsConf.ServerKeyPath(),
+		)
+	} else {
+		err = s.router.Run(s.getFormattedPort())
+	}
+	if err != nil {
+		logger.Log.WithError(err).Fatal("CoreAppServer failed to run")
+		return
+	}
 }
 
-func (s AppServerImpl) getFormattedPort() string {
+func (s CoreAppServerImpl) getFormattedPort() string {
 	return fmt.Sprintf(":%s", s.serverConf.GetAppServerPort())
 }
 
-// NewAppServerImpl creates an app server that can be run by the server configuration and a list of controllers
-func NewAppServerImpl(
-	ginRouterProvider ginservices.GinRouterProvider,
+// NewCoreAppServerImpl creates an app server that can be run by the server configuration and a list of controllers
+func NewCoreAppServerImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
-) *AppServerImpl {
-	ginRouterProvider.AccessRouter(middlewares.AddGlobalMiddleWares)
-	server := &AppServerImpl{serverConf: serverConf, tlsConf: tlsConf, ginRouterProvider: ginRouterProvider}
+	controllers ...controller.Controller,
+) *CoreAppServerImpl {
+	if environment.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+	}
+	r := gin.New()
+	middlewares.AddGlobalMiddleWares(r)
+	for _, c := range controllers {
+		c.AddRoutes(r)
+	}
+	server := &CoreAppServerImpl{serverConf: serverConf, tlsConf: tlsConf, router: r}
 	return server
 }

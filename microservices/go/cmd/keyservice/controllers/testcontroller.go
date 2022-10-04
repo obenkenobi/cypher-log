@@ -15,10 +15,9 @@ type TestController interface {
 }
 
 type TestControllerImpl struct {
-	ginRouterProvider ginservices.GinRouterProvider
-	userService       sharedservices.UserService
-	authMiddleware    middlewares.AuthMiddleware
-	ginCtxService     ginservices.GinCtxService
+	userService    sharedservices.UserService
+	authMiddleware middlewares.AuthMiddleware
+	ginCtxService  ginservices.GinCtxService
 }
 
 func (u TestControllerImpl) AddRoutes(r *gin.Engine) {
@@ -34,16 +33,13 @@ func (u TestControllerImpl) AddRoutes(r *gin.Engine) {
 }
 
 func NewTestControllerImpl(
-	ginRouterProvider ginservices.GinRouterProvider,
 	authMiddleware middlewares.AuthMiddleware,
 	userService sharedservices.UserService,
 	ginCtxService ginservices.GinCtxService,
 ) *TestControllerImpl {
-	c := &TestControllerImpl{
+	return &TestControllerImpl{
 		authMiddleware: authMiddleware,
 		userService:    userService,
 		ginCtxService:  ginCtxService,
 	}
-	ginRouterProvider.AccessRouter(c.AddRoutes)
-	return c
 }

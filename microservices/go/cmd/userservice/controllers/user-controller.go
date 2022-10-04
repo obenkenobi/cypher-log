@@ -17,10 +17,9 @@ type UserController interface {
 }
 
 type UserControllerImpl struct {
-	ginRouterProvider ginservices.GinRouterProvider
-	userService       services.UserService
-	authMiddleware    middlewares.AuthMiddleware
-	ginCtxService     ginservices.GinCtxService
+	userService    services.UserService
+	authMiddleware middlewares.AuthMiddleware
+	ginCtxService  ginservices.GinCtxService
 }
 
 func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
@@ -77,16 +76,13 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 }
 
 func NewUserControllerImpl(
-	ginRouterProvider ginservices.GinRouterProvider,
 	authMiddleware middlewares.AuthMiddleware,
 	userService services.UserService,
 	ginCtxService ginservices.GinCtxService,
 ) *UserControllerImpl {
-	c := &UserControllerImpl{
+	return &UserControllerImpl{
 		authMiddleware: authMiddleware,
 		userService:    userService,
 		ginCtxService:  ginCtxService,
 	}
-	ginRouterProvider.AccessRouter(c.AddRoutes)
-	return c
 }

@@ -5,8 +5,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
@@ -21,46 +21,39 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
+func InitializeApp() *app.App {
+	rabbitMQConfImpl := conf.NewRabbitMQConfImpl()
+	rabbitMQConsumerImpl := rmqservices.NewRabbitMQConsumerImpl(rabbitMQConfImpl)
+	serverConfImpl := conf.NewServerConfImpl()
+	tlsConfImpl := conf.NewTlsConfImpl()
+	auth0RouteSecurityConfImpl := authconf.NewAuth0SecurityConfImpl()
+	jwtValidateWebAppServiceImpl := securityservices.NewJwtValidateWebAppServiceImpl(auth0RouteSecurityConfImpl)
+	authMiddlewareImpl := middlewares.NewAuthMiddlewareImpl(jwtValidateWebAppServiceImpl)
+	mongoConfImpl := conf.NewMongoConfImpl()
+	mongoDBHandler := dshandlers.NewMongoDBHandler(mongoConfImpl)
+	userRepositoryImpl := sharedrepos.NewUserRepositoryImpl(mongoDBHandler)
+	httpClientConfImpl := conf.NewHttpClientConfImpl()
+	httpClientProviderImpl := externalservices.NewHTTPClientProviderImpl(httpClientConfImpl)
+	auth0SysAccessTokenClient := externalservices.NewSysAccessTokenClientAuth0Impl(httpClientConfImpl, auth0RouteSecurityConfImpl, httpClientProviderImpl)
+	coreGrpcConnProviderImpl := externalservices.NewCoreGrpcConnProviderImpl(auth0SysAccessTokenClient, tlsConfImpl)
+	grpcClientConfImpl := conf.NewGrpcClientConfImpl()
+	extUserServiceImpl := externalservices.NewExtUserServiceImpl(coreGrpcConnProviderImpl, grpcClientConfImpl)
+	errorServiceImpl := sharedservices.NewErrorServiceImpl()
+	userServiceImpl := sharedservices.NewUserServiceImpl(userRepositoryImpl, extUserServiceImpl, errorServiceImpl)
+	ginCtxServiceImpl := ginservices.NewGinCtxServiceImpl(errorServiceImpl)
+	testControllerImpl := controllers.NewTestControllerImpl(authMiddlewareImpl, userServiceImpl, ginCtxServiceImpl)
+	appServerImpl := servers.NewAppServerImpl(serverConfImpl, tlsConfImpl, testControllerImpl)
+	userKeyRepositoryImpl := repositories.NewUserKeyRepositoryImpl(mongoDBHandler)
+	userChangeEventServiceImpl := services.NewUserChangeEventServiceImpl(userServiceImpl, userKeyRepositoryImpl, mongoDBHandler)
+	rmqListenerImpl := listeners.NewRmqListenerImpl(rabbitMQConsumerImpl, userChangeEventServiceImpl)
+	appApp := app.NewApp(rabbitMQConsumerImpl, appServerImpl, rmqListenerImpl)
+	return appApp
+}
+
 func main() {
 	environment.ReadEnvFiles(".env", "keyservice.env") // Load env files
 	logger.ConfigureLoggerFromEnv()
-
-	// Dependency graph
-	serverConf := conf.NewServerConfImpl()
-	tlsConf := conf.NewTlsConfImpl()
-	httpclientConf := conf.NewHttpClientConfImpl()
-	grpcClientConf := conf.NewGrpcClientConfImpl()
-	auth0Conf := authconf.NewAuth0SecurityConfImpl()
-	rabbitMqConf := conf.NewRabbitMQConfImpl()
-	rabbitConsumer := rmqservices.NewRabbitMQConsumerImpl(rabbitMqConf)
-	httpClientProvider := externalservices.NewHTTPClientProviderImpl(httpclientConf)
-	auth0SysAccessTokenClient := externalservices.NewSysAccessTokenClientAuth0Impl(
-		httpclientConf,
-		auth0Conf,
-		httpClientProvider,
-	)
-	coreGrpcConnProvider := externalservices.NewCoreGrpcConnProviderImpl(auth0SysAccessTokenClient, tlsConf)
-	extUserService := externalservices.NewExtUserServiceImpl(coreGrpcConnProvider, grpcClientConf)
-	mongoCOnf := conf.NewMongoConfImpl()
-	redisConf := conf.NewRedisConfImpl()
-	mongoHandler := dshandlers.NewMongoDBHandler(mongoCOnf)
-	redisHandler := dshandlers.NewRedisKeyValueTimedDBHandler(redisConf)
-	userRepository := sharedrepos.NewUserRepositoryImpl(mongoHandler)
-	userKeyRepository := repositories.NewUserKeyRepositoryImpl(mongoHandler)
-	_ = repositories.NewAppSecretRepositoryImpl(redisHandler)
-	_ = repositories.NewPrimaryAppSecretRefRepositoryImpl(redisHandler)
-	errorService := sharedservices.NewErrorServiceImpl()
-	ginCtxService := ginservices.NewGinCtxServiceImpl(errorService)
-	userService := sharedservices.NewUserServiceImpl(userRepository, extUserService, errorService)
-	userChangeEventService := services.NewUserChangeEventServiceImpl(userService, userKeyRepository, mongoHandler)
-	ginRouterProvider := ginservices.NewGinEngineServiceImpl()
-	apiAuth0JwtValidateService := securityservices.NewExternalOath2ValidateServiceAuth0Impl(auth0Conf)
-	authMiddleware := middlewares.NewAuthMiddlewareImpl(apiAuth0JwtValidateService)
-	_ = controllers.NewTestControllerImpl(ginRouterProvider, authMiddleware, userService, ginCtxService)
-	appServer := commonservers.NewAppServerImpl(ginRouterProvider, serverConf, tlsConf)
-	rmqListener := listeners.NewRmqListenerImpl(rabbitConsumer, userChangeEventService)
-
-	application := app.NewApp(rabbitConsumer, appServer, rmqListener)
+	application := InitializeApp()
 	application.Start()
 
 }

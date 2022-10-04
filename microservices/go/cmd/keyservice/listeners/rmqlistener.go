@@ -18,13 +18,13 @@ type RmqListener interface {
 	taskrunner.TaskRunner
 }
 
-type rmqListenerImpl struct {
+type RmqListenerImpl struct {
 	consumer               rmqservices.RabbitMQConsumer
 	userChangeEventService services.UserChangeEventService
 	ctx                    context.Context
 }
 
-func (r rmqListenerImpl) ListenUserChange() {
+func (r RmqListenerImpl) ListenUserChange() {
 	userCreateReceiver := rmq.NewReceiver(
 		r.consumer.GetConsumer(),
 		"key_service_user_change",
@@ -49,7 +49,7 @@ func (r rmqListenerImpl) ListenUserChange() {
 	logger.Log.Info("Listening for user changes")
 }
 
-func (r rmqListenerImpl) Run() {
+func (r RmqListenerImpl) Run() {
 	r.ListenUserChange()
 	forever := make(chan any)
 	<-forever
@@ -58,8 +58,8 @@ func (r rmqListenerImpl) Run() {
 func NewRmqListenerImpl(
 	consumer rmqservices.RabbitMQConsumer,
 	userChangeEventService services.UserChangeEventService,
-) *rmqListenerImpl {
-	return &rmqListenerImpl{
+) *RmqListenerImpl {
+	return &RmqListenerImpl{
 		ctx:                    context.Background(),
 		consumer:               consumer,
 		userChangeEventService: userChangeEventService,
