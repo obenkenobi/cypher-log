@@ -22,7 +22,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
-func InitializeApp() *App { // This go file is not to be ran o
+func InitializeApp() *App {
 	wire.Build(
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),

@@ -25,7 +25,6 @@ import (
 )
 
 func InitializeApp() *App {
-	// wire_gen will not be imported but instead have InitializeApp be copied over to main.go
 	wire.Build(
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),

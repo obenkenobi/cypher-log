@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/joamaki/goreactive/stream"
+	bos "github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/businessobjects"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
@@ -17,9 +18,12 @@ import (
 )
 
 type AppSecretService interface {
-	GetAppSecret(ctx context.Context, kid string) single.Single[models.AppSecret] // Gets the app secret marked by the KID
-	GetPrimaryAppSecret() single.Single[models.AppSecret]                         // Get the main app secret
-	GeneratePrimaryAppSecret() single.Single[models.AppSecret]                    // Sets the n
+	// GetAppSecret gets the app secret marked by the KID
+	GetAppSecret(ctx context.Context, kid string) single.Single[bos.AppSecretBo]
+	// GetPrimaryAppSecret gets the primary app secret
+	GetPrimaryAppSecret() single.Single[bos.AppSecretBo]
+	// GeneratePrimaryAppSecret generates a new primary app secret
+	GeneratePrimaryAppSecret() single.Single[bos.AppSecretBo]
 }
 
 type AppSecretServiceImpl struct {
@@ -29,34 +33,29 @@ type AppSecretServiceImpl struct {
 	errorService                  sharedservices.ErrorService
 }
 
-func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) single.Single[models.AppSecret] {
-	appSecretFindSrc := a.appSecretRepository.Get(ctx, kid)
-	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (models.AppSecret, error) {
-		return appSecretServiceReadMaybeModel(a, maybe)
-	})
-}
-
-func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) single.Single[models.AppSecret] {
+func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo] {
 	refFindSrc := a.primaryAppSecretRefRepository.Get(ctx)
-	refSrc := single.FlatMap(refFindSrc,
-		func(maybe option.Maybe[models.PrimaryAppSecretRef]) single.Single[models.PrimaryAppSecretRef] {
-			if val, ok := maybe.Get(); ok {
-				return single.Just(val)
+	return single.FlatMap(refFindSrc,
+		func(maybe option.Maybe[models.PrimaryAppSecretRef]) single.Single[bos.AppSecretBo] {
+			if ref, ok := maybe.Get(); ok {
+				return a.GetAppSecret(ctx, ref.Kid)
 			}
 			return a.GeneratePrimaryAppSecret(ctx)
 		},
 	)
-	appSecretFindSrc := single.FlatMap(refSrc,
-		func(ref models.PrimaryAppSecretRef) single.Single[option.Maybe[models.AppSecret]] {
-			return a.appSecretRepository.Get(ctx, ref.Kid)
-		},
-	)
-	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (models.AppSecret, error) {
-		return appSecretServiceReadMaybeModel(a, maybe)
+}
+
+func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) single.Single[bos.AppSecretBo] {
+	appSecretFindSrc := a.appSecretRepository.Get(ctx, kid)
+	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (bos.AppSecretBo, error) {
+		appSecretBoMaybe := option.Map(maybe, func(appSecret models.AppSecret) bos.AppSecretBo {
+			return bos.NewAppSecretBo(kid, appSecret.SecretKey)
+		})
+		return appSecretServiceReadMaybeModel(a, appSecretBoMaybe)
 	})
 }
 
-func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) single.Single[models.PrimaryAppSecretRef] {
+func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo] {
 	kidGuidSrc := single.FromSupplier(uuid.NewRandom)
 	kidSrc := single.MapWithError(kidGuidSrc, func(kidGuid uuid.UUID) (string, error) {
 		newKid := kidGuid.String()
@@ -67,16 +66,19 @@ func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) sing
 	})
 	newKeySrc := single.FromSupplier(cipherutils.GenerateRandomKey)
 	kidKeySrc := single.Zip2(kidSrc, newKeySrc)
-	return single.FlatMap(kidKeySrc, func(t stream.Tuple2[string, []byte]) single.Single[models.PrimaryAppSecretRef] {
+	return single.FlatMap(kidKeySrc, func(t stream.Tuple2[string, []byte]) single.Single[bos.AppSecretBo] {
 		ref := models.PrimaryAppSecretRef{Kid: t.V1}
 		appSecret := models.AppSecret{SecretKey: t.V2}
 		secretSaveSrc := a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration())
-		return single.FlatMap(
+		refSavedSrc := single.FlatMap(
 			secretSaveSrc,
 			func(_ models.AppSecret) single.Single[models.PrimaryAppSecretRef] {
 				return a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration())
 			},
 		)
+		return single.Map(refSavedSrc, func(_ models.PrimaryAppSecretRef) bos.AppSecretBo {
+			return bos.NewAppSecretBo(ref.Kid, appSecret.SecretKey)
+		})
 	})
 }
 
