@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"github.com/joamaki/goreactive/stream"
+	"github.com/barweiss/go-tuple"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
@@ -44,7 +44,7 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 				userKeyDeleteSrc := u.userKeyRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
 				userResSrc = single.Map(
 					single.Zip2(userDeleteSrc, userKeyDeleteSrc),
-					func(_ stream.Tuple2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
+					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
 						return userdtos.UserChangeEventResponseDto{Discarded: false}
 					},
 				)

@@ -2,7 +2,7 @@ package single_test
 
 import (
 	"context"
-	"github.com/joamaki/goreactive/stream"
+	"github.com/barweiss/go-tuple"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	cv "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -19,7 +19,7 @@ func TestSingleFromSupplierAsync(t *testing.T) {
 			twoSrc := single.Map(oneSrc, func(v int) int { return v + 1 })
 			threeSrc := single.Map(oneSrc, func(v int) int { return v + 2 })
 			twoExpected, threeExpected := 2, 3
-			tupleExpected := stream.Tuple2[int, int]{V1: twoExpected, V2: threeExpected}
+			tupleExpected := tuple.New2(twoExpected, threeExpected)
 
 			cv.Convey("Expect zipping twoSrc and threeSrc successfully results in the expected tuples", func() {
 				zipped := single.Zip2(twoSrc, threeSrc)

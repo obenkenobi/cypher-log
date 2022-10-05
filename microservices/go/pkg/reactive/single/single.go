@@ -3,6 +3,7 @@ package single
 import (
 	"context"
 	"github.com/akrennmair/slice"
+	"github.com/barweiss/go-tuple"
 	"github.com/joamaki/goreactive/stream"
 	"sync"
 )
@@ -134,10 +135,10 @@ func MapWithError[A any, B any](src Single[A], apply func(A) (B, error)) Single[
 
 // Zip2 Takes 2 Singles and returns a Single that emits a tuple of each of the
 // singles in the order they are supplied
-func Zip2[V1 any, V2 any](src1 Single[V1], src2 Single[V2]) Single[stream.Tuple2[V1, V2]] {
-	return FlatMap(src1, func(v1 V1) Single[stream.Tuple2[V1, V2]] {
-		return Map(src2, func(v2 V2) stream.Tuple2[V1, V2] {
-			return stream.Tuple2[V1, V2]{V1: v1, V2: v2}
+func Zip2[V1 any, V2 any](src1 Single[V1], src2 Single[V2]) Single[tuple.T2[V1, V2]] {
+	return FlatMap(src1, func(v1 V1) Single[tuple.T2[V1, V2]] {
+		return Map(src2, func(v2 V2) tuple.T2[V1, V2] {
+			return tuple.New2(v1, v2)
 		})
 
 	})

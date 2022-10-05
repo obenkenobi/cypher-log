@@ -3,8 +3,8 @@ package embeddeduser
 import "github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded"
 
 type BaseUserCommon struct {
-	UserName    string `json:"userName" binding:"required"`
-	DisplayName string `json:"displayName" binding:"required"`
+	UserName    string `json:"userName" binding:"exists,alphanumunicode,min=4,max=255"`
+	DisplayName string `json:"displayName" binding:"exists,alphanumunicode,min=4,max=255"`
 }
 
 type BaseUserAuthId struct {

@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"github.com/barweiss/go-tuple"
 	"github.com/google/uuid"
-	"github.com/joamaki/goreactive/stream"
 	bos "github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/businessobjects"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
@@ -66,7 +66,7 @@ func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) sing
 	})
 	newKeySrc := single.FromSupplier(cipherutils.GenerateRandomKey)
 	kidKeySrc := single.Zip2(kidSrc, newKeySrc)
-	return single.FlatMap(kidKeySrc, func(t stream.Tuple2[string, []byte]) single.Single[bos.AppSecretBo] {
+	return single.FlatMap(kidKeySrc, func(t tuple.T2[string, []byte]) single.Single[bos.AppSecretBo] {
 		ref := models.PrimaryAppSecretRef{Kid: t.V1}
 		appSecret := models.AppSecret{SecretKey: t.V2}
 		secretSaveSrc := a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration())
