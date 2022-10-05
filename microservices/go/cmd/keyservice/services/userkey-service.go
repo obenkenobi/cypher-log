@@ -50,7 +50,6 @@ func (u UserKeyServiceImpl) CreateUserKey(
 		return models.UserKey{UserId: userBo.Id, KeyDerivationSalt: keyDerivationSalt, KeyHash: keyHash}
 
 	})
-
 	userKeySaveSrc := single.FlatMap(newUserKeySrc, func(userKey models.UserKey) single.Single[models.UserKey] {
 		return u.userKeyRepository.Create(ctx, userKey)
 	})
