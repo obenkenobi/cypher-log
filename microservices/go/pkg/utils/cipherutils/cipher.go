@@ -4,14 +4,16 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/scrypt"
+	"golang.org/x/exp/slices"
 )
 
-const KeyLength = 32
+const aesKeyLength = 32
 
-// Encrypt encrypts your data
-func Encrypt(key, data []byte) ([]byte, error) {
+// EncryptAES encrypts your data using AES
+func EncryptAES(key, data []byte) ([]byte, error) {
 	blockCipher, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -22,8 +24,8 @@ func Encrypt(key, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err = rand.Read(nonce); err != nil {
+	nonce, err := generateRandomBytes(gcm.NonceSize())
+	if err != nil {
 		return nil, err
 	}
 
@@ -32,8 +34,8 @@ func Encrypt(key, data []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// Decrypt decrypts your data
-func Decrypt(key, data []byte) ([]byte, error) {
+// DecryptAES decrypts your data using AES
+func DecryptAES(key, data []byte) ([]byte, error) {
 	blockCipher, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -54,28 +56,24 @@ func Decrypt(key, data []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-// GenerateRandomKey generates a random 32 byte encryption key
-func GenerateRandomKey() ([]byte, error) {
-	key := make([]byte, KeyLength)
-	if _, err := rand.Read(key); err != nil {
-		return nil, err
-	}
-	return key, nil
+// GenerateRandomKeyAES generates a random 32 byte encryption key to be used with AES
+func GenerateRandomKeyAES() ([]byte, error) {
+	return generateRandomBytes(aesKeyLength)
 }
 
-// DeriveKey generates an encryption key with a password. Salt can be passed as
+// DeriveAESKeyFromPassword generates an encryption key with a password. Salt can be passed as
 // nil if no salt is provided as a new salt will be returned alongside the new
 // key. If a salt already exists, just pass the existing one, and it will be used
 // to derive the new key.
-func DeriveKey(password, salt []byte) (derivedKey []byte, passwordSalt []byte, err error) {
+func DeriveAESKeyFromPassword(password, salt []byte) (derivedKey []byte, passwordSalt []byte, err error) {
 	if salt == nil {
-		salt = make([]byte, 32)
-		if _, err := rand.Read(salt); err != nil {
+		salt, err = generateRandomBytes(32)
+		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	key, err := scrypt.Key(password, salt, 32768, 8, 1, KeyLength)
+	key, err := scrypt.Key(password, salt, 32768, 8, 1, aesKeyLength)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -83,16 +81,16 @@ func DeriveKey(password, salt []byte) (derivedKey []byte, passwordSalt []byte, e
 	return key, salt, nil
 }
 
-// HashKey hashes an encryption key
-func HashKey(key []byte) ([]byte, error) {
+// HashKeyBcrypt hashes an encryption key with bcrypts
+func HashKeyBcrypt(key []byte) ([]byte, error) {
 	return bcrypt.GenerateFromPassword(key, 10)
 }
 
-// VerifyKeyHash takes an existing key hash and key and verifies if the key is
-// correct. If so, true is returned. Otherwise, false is returned. An error is
-// returned if and only if the verification failed due to reasons other than the
-// key not matching the hash.
-func VerifyKeyHash(keyHash []byte, key []byte) (bool, error) {
+// VerifyKeyHashBcrypt takes an existing key hash and key and verifies if the key
+// is correct with bcrypt. If so, true is returned. Otherwise, false is returned.
+// An error is returned if and only if the verification failed due to reasons
+// other than the key not matching the hash.
+func VerifyKeyHashBcrypt(keyHash []byte, key []byte) (bool, error) {
 	err := bcrypt.CompareHashAndPassword(keyHash, key)
 	if err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
@@ -101,4 +99,46 @@ func VerifyKeyHash(keyHash []byte, key []byte) (bool, error) {
 		return false, bcrypt.ErrMismatchedHashAndPassword
 	}
 	return true, nil
+}
+
+const sha256SaltLen = 32
+
+// HashWithSaltSHA256 hashes the given value and returns a hash with an
+// embedded salt
+func HashWithSaltSHA256(value []byte) ([]byte, error) {
+	hash, salt, err := hashValueSHA256(value, nil)
+	return append(hash, salt...), err
+}
+
+// VerifyHashWithSaltSHA256 verifies the salted hash matches the value
+func VerifyHashWithSaltSHA256(saltedHash, value []byte) (bool, error) {
+	saltIndex := len(saltedHash) - sha256SaltLen
+	hash := saltedHash[:saltIndex]
+	salt := saltedHash[saltIndex:]
+	hashToVerify, _, err := hashValueSHA256(value, salt)
+	if err != nil {
+		return false, err
+	}
+	return slices.Equal(hash, hashToVerify), nil
+}
+
+func hashValueSHA256(value, salt []byte) (hash []byte, hashSalt []byte, err error) {
+	if salt == nil {
+		salt, err = generateRandomBytes(sha256SaltLen)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	saltedValue := append(value, salt...)
+	h := sha256.New()
+	if _, err := h.Write(saltedValue); err != nil {
+		return nil, nil, err
+	}
+	return h.Sum(nil), salt, nil
+}
+
+func generateRandomBytes(byteCount int) ([]byte, error) {
+	bytes := make([]byte, byteCount)
+	_, err := rand.Read(bytes)
+	return bytes, err
 }

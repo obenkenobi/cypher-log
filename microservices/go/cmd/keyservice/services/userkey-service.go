@@ -34,14 +34,14 @@ func (u UserKeyServiceImpl) CreateUserKey(
 	type tKeyDerivationSalt []byte
 	type tKeyHash []byte
 	newKeySrc := single.FromSupplier(func() (tuple.T2[tKey, tKeyDerivationSalt], error) {
-		key, keyDerivationSalt, err := cipherutils.DeriveKey([]byte(passwordDto.Passcode), nil)
+		key, keyDerivationSalt, err := cipherutils.DeriveAESKeyFromPassword([]byte(passwordDto.Passcode), nil)
 		return tuple.New2(tKey(key), tKeyDerivationSalt(keyDerivationSalt)), err
 	})
 	newKeyAndHashSrc := single.MapWithError(
 		newKeySrc,
 		func(t tuple.T2[tKey, tKeyDerivationSalt]) (tuple.T2[tKeyDerivationSalt, tKeyHash], error) {
 			key, keyDerivationSalt := t.V1, t.V2
-			keyHash, err := cipherutils.HashKey(key)
+			keyHash, err := cipherutils.HashKeyBcrypt(key)
 			return tuple.New2(keyDerivationSalt, tKeyHash(keyHash)), err
 		},
 	)

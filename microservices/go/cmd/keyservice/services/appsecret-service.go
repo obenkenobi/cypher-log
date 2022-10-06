@@ -64,7 +64,7 @@ func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) sing
 		}
 		return newKid, nil
 	})
-	newKeySrc := single.FromSupplier(cipherutils.GenerateRandomKey)
+	newKeySrc := single.FromSupplier(cipherutils.GenerateRandomKeyAES)
 	kidKeySrc := single.Zip2(kidSrc, newKeySrc)
 	return single.FlatMap(kidKeySrc, func(t tuple.T2[string, []byte]) single.Single[bos.AppSecretBo] {
 		ref := models.PrimaryAppSecretRef{Kid: t.V1}
