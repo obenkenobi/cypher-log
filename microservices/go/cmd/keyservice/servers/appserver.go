@@ -17,7 +17,7 @@ type AppServerImpl struct {
 func NewAppServerImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
-	testController controllers.TestController,
+	testController controllers.UserKeyController,
 ) *AppServerImpl {
 	coreAppServer := commonservers.NewCoreAppServerImpl(serverConf, tlsConf, testController)
 	return &AppServerImpl{CoreAppServer: coreAppServer}

@@ -23,6 +23,8 @@ import (
 )
 
 type UserKeyService interface {
+	UserKeyExists(ctx context.Context, userBo userbos.UserBo) single.Single[commondtos.ExistsDto]
+
 	CreateUserKey(
 		ctx context.Context,
 		userBo userbos.UserBo,
@@ -38,7 +40,7 @@ type UserKeyService interface {
 	GetKeyFromSession(
 		ctx context.Context,
 		userBo userbos.UserBo,
-		dto keydtos.UserKeySessionTokenDto,
+		sessionDto keydtos.UserKeySessionTokenDto,
 	) single.Single[keydtos.UserKeyDto]
 }
 
@@ -51,10 +53,20 @@ type UserKeyServiceImpl struct {
 	keyConf                    conf.KeyConf
 }
 
+func (u UserKeyServiceImpl) UserKeyExists(
+	ctx context.Context,
+	userBo userbos.UserBo,
+) single.Single[commondtos.ExistsDto] {
+	userFindSrc := u.userKeyGeneratorRepository.FindOneByUserId(ctx, userBo.Id)
+	return single.Map(userFindSrc, func(maybe option.Maybe[models.UserKeyGenerator]) commondtos.ExistsDto {
+		return commondtos.NewExistsDto(maybe.IsPresent())
+	})
+}
+
 func (u UserKeyServiceImpl) CreateUserKey(
 	ctx context.Context,
 	userBo userbos.UserBo,
-	passwordDto keydtos.PasscodeCreateDto,
+	passcodeDto keydtos.PasscodeCreateDto,
 ) single.Single[commondtos.SuccessDto] {
 	type derivedKey struct {
 		key               []byte
@@ -65,7 +77,7 @@ func (u UserKeyServiceImpl) CreateUserKey(
 		keyDerivationSalt []byte
 	}
 	newKeySrc := single.FromSupplier(func() (derivedKey, error) {
-		key, keyDerivationSalt, err := cipherutils.DeriveAESKeyFromPassword([]byte(passwordDto.Passcode), nil)
+		key, keyDerivationSalt, err := cipherutils.DeriveAESKeyFromPassword([]byte(passcodeDto.Passcode), nil)
 		return derivedKey{key: key, keyDerivationSalt: keyDerivationSalt}, err
 	})
 	newKeyAndHashSrc := single.MapWithError(newKeySrc, func(dk derivedKey) (keyGeneration, error) {
