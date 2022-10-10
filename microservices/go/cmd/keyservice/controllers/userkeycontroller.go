@@ -58,7 +58,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
 		})
 
-	userKeyGroupV1.POST("/session",
+	userKeyGroupV1.POST("/newSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
