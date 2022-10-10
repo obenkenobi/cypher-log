@@ -76,12 +76,10 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 	userKeyGroupV1.POST("/getKeyFromSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
-			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 			bodySrc := ginservices.ReadValueFromBody[keydtos.UserKeySessionTokenDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(single.Zip2(reqUserSrc, bodySrc),
-				func(t tuple.T2[userbos.UserBo, keydtos.UserKeySessionTokenDto]) single.Single[keydtos.UserKeyDto] {
-					userBos, sessionDto := t.V1, t.V2
-					return u.userKeyService.GetKeyFromSession(c, userBos, sessionDto)
+			businessLogicSrc := single.FlatMap(bodySrc,
+				func(sessionDto keydtos.UserKeySessionTokenDto) single.Single[keydtos.UserKeyDto] {
+					return u.userKeyService.GetKeyFromSession(c, sessionDto)
 				},
 			)
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)

@@ -39,7 +39,6 @@ type UserKeyService interface {
 
 	GetKeyFromSession(
 		ctx context.Context,
-		userBo userbos.UserBo,
 		sessionDto keydtos.UserKeySessionTokenDto,
 	) single.Single[keydtos.UserKeyDto]
 }
@@ -160,10 +159,8 @@ func (u UserKeyServiceImpl) NewKeySession(
 
 func (u UserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
-	userBo userbos.UserBo,
 	sessionDto keydtos.UserKeySessionTokenDto,
 ) single.Single[keydtos.UserKeyDto] {
-	userKeyGenSrc := u.getUserKeyGenerator(ctx, userBo)
 	storedSessionSrc := single.FlatMap(u.userKeySessionRepository.Get(ctx, sessionDto.ProxyKid),
 		func(maybe option.Maybe[models.UserKeySession]) single.Single[models.UserKeySession] {
 			return option.Map(maybe, single.Just[models.UserKeySession]).
@@ -193,25 +190,13 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 			return cipherutils.DecryptAES(appSecret.Key, proxyKeyCipher)
 		})
 	})
-	keyBytesSrc := single.MapWithError(
-		single.Zip2(storedSessionSrc, proxyKeySrc),
+	keyBytesSrc := single.MapWithError(single.Zip2(storedSessionSrc, proxyKeySrc),
 		func(t tuple.T2[models.UserKeySession, []byte]) ([]byte, error) {
 			session, proxyKey := t.V1, t.V2
 			return cipherutils.DecryptAES(proxyKey, session.EncryptedKey)
 		},
 	)
-	validateKeyFromGenerator := single.FlatMap(single.Zip2(userKeyGenSrc, keyBytesSrc),
-		func(t tuple.T2[models.UserKeyGenerator, []byte]) single.Single[[]apperrors.RuleError] {
-			userKeyGen, key := t.V1, t.V2
-			return u.userKeyBr.ValidateKeyFromSession(userKeyGen, key)
-		},
-	)
-	return single.Map(single.Zip2(keyBytesSrc, validateKeyFromGenerator),
-		func(t tuple.T2[[]byte, []apperrors.RuleError]) keydtos.UserKeyDto {
-			keyBytes := t.V1
-			return keydtos.NewUserKeyDto(keyBytes)
-		},
-	)
+	return single.Map(keyBytesSrc, keydtos.NewUserKeyDto)
 }
 
 func (u UserKeyServiceImpl) getUserKeyGenerator(
