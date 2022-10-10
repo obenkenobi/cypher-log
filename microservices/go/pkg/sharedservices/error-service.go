@@ -34,6 +34,8 @@ func NewErrorServiceImpl() *ErrorServiceImpl {
 		apperrors.ErrCodeResourceAlreadyCreated: "Resource already created",
 		apperrors.ErrCodeUsernameTaken:          "Username is taken",
 		apperrors.ErrCodeUserRequireFail:        "User is not found or incomplete",
+		apperrors.ErrCodeIncorrectPasscode:      "Incorrect passcode",
+		apperrors.ErrCodeInvalidSession:         "Invalid session",
 	}
 	return &ErrorServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

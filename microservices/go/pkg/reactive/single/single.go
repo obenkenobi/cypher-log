@@ -144,6 +144,41 @@ func Zip2[V1 any, V2 any](src1 Single[V1], src2 Single[V2]) Single[tuple.T2[V1, 
 	})
 }
 
+// Zip3 Takes 3 Singles and returns a Single that emits a tuple of each of the
+// singles in the order they are supplied
+func Zip3[V1 any, V2 any, V3 any](
+	src1 Single[V1],
+	src2 Single[V2],
+	src3 Single[V3],
+) Single[tuple.T3[V1, V2, V3]] {
+	return FlatMap(
+		Zip2(src1, src2),
+		func(t tuple.T2[V1, V2]) Single[tuple.T3[V1, V2, V3]] {
+			return Map(src3, func(v3 V3) tuple.T3[V1, V2, V3] {
+				return tuple.New3(t.V1, t.V2, v3)
+			})
+		},
+	)
+}
+
+// Zip4 Takes 4 Singles and returns a Single that emits a tuple of each of the
+// singles in the order they are supplied
+func Zip4[V1 any, V2 any, V3 any, V4 any](
+	src1 Single[V1],
+	src2 Single[V2],
+	src3 Single[V3],
+	src4 Single[V4],
+) Single[tuple.T4[V1, V2, V3, V4]] {
+	return FlatMap(
+		Zip2(src1, src2),
+		func(t1 tuple.T2[V1, V2]) Single[tuple.T4[V1, V2, V3, V4]] {
+			return Map(Zip2(src3, src4), func(t2 tuple.T2[V3, V4]) tuple.T4[V1, V2, V3, V4] {
+				return tuple.New4(t1.V1, t1.V2, t2.V1, t2.V2)
+			})
+		},
+	)
+}
+
 func MergeSingles[T any](singles []Single[T]) stream.Observable[T] {
 	observables := slice.Map(singles, func(s Single[T]) stream.Observable[T] {
 		return s.ToObservable()

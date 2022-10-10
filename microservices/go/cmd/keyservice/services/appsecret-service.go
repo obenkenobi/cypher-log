@@ -21,9 +21,9 @@ type AppSecretService interface {
 	// GetAppSecret gets the app secret marked by the KID
 	GetAppSecret(ctx context.Context, kid string) single.Single[bos.AppSecretBo]
 	// GetPrimaryAppSecret gets the primary app secret
-	GetPrimaryAppSecret() single.Single[bos.AppSecretBo]
+	GetPrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo]
 	// GeneratePrimaryAppSecret generates a new primary app secret
-	GeneratePrimaryAppSecret() single.Single[bos.AppSecretBo]
+	GeneratePrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo]
 }
 
 type AppSecretServiceImpl struct {

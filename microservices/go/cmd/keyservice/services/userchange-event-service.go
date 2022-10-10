@@ -19,9 +19,9 @@ type UserChangeEventService interface {
 }
 
 type UserChangeEventServiceImpl struct {
-	userService       sharedservices.UserService
-	userKeyRepository repositories.UserKeyRepository
-	crudDSHandler     dshandlers.CrudDSHandler
+	userService                sharedservices.UserService
+	userKeyGeneratorRepository repositories.UserKeyGeneratorRepository
+	crudDSHandler              dshandlers.CrudDSHandler
 }
 
 func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
@@ -41,7 +41,7 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 				})
 			case userdtos.UserDelete:
 				userDeleteSrc := u.userService.DeleteUser(ctx, userEventDto)
-				userKeyDeleteSrc := u.userKeyRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
+				userKeyDeleteSrc := u.userKeyGeneratorRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
 				userResSrc = single.Map(
 					single.Zip2(userDeleteSrc, userKeyDeleteSrc),
 					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
@@ -59,12 +59,12 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 
 func NewUserChangeEventServiceImpl(
 	userService sharedservices.UserService,
-	userKeyRepository repositories.UserKeyRepository,
+	userKeyRepository repositories.UserKeyGeneratorRepository,
 	crudDSHandler dshandlers.CrudDSHandler,
 ) *UserChangeEventServiceImpl {
 	return &UserChangeEventServiceImpl{
-		userService:       userService,
-		userKeyRepository: userKeyRepository,
-		crudDSHandler:     crudDSHandler,
+		userService:                userService,
+		userKeyGeneratorRepository: userKeyRepository,
+		crudDSHandler:              crudDSHandler,
 	}
 }

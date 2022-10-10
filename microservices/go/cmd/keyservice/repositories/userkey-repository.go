@@ -12,58 +12,73 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type UserKeyRepository interface {
-	baserepos.CRUDRepository[models.UserKey, string]
-	FindOneByUserId(ctx context.Context, userId string) single.Single[option.Maybe[models.UserKey]]
+type UserKeyGeneratorRepository interface {
+	baserepos.CRUDRepository[models.UserKeyGenerator, string]
+	FindOneByUserId(ctx context.Context, userId string) single.Single[option.Maybe[models.UserKeyGenerator]]
 	DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64]
 }
 
-type UserKeyRepositoryImpl struct {
-	baserepos.BaseRepositoryMongo[models.UserKey]
+type UserKeyGeneratorRepositoryImpl struct {
+	baserepos.BaseRepositoryMongo[models.UserKeyGenerator]
 }
 
-func (u UserKeyRepositoryImpl) Create(ctx context.Context, model models.UserKey) single.Single[models.UserKey] {
-	return single.FromSupplier(func() (models.UserKey, error) {
+func (u UserKeyGeneratorRepositoryImpl) Create(
+	ctx context.Context,
+	model models.UserKeyGenerator,
+) single.Single[models.UserKeyGenerator] {
+	return single.FromSupplier(func() (models.UserKeyGenerator, error) {
 		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
 }
 
-func (u UserKeyRepositoryImpl) Update(ctx context.Context, model models.UserKey) single.Single[models.UserKey] {
-	return single.FromSupplier(func() (models.UserKey, error) {
+func (u UserKeyGeneratorRepositoryImpl) Update(
+	ctx context.Context,
+	model models.UserKeyGenerator,
+) single.Single[models.UserKeyGenerator] {
+	return single.FromSupplier(func() (models.UserKeyGenerator, error) {
 		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
 }
 
-func (u UserKeyRepositoryImpl) Delete(ctx context.Context, model models.UserKey) single.Single[models.UserKey] {
-	return single.FromSupplier(func() (models.UserKey, error) {
+func (u UserKeyGeneratorRepositoryImpl) Delete(
+	ctx context.Context,
+	model models.UserKeyGenerator,
+) single.Single[models.UserKeyGenerator] {
+	return single.FromSupplier(func() (models.UserKeyGenerator, error) {
 		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
 }
 
-func (u UserKeyRepositoryImpl) FindById(ctx context.Context, id string) single.Single[option.Maybe[models.UserKey]] {
-	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.UserKey, error) {
-		model := models.UserKey{}
+func (u UserKeyGeneratorRepositoryImpl) FindById(
+	ctx context.Context,
+	id string,
+) single.Single[option.Maybe[models.UserKeyGenerator]] {
+	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.UserKeyGenerator, error) {
+		model := models.UserKeyGenerator{}
 		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), id, &model)
 		return model, err
 	})
 }
 
-func (u UserKeyRepositoryImpl) FindOneByUserId(
+func (u UserKeyGeneratorRepositoryImpl) FindOneByUserId(
 	ctx context.Context,
 	userId string,
-) single.Single[option.Maybe[models.UserKey]] {
-	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.UserKey, error) {
-		user := models.UserKey{}
+) single.Single[option.Maybe[models.UserKeyGenerator]] {
+	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.UserKeyGenerator, error) {
+		user := models.UserKeyGenerator{}
 		err := mgm.Coll(u.ModelColl).
 			FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"userId": userId}, &user)
 		return user, err
 	})
 }
 
-func (u UserKeyRepositoryImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
+func (u UserKeyGeneratorRepositoryImpl) DeleteByUserIdAndGetCount(
+	ctx context.Context,
+	userId string,
+) single.Single[int64] {
 	return single.FromSupplier(func() (int64, error) {
 		res, err := mgm.Coll(u.ModelColl).DeleteMany(ctx, bson.M{"userId": userId})
 		deletedCount := option.
@@ -74,9 +89,12 @@ func (u UserKeyRepositoryImpl) DeleteByUserIdAndGetCount(ctx context.Context, us
 
 }
 
-func NewUserKeyRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserKeyRepositoryImpl {
-	return &UserKeyRepositoryImpl{
-		BaseRepositoryMongo: *baserepos.NewBaseRepositoryMongo[models.UserKey](models.UserKey{}, mongoDBHandler),
+func NewUserKeyRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserKeyGeneratorRepositoryImpl {
+	return &UserKeyGeneratorRepositoryImpl{
+		BaseRepositoryMongo: *baserepos.NewBaseRepositoryMongo[models.UserKeyGenerator](
+			models.UserKeyGenerator{},
+			mongoDBHandler,
+		),
 	}
 }
 

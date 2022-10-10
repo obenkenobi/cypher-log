@@ -5,29 +5,29 @@ import (
 	"time"
 )
 
-type UserKey struct {
+type UserKeyGenerator struct {
 	mgm.DefaultModel  `bson:",inline"`
 	UserId            string `bson:"userId"`
 	KeyDerivationSalt []byte `bson:"keyDerivationSalt"`
 	KeyHash           []byte `bson:"keyHash"`
 }
 
-func (k UserKey) GetIdStr() string {
+func (k UserKeyGenerator) GetIdStr() string {
 	return k.ID.Hex()
 }
 
-func (k UserKey) IsIdEmpty() bool {
+func (k UserKeyGenerator) IsIdEmpty() bool {
 	return k.ID.IsZero()
 }
 
-func (k *UserKey) CollectionName() string {
+func (k *UserKeyGenerator) CollectionName() string {
 	return "userKeys"
 }
 
-func (k UserKey) GetCreatedAt() time.Time {
+func (k UserKeyGenerator) GetCreatedAt() time.Time {
 	return k.CreatedAt
 }
 
-func (k UserKey) GetUpdatedAt() time.Time {
+func (k UserKeyGenerator) GetUpdatedAt() time.Time {
 	return k.UpdatedAt
 }
