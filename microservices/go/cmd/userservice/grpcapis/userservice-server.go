@@ -1,4 +1,4 @@
-package grpcservers
+package grpcapis
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func (u UserServiceServerImpl) GetUserById(ctx context.Context, request *userpb.
 	userFindSrc := u.userService.GetById(ctx, request.GetId())
 	userReplySrc := single.Map(userFindSrc, func(userDto userdtos.UserReadDto) *userpb.UserReply {
 		userReply := &userpb.UserReply{}
-		grpcmappers.MapUserReadDtoToUserReply(&userDto, userReply)
+		grpcmappers.UserReadDtoToUserReply(&userDto, userReply)
 		return userReply
 	})
 	res, err := single.RetrieveValue(ctx, userReplySrc)
@@ -33,7 +33,7 @@ func (u UserServiceServerImpl) GetUserByAuthId(
 	userFindSrc := u.userService.GetByAuthId(ctx, request.GetAuthId())
 	userReplySrc := single.Map(userFindSrc, func(userDto userdtos.UserReadDto) *userpb.UserReply {
 		userReply := &userpb.UserReply{}
-		grpcmappers.MapUserReadDtoToUserReply(&userDto, userReply)
+		grpcmappers.UserReadDtoToUserReply(&userDto, userReply)
 		return userReply
 	})
 	res, err := single.RetrieveValue(ctx, userReplySrc)

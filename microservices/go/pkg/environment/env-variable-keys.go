@@ -23,6 +23,7 @@ const EnvVarLoadCACert = "LOAD_CA_CERT"
 // GRPC Client
 
 const EnvVarKeyGrpcUserServiceAddress = "GRPC_USER_SERVICE_ADDRESS"
+const EnvVarKeyGrpcKeyServiceAddress = "GRPC_KEY_SERVICE_ADDRESS"
 
 // Server
 

@@ -35,11 +35,11 @@ type UserKeyService interface {
 		ctx context.Context,
 		userBo userbos.UserBo,
 		dto keydtos.PasscodeDto,
-	) single.Single[keydtos.UserKeySessionTokenDto]
+	) single.Single[keydtos.UserKeySessionDto]
 
 	GetKeyFromSession(
 		ctx context.Context,
-		sessionDto keydtos.UserKeySessionTokenDto,
+		sessionDto keydtos.UserKeySessionDto,
 	) single.Single[keydtos.UserKeyDto]
 }
 
@@ -100,7 +100,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	dto keydtos.PasscodeDto,
-) single.Single[keydtos.UserKeySessionTokenDto] {
+) single.Single[keydtos.UserKeySessionDto] {
 	userKeyGenSrc := u.getUserKeyGenerator(ctx, userBo)
 	KeySrc := single.FlatMap(userKeyGenSrc,
 		func(userKeyGen models.UserKeyGenerator) single.Single[[]byte] {
@@ -118,7 +118,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	proxyKeySrc := single.FromSupplier(cipherutils.GenerateRandomKeyAES)
 	appSecretSrc := u.appSecretService.GetPrimaryAppSecret(ctx)
 	return single.FlatMap(single.Zip3(proxyKeySrc, appSecretSrc, KeySrc),
-		func(t tuple.T3[[]byte, bos.AppSecretBo, []byte]) single.Single[keydtos.UserKeySessionTokenDto] {
+		func(t tuple.T3[[]byte, bos.AppSecretBo, []byte]) single.Single[keydtos.UserKeySessionDto] {
 			proxyKey, appSecret, key := t.V1, t.V2, t.V3
 			tokenBytesSrc := single.FromSupplier(func() ([]byte, error) {
 				return cipherutils.EncryptAES(appSecret.Key, proxyKey)
@@ -139,7 +139,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 				return cipherutils.EncryptAES(proxyKey, key)
 			})
 			return single.FlatMap(single.Zip4(tokenHashSrc, tokenSrc, proxyKidSrc, encryptedKeySrc),
-				func(t tuple.T4[[]byte, string, string, []byte]) single.Single[keydtos.UserKeySessionTokenDto] {
+				func(t tuple.T4[[]byte, string, string, []byte]) single.Single[keydtos.UserKeySessionDto] {
 					tokenHash, token, proxyKid, encryptedKey := t.V1, t.V2, t.V3, t.V4
 					keySessionModel := models.UserKeySession{
 						EncryptedKey: encryptedKey,
@@ -148,8 +148,8 @@ func (u UserKeyServiceImpl) NewKeySession(
 					}
 					savedKeySession := u.userKeySessionRepository.Set(ctx, proxyKid,
 						keySessionModel, u.keyConf.GetTokenSessionDuration())
-					return single.Map(savedKeySession, func(_ models.UserKeySession) keydtos.UserKeySessionTokenDto {
-						return keydtos.UserKeySessionTokenDto{Token: token, ProxyKid: proxyKid}
+					return single.Map(savedKeySession, func(_ models.UserKeySession) keydtos.UserKeySessionDto {
+						return keydtos.UserKeySessionDto{Token: token, ProxyKid: proxyKid}
 					})
 				},
 			)
@@ -159,7 +159,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 
 func (u UserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
-	sessionDto keydtos.UserKeySessionTokenDto,
+	sessionDto keydtos.UserKeySessionDto,
 ) single.Single[keydtos.UserKeyDto] {
 	storedSessionSrc := single.FlatMap(u.userKeySessionRepository.Get(ctx, sessionDto.ProxyKid),
 		func(maybe option.Maybe[models.UserKeySession]) single.Single[models.UserKeySession] {

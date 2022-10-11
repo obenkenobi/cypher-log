@@ -12,7 +12,7 @@ type PasscodeDto struct {
 	Passcode string `json:"passcode" binding:"required"`
 }
 
-type UserKeySessionTokenDto struct {
+type UserKeySessionDto struct {
 	ProxyKid string `json:"proxyKid" binding:"required"`
 	Token    string `json:"token" binding:"required"`
 }
@@ -21,9 +21,9 @@ type UserKeyDto struct {
 	KeyBase64 string `json:"key"`
 }
 
-func NewUserKeyDto(key []byte) UserKeyDto {
+func NewUserKeyDto(keyBytes []byte) UserKeyDto {
 	return UserKeyDto{
-		KeyBase64: encodingutils.EncodeBase64String(key),
+		KeyBase64: encodingutils.EncodeBase64String(keyBytes),
 	}
 }
 

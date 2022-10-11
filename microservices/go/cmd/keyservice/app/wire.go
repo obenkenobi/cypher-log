@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/businessrules"
 	appConf "github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/controllers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/grpcapis"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/servers"
@@ -15,11 +16,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedrepos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/grpcserveropts"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
@@ -94,6 +97,16 @@ func InitializeApp() *App {
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
 		listeners.NewRmqListenerImpl,
 		wire.Bind(new(listeners.RmqListener), new(*listeners.RmqListenerImpl)),
+		securityservices.NewJwtValidateGrpcServiceImpl,
+		wire.Bind(new(securityservices.JwtValidateGrpcService), new(*securityservices.JwtValidateGrpcServiceImpl)),
+		grpcserveropts.NewAuthInterceptorCreatorImpl,
+		wire.Bind(new(grpcserveropts.AuthInterceptorCreator), new(*grpcserveropts.AuthInterceptorCreatorImpl)),
+		grpcserveropts.NewCredentialsOptionCreatorImpl,
+		wire.Bind(new(grpcserveropts.CredentialsOptionCreator), new(*grpcserveropts.CredentialsOptionCreatorImpl)),
+		grpcapis.NewUserKeyServiceServerImpl,
+		wire.Bind(new(userkeypb.UserKeyServiceServer), new(*grpcapis.UserKeyServiceServerImpl)),
+		servers.NewGrpcServerImpl,
+		wire.Bind(new(servers.GrpcServer), new(*servers.GrpcServerImpl)),
 		NewApp,
 	)
 	return &App{}

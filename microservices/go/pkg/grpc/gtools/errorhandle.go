@@ -37,7 +37,7 @@ func processBadReqErr(procedureType GrpcAction, badReqErr apperrors.BadRequestEr
 	} else if _, ok := brViolations[apperrors.ErrCodeResourceAlreadyCreated]; procedureType == CreateAction && ok {
 		return status.Error(codes.AlreadyExists, badReqJson)
 	} else if len(badReqErr.ValidationErrors) > 0 {
-		return status.Error(codes.AlreadyExists, badReqJson)
+		return status.Error(codes.InvalidArgument, badReqJson)
 	} else if len(badReqErr.RuleErrors) > 0 {
 		return status.Error(codes.FailedPrecondition, badReqJson)
 	} else {

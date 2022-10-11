@@ -8,7 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/background"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/controllers"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/grpcservers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/grpcapis"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
@@ -68,8 +68,8 @@ func InitializeApp() *App {
 		wire.Bind(new(grpcserveropts.AuthInterceptorCreator), new(*grpcserveropts.AuthInterceptorCreatorImpl)),
 		grpcserveropts.NewCredentialsOptionCreatorImpl,
 		wire.Bind(new(grpcserveropts.CredentialsOptionCreator), new(*grpcserveropts.CredentialsOptionCreatorImpl)),
-		grpcservers.NewUserServiceServerImpl,
-		wire.Bind(new(userpb.UserServiceServer), new(*grpcservers.UserServiceServerImpl)),
+		grpcapis.NewUserServiceServerImpl,
+		wire.Bind(new(userpb.UserServiceServer), new(*grpcapis.UserServiceServerImpl)),
 		servers.NewGrpcServerImpl,
 		wire.Bind(new(servers.GrpcServer), new(*servers.GrpcServerImpl)),
 		background.NewCronRunnerImpl,

@@ -34,7 +34,7 @@ func (u ExtUserServiceImpl) GetById(ctx context.Context, id string) single.Singl
 	)
 	return single.Map(userReplySrc, func(reply *userpb.UserReply) userdtos.UserReadDto {
 		dto := userdtos.UserReadDto{}
-		grpcmappers.MapUserReplyToUserReadDto(reply, &dto)
+		grpcmappers.UserReplyToUserReadDto(reply, &dto)
 		return dto
 	})
 }
@@ -49,7 +49,7 @@ func (u ExtUserServiceImpl) GetByAuthId(ctx context.Context, authId string) sing
 	})
 	return single.Map(userReplySrc, func(reply *userpb.UserReply) userdtos.UserReadDto {
 		dto := userdtos.UserReadDto{}
-		grpcmappers.MapUserReplyToUserReadDto(reply, &dto)
+		grpcmappers.UserReplyToUserReadDto(reply, &dto)
 		return dto
 	})
 }

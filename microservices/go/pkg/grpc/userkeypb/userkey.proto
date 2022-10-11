@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb";
+
+/*
+type UserKeySessionDto struct {
+	ProxyKid string `json:"proxyKid" binding:"required"`
+	Token    string `json:"token" binding:"required"`
+}
+
+type UserKeyDto struct {
+	KeyBase64 string `json:"key"`
+}
+*/
+
+message UserKeySession {
+  string ProxyKid = 1;
+  string Token = 2;
+}
+
+message UserKey {
+  string KeyBase64 = 1;
+}
+
+service UserKeyService {
+  rpc GetKeyFromSession(UserKeySession) returns (UserKey) {}
+}
+
