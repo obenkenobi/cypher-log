@@ -1,17 +1,17 @@
 package commondtos
 
 type SuccessDto struct {
-	success bool
+	Success bool `json:"success"`
 }
 
 func NewSuccessTrue() SuccessDto {
-	return SuccessDto{success: true}
+	return SuccessDto{Success: true}
 }
 
 type ExistsDto struct {
-	exists bool
+	Exists bool `json:"exists"`
 }
 
 func NewExistsDto(exists bool) ExistsDto {
-	return ExistsDto{exists: exists}
+	return ExistsDto{Exists: exists}
 }

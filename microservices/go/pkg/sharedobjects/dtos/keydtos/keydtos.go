@@ -5,7 +5,7 @@ import (
 )
 
 type PasscodeCreateDto struct {
-	Passcode string `json:"passcode" binding:"exists,alphanumunicode,min=4,max=20"`
+	Passcode string `json:"passcode" binding:"required,alphanumunicode,min=4,max=20"`
 }
 
 type PasscodeDto struct {

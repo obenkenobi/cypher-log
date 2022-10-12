@@ -220,6 +220,7 @@ func NewUserKeyServiceImpl(
 	errorService sharedservices.ErrorService,
 	userKeySessionRepository repositories.UserKeySessionRepository,
 	userKeyBr businessrules.UserKeyBr,
+	keyConf conf.KeyConf,
 ) *UserKeyServiceImpl {
 	return &UserKeyServiceImpl{
 		userKeyGeneratorRepository: userKeyGeneratorRepository,
@@ -227,5 +228,6 @@ func NewUserKeyServiceImpl(
 		errorService:               errorService,
 		userKeySessionRepository:   userKeySessionRepository,
 		userKeyBr:                  userKeyBr,
+		keyConf:                    keyConf,
 	}
 }

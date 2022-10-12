@@ -14,14 +14,17 @@ until curl http://${MONGODB1}:27017/serverStatus\?text\=1 2>&1 | grep uptime | h
   printf '.'
   sleep 1
 done
+echo "connected to $MONGODB1"
 until curl http://${MONGODB2}:27017/serverStatus\?text\=1 2>&1 | grep uptime | head -1; do
   printf '.'
   sleep 1
 done
+echo "connected to $MONGODB2"
 until curl http://${MONGODB3}:27017/serverStatus\?text\=1 2>&1 | grep uptime | head -1; do
   printf '.'
   sleep 1
 done
+echo "connected to $MONGODB3"
 
 # echo curl http://${MONGODB1}:28017/serverStatus\?text\=1 2>&1 | grep uptime | head -1
 # echo "Started.."

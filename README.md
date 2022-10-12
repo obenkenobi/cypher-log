@@ -39,7 +39,7 @@ Add the `-d` argument to run in detach mode. Alternatively you can use your IDE 
 MongoDB replica sets in docker require your hosts to be updated.
 
 If you use windows, open the file `C:\Windows\System32\drivers\etc\hosts`
-and add `127.0.0.1 mongo0 mongo1 mongo` to the file.
+and add `127.0.0.1 mongo1 mongo2 mongo3` to the file.
 
 If on a linux server, use the hostname provided by the docker compose file <br>
 e.g. `HOSTNAME = mongo1, mongo2, mongo3`
