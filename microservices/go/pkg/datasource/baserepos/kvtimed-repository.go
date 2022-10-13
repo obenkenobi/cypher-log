@@ -22,7 +22,7 @@ type KeyValueTimedRepositoryRedis[Value any] struct {
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) Get(ctx context.Context, key string) single.Single[option.Maybe[Value]] {
-	return single.FromSupplier[option.Maybe[Value]](func() (option.Maybe[Value], error) { return k.runGet(ctx, key) })
+	return single.FromSupplierCached[option.Maybe[Value]](func() (option.Maybe[Value], error) { return k.runGet(ctx, key) })
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) runGet(ctx context.Context, key string) (option.Maybe[Value], error) {
@@ -47,7 +47,7 @@ func (k KeyValueTimedRepositoryRedis[Value]) Set(
 	value Value,
 	expiration time.Duration,
 ) single.Single[Value] {
-	return single.FromSupplier[Value](func() (Value, error) { return k.runSet(ctx, key, value, expiration) })
+	return single.FromSupplierCached[Value](func() (Value, error) { return k.runSet(ctx, key, value, expiration) })
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) runSet(

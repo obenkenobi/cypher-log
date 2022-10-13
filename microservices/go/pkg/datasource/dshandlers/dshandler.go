@@ -15,7 +15,7 @@ func OptionalSingleQuerySrc[TQueryResult any](
 	dbHandler DataSourceHandler,
 	supplier func() (TQueryResult, error),
 ) single.Single[option.Maybe[TQueryResult]] {
-	return single.FromSupplier(func() (option.Maybe[TQueryResult], error) {
+	return single.FromSupplierCached(func() (option.Maybe[TQueryResult], error) {
 		return runOptionalSingleQuery(dbHandler, supplier)
 	})
 }

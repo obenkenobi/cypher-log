@@ -25,13 +25,13 @@ func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
 // returning single. The emitted value is cached if observed twice.
 func (s Single[T]) ScheduleCachedEagerAsync(ctx context.Context) Single[T] {
 	ch, errCh := ToChannels(ctx, s)
-	return FromChannels(ch, errCh)
+	return FromChannelsCached(ch, errCh)
 }
 
 // ScheduleLazyAndCache takes a single and returns a new single that is lazy
 // evaluated. The single's emitted value is cached if observed twice.
 func (s Single[T]) ScheduleLazyAndCache(ctx context.Context) Single[T] {
-	return FromSupplier(func() (T, error) {
+	return FromSupplierCached(func() (T, error) {
 		return RetrieveValue(ctx, s)
 	})
 }
@@ -138,17 +138,19 @@ func FromObservableAsList[T any](obs stream.Observable[T]) Single[[]T] {
 	return fromSingleObservable(listObs)
 }
 
-// FromChannel Creates a single that listens to a single value from a channel.
-// Recommended for channels that only emmit one value. If a channel emits
-// multiple values, it is recommended you use observables instead.
-func FromChannel[T any](ch <-chan T) Single[T] { return FromChannels(ch, nil) }
+// FromChannelCached Creates a single that listens to a single value from a channel.
+// Recommended for channels that only emmit one value. Once the channel is read,
+// the value is cached so the single can be observed more than one time with
+// little overhead. If a channel emits multiple values, it is recommended you use
+// observables instead.
+func FromChannelCached[T any](ch <-chan T) Single[T] { return FromChannelsCached(ch, nil) }
 
-// FromChannels Creates a single that listens to a single value from a channel
+// FromChannelsCached Creates a single that listens to a single value from a channel
 // and checks for errors in the error channel. Once the channel is read, the
 // value is cached so the single can be observed more than one time with little
 // overhead. Recommended for channels that only emmit one value. If a channel
 // emits multiple values, it is recommended you use observables instead.
-func FromChannels[T any](ch <-chan T, chErr <-chan error) Single[T] {
+func FromChannelsCached[T any](ch <-chan T, chErr <-chan error) Single[T] {
 	return Single[T]{src: &singleChanReadObservable[T]{_ch: ch, _chErr: chErr}}
 }
 
@@ -158,12 +160,12 @@ func Just[T any](val T) Single[T] { return fromSingleObservable(stream.Just(val)
 // Error creates a single that fails immediately with the given error
 func Error[T any](err error) Single[T] { return fromSingleObservable(stream.Error[T](err)) }
 
-// FromSupplier
-//creates a single out of a supplier function that returns a value or an error
-//to emit. If the supplier is successful, the result value is emitted.
-//Otherwise, if an error is returned, an error is emitted. When this single is
-//observed, the emitted value from the supplier is cached if observed again.
-func FromSupplier[T any](supplier func() (T, error)) Single[T] {
+// FromSupplierCached creates a single out of a supplier function that returns a
+// value or an error to emit. If the supplier is successful, the result value is
+// emitted. Otherwise, if an error is returned, an error is emitted. When this
+// single is observed, the emitted value from the supplier is cached if observed
+// again.
+func FromSupplierCached[T any](supplier func() (T, error)) Single[T] {
 	var src stream.Observable[T] = &singleSupplierReadObservable[T]{_supplier: supplier}
 	return fromSingleObservable(src)
 }

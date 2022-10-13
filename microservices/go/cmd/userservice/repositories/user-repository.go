@@ -26,21 +26,21 @@ type UserRepositoryImpl struct {
 }
 
 func (u UserRepositoryImpl) Create(ctx context.Context, model models.User) single.Single[models.User] {
-	return single.FromSupplier(func() (models.User, error) {
+	return single.FromSupplierCached(func() (models.User, error) {
 		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
 }
 
 func (u UserRepositoryImpl) Update(ctx context.Context, model models.User) single.Single[models.User] {
-	return single.FromSupplier(func() (models.User, error) {
+	return single.FromSupplierCached(func() (models.User, error) {
 		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
 }
 
 func (u UserRepositoryImpl) Delete(ctx context.Context, model models.User) single.Single[models.User] {
-	return single.FromSupplier(func() (models.User, error) {
+	return single.FromSupplierCached(func() (models.User, error) {
 		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})

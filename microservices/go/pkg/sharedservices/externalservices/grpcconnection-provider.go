@@ -21,9 +21,9 @@ type CoreGrpcConnProviderImpl struct {
 func (u CoreGrpcConnProviderImpl) CreateConnectionSingle(ctx context.Context, address string) single.Single[*grpc.ClientConn] {
 	var dialOptSources []single.Single[grpc.DialOption]
 	if environment.ActivateGRPCAuth() {
-		oathTokenSrc := single.FromSupplier(u.systemAccessTokenClient.GetGRPCAccessToken)
+		oathTokenSrc := single.FromSupplierCached(u.systemAccessTokenClient.GetGRPCAccessToken)
 		if u.tlsConf.WillLoadCACert() {
-			tlsOptSrc := single.FromSupplier(func() (grpc.DialOption, error) {
+			tlsOptSrc := single.FromSupplierCached(func() (grpc.DialOption, error) {
 				return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
 			})
 			dialOptSources = append(dialOptSources, tlsOptSrc)

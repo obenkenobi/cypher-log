@@ -37,7 +37,7 @@ func TransactionalSingle[T any](
 	d CrudDSHandler,
 	supplier func(Session, context.Context) single.Single[T],
 ) single.Single[T] {
-	return single.FromSupplier(func() (T, error) {
+	return single.FromSupplierCached(func() (T, error) {
 		var res T
 		var err error = nil
 		transactionErr := d.ExecTransaction(ctx, func(session Session, ctx context.Context) error {

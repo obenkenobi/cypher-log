@@ -23,7 +23,7 @@ func (u UserKeyBrImpl) ValidateSessionTokenHash(
 	session models.UserKeySession,
 	tokenBytes []byte,
 ) single.Single[[]apperrors.RuleError] {
-	hashCheckSrc := single.FromSupplier(func() (bool, error) {
+	hashCheckSrc := single.FromSupplierCached(func() (bool, error) {
 		return cipherutils.VerifyHashWithSaltSHA256(session.TokenHash, tokenBytes)
 	})
 	tokenHashValidate := single.Map(hashCheckSrc, func(verified bool) []apperrors.RuleError {
@@ -41,7 +41,7 @@ func (u UserKeyBrImpl) ValidateKeyFromSession(
 	userKeyGen models.UserKeyGenerator,
 	key []byte,
 ) single.Single[[]apperrors.RuleError] {
-	verifiedKeyHashSrc := single.FromSupplier(func() (bool, error) {
+	verifiedKeyHashSrc := single.FromSupplierCached(func() (bool, error) {
 		return cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
 	})
 	keyHashValidationSrc := single.Map(verifiedKeyHashSrc, func(verified bool) []apperrors.RuleError {
@@ -58,7 +58,7 @@ func (u UserKeyBrImpl) ValidateKeyFromPassword(
 	userKeyGen models.UserKeyGenerator,
 	key []byte,
 ) single.Single[[]apperrors.RuleError] {
-	verifiedKeyHashSrc := single.FromSupplier(func() (bool, error) {
+	verifiedKeyHashSrc := single.FromSupplierCached(func() (bool, error) {
 		return cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
 	})
 	keyHashValidationSrc := single.Map(verifiedKeyHashSrc, func(verified bool) []apperrors.RuleError {

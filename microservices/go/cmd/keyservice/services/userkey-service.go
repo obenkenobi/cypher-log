@@ -76,7 +76,7 @@ func (u UserKeyServiceImpl) CreateUserKey(
 		keyHash           []byte
 		keyDerivationSalt []byte
 	}
-	newKeySrc := single.FromSupplier(func() (derivedKey, error) {
+	newKeySrc := single.FromSupplierCached(func() (derivedKey, error) {
 		key, keyDerivationSalt, err := cipherutils.DeriveAESKeyFromPassword([]byte(passcodeDto.Passcode), nil)
 		return derivedKey{key: key, keyDerivationSalt: keyDerivationSalt}, err
 	})
@@ -105,7 +105,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	userKeyGenSrc := u.getUserKeyGenerator(ctx, userBo)
 	KeySrc := single.FlatMap(userKeyGenSrc,
 		func(userKeyGen models.UserKeyGenerator) single.Single[[]byte] {
-			newKeySrc := single.FromSupplier(func() ([]byte, error) {
+			newKeySrc := single.FromSupplierCached(func() ([]byte, error) {
 				logger.Log.Debugf("Generating key from password")
 				key, _, err := cipherutils.DeriveAESKeyFromPassword([]byte(dto.Passcode), userKeyGen.KeyDerivationSalt)
 				return key, err
@@ -117,18 +117,18 @@ func (u UserKeyServiceImpl) NewKeySession(
 				return newKeySrc
 			})
 		})
-	proxyKeySrc := single.FromSupplier(cipherutils.GenerateRandomKeyAES)
+	proxyKeySrc := single.FromSupplierCached(cipherutils.GenerateRandomKeyAES)
 	appSecretSrc := u.appSecretService.GetPrimaryAppSecret(ctx)
 	return single.FlatMap(single.Zip3(proxyKeySrc, appSecretSrc, KeySrc),
 		func(t tuple.T3[[]byte, bos.AppSecretBo, []byte]) single.Single[keydtos.UserKeySessionDto] {
 			proxyKey, appSecret, key := t.V1, t.V2, t.V3
-			tokenBytesSrc := single.FromSupplier(func() ([]byte, error) {
+			tokenBytesSrc := single.FromSupplierCached(func() ([]byte, error) {
 				return cipherutils.EncryptAES(appSecret.Key, proxyKey)
 			})
 			tokenHashSrc := single.MapWithError(tokenBytesSrc, cipherutils.HashWithSaltSHA256)
 			tokenSrc := single.Map(tokenBytesSrc, encodingutils.EncodeBase64String)
 			proxyKidSrc := single.MapWithError(
-				single.FromSupplier(uuid.NewRandom),
+				single.FromSupplierCached(uuid.NewRandom),
 				func(uuid uuid.UUID) (string, error) {
 					proxyKid := uuid.String()
 					if utils.StringIsBlank(proxyKid) {
@@ -137,7 +137,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 					return proxyKid, nil
 				},
 			)
-			encryptedKeySrc := single.FromSupplier(func() ([]byte, error) {
+			encryptedKeySrc := single.FromSupplierCached(func() ([]byte, error) {
 				return cipherutils.EncryptAES(proxyKey, key)
 			})
 			return single.FlatMap(single.Zip4(tokenHashSrc, tokenSrc, proxyKidSrc, encryptedKeySrc),

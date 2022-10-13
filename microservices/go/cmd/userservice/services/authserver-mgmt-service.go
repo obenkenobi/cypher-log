@@ -16,11 +16,11 @@ type AuthServerMgmtServiceImpl struct {
 }
 
 func (a AuthServerMgmtServiceImpl) DeleteUser(authId string) single.Single[bool] {
-	return single.FromSupplier(func() (bool, error) { return a.runDeleteUser(authId) })
+	return single.FromSupplierCached(func() (bool, error) { return a.runDeleteUser(authId) })
 }
 
 func (a AuthServerMgmtServiceImpl) DeleteAsync(authId string) single.Single[bool] {
-	return single.FromSupplier(func() (bool, error) { return a.runDeleteUser(authId) })
+	return single.FromSupplierCached(func() (bool, error) { return a.runDeleteUser(authId) })
 }
 
 func (a AuthServerMgmtServiceImpl) runDeleteUser(authId string) (bool, error) {

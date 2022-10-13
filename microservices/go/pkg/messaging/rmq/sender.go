@@ -28,7 +28,7 @@ func NewSender[T any](
 }
 
 func (r *Sender[T]) Send(body T) single.Single[T] {
-	return single.FromSupplier(func() (T, error) {
+	return single.FromSupplierCached(func() (T, error) {
 		var msgBytes []byte
 		var contentType string
 		{

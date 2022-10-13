@@ -13,7 +13,7 @@ func TestSingleFromSupplierAsync(t *testing.T) {
 	cv.Convey("When creating an observable with a supplier returns 1 that runs asynchronously", t, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Hour*24)
 		defer cancel()
-		oneSrc := single.FromSupplier(func() (int, error) { return 1, nil }).ScheduleCachedEagerAsync(ctx)
+		oneSrc := single.FromSupplierCached(func() (int, error) { return 1, nil }).ScheduleCachedEagerAsync(ctx)
 		twoSrc := single.Map(oneSrc, func(v int) int { return v + 1 }).ScheduleCachedEagerAsync(ctx)
 		threeSrc := single.Map(oneSrc, func(v int) int { return v + 2 }).ScheduleCachedEagerAsync(ctx)
 		twoExpected, threeExpected := 2, 3

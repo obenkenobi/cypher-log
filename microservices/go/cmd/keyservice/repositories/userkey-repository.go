@@ -26,7 +26,7 @@ func (u UserKeyGeneratorRepositoryImpl) Create(
 	ctx context.Context,
 	model models.UserKeyGenerator,
 ) single.Single[models.UserKeyGenerator] {
-	return single.FromSupplier(func() (models.UserKeyGenerator, error) {
+	return single.FromSupplierCached(func() (models.UserKeyGenerator, error) {
 		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
@@ -36,7 +36,7 @@ func (u UserKeyGeneratorRepositoryImpl) Update(
 	ctx context.Context,
 	model models.UserKeyGenerator,
 ) single.Single[models.UserKeyGenerator] {
-	return single.FromSupplier(func() (models.UserKeyGenerator, error) {
+	return single.FromSupplierCached(func() (models.UserKeyGenerator, error) {
 		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
@@ -46,7 +46,7 @@ func (u UserKeyGeneratorRepositoryImpl) Delete(
 	ctx context.Context,
 	model models.UserKeyGenerator,
 ) single.Single[models.UserKeyGenerator] {
-	return single.FromSupplier(func() (models.UserKeyGenerator, error) {
+	return single.FromSupplierCached(func() (models.UserKeyGenerator, error) {
 		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
 		return model, err
 	})
@@ -79,7 +79,7 @@ func (u UserKeyGeneratorRepositoryImpl) DeleteByUserIdAndGetCount(
 	ctx context.Context,
 	userId string,
 ) single.Single[int64] {
-	return single.FromSupplier(func() (int64, error) {
+	return single.FromSupplierCached(func() (int64, error) {
 		res, err := mgm.Coll(u.ModelColl).DeleteMany(ctx, bson.M{"userId": userId})
 		deletedCount := option.
 			Map(option.Perhaps(res), func(r *mongo.DeleteResult) int64 { return r.DeletedCount }).

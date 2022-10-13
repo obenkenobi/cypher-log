@@ -56,7 +56,7 @@ func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) sing
 }
 
 func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo] {
-	kidGuidSrc := single.FromSupplier(uuid.NewRandom)
+	kidGuidSrc := single.FromSupplierCached(uuid.NewRandom)
 	kidSrc := single.MapWithError(kidGuidSrc, func(kidGuid uuid.UUID) (string, error) {
 		newKid := kidGuid.String()
 		if utils.StringIsBlank(newKid) {
@@ -64,7 +64,7 @@ func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) sing
 		}
 		return newKid, nil
 	})
-	newKeySrc := single.FromSupplier(cipherutils.GenerateRandomKeyAES)
+	newKeySrc := single.FromSupplierCached(cipherutils.GenerateRandomKeyAES)
 	kidKeySrc := single.Zip2(kidSrc, newKeySrc)
 	return single.FlatMap(kidKeySrc, func(t tuple.T2[string, []byte]) single.Single[bos.AppSecretBo] {
 		ref := models.PrimaryAppSecretRef{Kid: t.V1}
