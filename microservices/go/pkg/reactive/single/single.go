@@ -54,29 +54,34 @@ func (a *singleChanReadObservable[T]) Observe(ctx context.Context, next func(T) 
 		// Context already cancelled, stop before emitting items.
 		return ctx.Err()
 	}
-	a._valueRWLock.RLock()
-	shouldAttemptWriteValue := !a._channelRead
-	a._valueRWLock.RUnlock()
+	shouldAttemptWriteValue := func() bool {
+		a._valueRWLock.RLock()
+		defer a._valueRWLock.RUnlock()
+		return !a._channelRead
+	}()
 
 	if shouldAttemptWriteValue {
-		a._valueRWLock.Lock()
-		if !a._channelRead {
-			a._channelRead = true
-			if a._chErr != nil {
-				if err := <-a._chErr; err != nil {
-					a._error = err
+		func() {
+			a._valueRWLock.Lock()
+			defer a._valueRWLock.Unlock()
+			if !a._channelRead {
+				a._channelRead = true
+				if a._chErr != nil {
+					if err := <-a._chErr; err != nil {
+						a._error = err
+					}
+				}
+				if a._error == nil {
+					a._value = <-a._ch
 				}
 			}
-			if a._error == nil {
-				a._value = <-a._ch
-			}
-		}
-		a._valueRWLock.Unlock()
+		}()
 	}
-	a._valueRWLock.RLock()
-	value := a._value
-	err := a._error
-	a._valueRWLock.RUnlock()
+	value, err := func() (T, error) {
+		a._valueRWLock.RLock()
+		defer a._valueRWLock.RUnlock()
+		return a._value, a._error
+	}()
 	if err != nil {
 		return err
 	}
@@ -96,26 +101,35 @@ func (a *singleSupplierReadObservable[T]) Observe(ctx context.Context, next func
 		// Context already cancelled, stop before emitting items.
 		return ctx.Err()
 	}
-	a._valueRWLock.RLock()
-	shouldAttemptWriteValue := !a._supplierRan
-	a._valueRWLock.RUnlock()
+	shouldAttemptWriteValue := func() bool {
+		a._valueRWLock.RLock()
+		defer a._valueRWLock.RUnlock()
+		return !a._supplierRan
+	}()
 
 	if shouldAttemptWriteValue {
-		a._valueRWLock.Lock()
-		if !a._supplierRan {
-			val, err := a._supplier()
-			if err != nil {
-				a._err = err
-			} else {
-				a._value = val
+		func() {
+			a._valueRWLock.Lock()
+			defer a._valueRWLock.Unlock()
+			if !a._supplierRan {
+				val, err := a._supplier()
+				if err != nil {
+					a._err = err
+				} else {
+					a._value = val
+				}
+				a._supplierRan = true
 			}
-			a._supplierRan = true
-		}
-		a._valueRWLock.Unlock()
+		}()
 	}
-	a._valueRWLock.RLock()
-	value := a._value
-	a._valueRWLock.RUnlock()
+	value, err := func() (T, error) {
+		a._valueRWLock.RLock()
+		defer a._valueRWLock.RUnlock()
+		return a._value, a._err
+	}()
+	if err != nil {
+		return err
+	}
 	return next(value)
 }
 

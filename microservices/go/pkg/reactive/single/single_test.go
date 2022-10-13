@@ -14,13 +14,12 @@ func TestSingleFromSupplierAsync(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Hour*24)
 		defer cancel()
 		oneSrc := single.FromSupplier(func() (int, error) { return 1, nil }).ScheduleCachedEagerAsync(ctx)
-		cv.Convey("The same source is then mapped to other Singles twoSrc and threeSrc,\n"+
+		twoSrc := single.Map(oneSrc, func(v int) int { return v + 1 }).ScheduleCachedEagerAsync(ctx)
+		threeSrc := single.Map(oneSrc, func(v int) int { return v + 2 }).ScheduleCachedEagerAsync(ctx)
+		twoExpected, threeExpected := 2, 3
+		tupleExpected := tuple.New2(twoExpected, threeExpected)
+		cv.Convey("The same source oneSrc is then mapped to other Singles twoSrc and threeSrc,\n"+
 			"incrementing the source value", func() {
-			twoSrc := single.Map(oneSrc, func(v int) int { return v + 1 })
-			threeSrc := single.Map(oneSrc, func(v int) int { return v + 2 })
-			twoExpected, threeExpected := 2, 3
-			tupleExpected := tuple.New2(twoExpected, threeExpected)
-
 			cv.Convey("Expect zipping twoSrc and threeSrc successfully results in the expected tuples", func() {
 				zipped := single.Zip2(twoSrc, threeSrc)
 				value, err := single.RetrieveValue(ctx, zipped)
