@@ -2,24 +2,17 @@ syntax = "proto3";
 
 option go_package = "github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb";
 
-/*
-type UserKeySessionDto struct {
-	ProxyKid string `json:"proxyKid" binding:"required"`
-	Token    string `json:"token" binding:"required"`
-}
-
-type UserKeyDto struct {
-	KeyBase64 string `json:"key"`
-}
-*/
-
 message UserKeySession {
-  string ProxyKid = 1;
-  string Token = 2;
+  string proxyKid = 1;
+  string token = 2;
+  string userId = 3;
+  int64 keyVersion = 4;
+  int64 startTime = 5;
+  int64 durationMilli = 6;
 }
 
 message UserKey {
-  string KeyBase64 = 1;
+  string keyBase64 = 1;
 }
 
 service UserKeyService {

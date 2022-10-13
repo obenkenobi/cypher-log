@@ -21,6 +21,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/cipherutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/encodingutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
+	"time"
 )
 
 type UserKeyService interface {
@@ -85,7 +86,12 @@ func (u UserKeyServiceImpl) CreateUserKey(
 		return keyGeneration{keyHash: keyHash, keyDerivationSalt: dk.keyDerivationSalt}, err
 	})
 	newUserKeyGenSrc := single.Map(newKeyAndHashSrc, func(kg keyGeneration) models.UserKeyGenerator {
-		return models.UserKeyGenerator{UserId: userBo.Id, KeyDerivationSalt: kg.keyDerivationSalt, KeyHash: kg.keyHash}
+		return models.UserKeyGenerator{
+			UserId:            userBo.Id,
+			KeyDerivationSalt: kg.keyDerivationSalt,
+			KeyHash:           kg.keyHash,
+			KeyVersion:        0,
+		}
 	})
 	userKeyGenSaveSrc := single.FlatMap(newUserKeyGenSrc,
 		func(userKeyGen models.UserKeyGenerator) single.Single[models.UserKeyGenerator] {
@@ -102,7 +108,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	userBo userbos.UserBo,
 	dto keydtos.PasscodeDto,
 ) single.Single[keydtos.UserKeySessionDto] {
-	userKeyGenSrc := u.getUserKeyGenerator(ctx, userBo)
+	userKeyGenSrc := u.getUserKeyGenerator(ctx, userBo).ScheduleLazyAndCache(ctx)
 	KeySrc := single.FlatMap(userKeyGenSrc,
 		func(userKeyGen models.UserKeyGenerator) single.Single[[]byte] {
 			newKeySrc := single.FromSupplierCached(func() ([]byte, error) {
@@ -119,9 +125,9 @@ func (u UserKeyServiceImpl) NewKeySession(
 		})
 	proxyKeySrc := single.FromSupplierCached(cipherutils.GenerateRandomKeyAES)
 	appSecretSrc := u.appSecretService.GetPrimaryAppSecret(ctx)
-	return single.FlatMap(single.Zip3(proxyKeySrc, appSecretSrc, KeySrc),
-		func(t tuple.T3[[]byte, bos.AppSecretBo, []byte]) single.Single[keydtos.UserKeySessionDto] {
-			proxyKey, appSecret, key := t.V1, t.V2, t.V3
+	return single.FlatMap(single.Zip4(proxyKeySrc, appSecretSrc, KeySrc, userKeyGenSrc),
+		func(t tuple.T4[[]byte, bos.AppSecretBo, []byte, models.UserKeyGenerator]) single.Single[keydtos.UserKeySessionDto] {
+			proxyKey, appSecret, key, userKeyGen := t.V1, t.V2, t.V3, t.V4
 			tokenBytesSrc := single.FromSupplierCached(func() ([]byte, error) {
 				return cipherutils.EncryptAES(appSecret.Key, proxyKey)
 			})
@@ -137,21 +143,39 @@ func (u UserKeyServiceImpl) NewKeySession(
 					return proxyKid, nil
 				},
 			)
-			encryptedKeySrc := single.FromSupplierCached(func() ([]byte, error) {
+			keyCipherSrc := single.FromSupplierCached(func() ([]byte, error) {
 				return cipherutils.EncryptAES(proxyKey, key)
 			})
-			return single.FlatMap(single.Zip4(tokenHashSrc, tokenSrc, proxyKidSrc, encryptedKeySrc),
-				func(t tuple.T4[[]byte, string, string, []byte]) single.Single[keydtos.UserKeySessionDto] {
-					tokenHash, token, proxyKid, encryptedKey := t.V1, t.V2, t.V3, t.V4
+			userIdCipherSrc := single.FromSupplierCached(func() ([]byte, error) {
+				return cipherutils.EncryptAES(proxyKey, []byte(userBo.Id))
+			})
+			keyVersionCipherSrc := single.FromSupplierCached(func() ([]byte, error) {
+				return cipherutils.EncryptAES(proxyKey, []byte(utils.Int64ToStr(userKeyGen.KeyVersion)))
+			})
+			return single.FlatMap(
+				single.Zip6(tokenHashSrc, tokenSrc, proxyKidSrc, keyCipherSrc, userIdCipherSrc, keyVersionCipherSrc),
+				func(t tuple.T6[[]byte, string, string, []byte, []byte, []byte]) single.Single[keydtos.UserKeySessionDto] {
+					tokenHash, token, proxyKid := t.V1, t.V2, t.V3
+					keyCipher, userIdCipher, keyVersionCipher := t.V4, t.V5, t.V6
 					keySessionModel := models.UserKeySession{
-						EncryptedKey: encryptedKey,
-						TokenHash:    tokenHash,
-						AppSecretKid: appSecret.Kid,
+						KeyCipher:        keyCipher,
+						TokenHash:        tokenHash,
+						AppSecretKid:     appSecret.Kid,
+						UserIdCipher:     userIdCipher,
+						KeyVersionCipher: keyVersionCipher,
 					}
-					savedKeySession := u.userKeySessionRepository.Set(ctx, proxyKid,
-						keySessionModel, u.keyConf.GetTokenSessionDuration())
+					startTime := time.Now().UnixMilli()
+					sessionDuration := u.keyConf.GetTokenSessionDuration()
+					savedKeySession := u.userKeySessionRepository.Set(ctx, proxyKid, keySessionModel, sessionDuration)
 					return single.Map(savedKeySession, func(_ models.UserKeySession) keydtos.UserKeySessionDto {
-						return keydtos.UserKeySessionDto{Token: token, ProxyKid: proxyKid}
+						return keydtos.UserKeySessionDto{
+							Token:         token,
+							ProxyKid:      proxyKid,
+							UserId:        userBo.Id,
+							KeyVersion:    userKeyGen.KeyVersion,
+							StartTime:     startTime,
+							DurationMilli: sessionDuration.Milliseconds(),
+						}
 					})
 				},
 			)
@@ -191,10 +215,18 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 			return cipherutils.DecryptAES(appSecret.Key, tokenBytes)
 		},
 	)
-	keyBytesSrc := single.MapWithError(single.Zip2(storedSessionSrc, proxyKeySrc),
-		func(t tuple.T2[models.UserKeySession, []byte]) ([]byte, error) {
+	keyBytesSrc := single.FlatMap(single.Zip2(storedSessionSrc, proxyKeySrc),
+		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]byte] {
 			session, proxyKey := t.V1, t.V2
-			return cipherutils.DecryptAES(proxyKey, session.EncryptedKey)
+			validateProxyKeysSrc := u.userKeyBr.ValidateProxyKeyCiphersFromSession(
+				proxyKey,
+				sessionDto.UserId,
+				sessionDto.KeyVersion,
+				session,
+			)
+			return single.MapWithError(validateProxyKeysSrc, func(_ []apperrors.RuleError) ([]byte, error) {
+				return cipherutils.DecryptAES(proxyKey, session.KeyCipher)
+			})
 		},
 	)
 	return single.Map(keyBytesSrc, keydtos.NewUserKeyDto)

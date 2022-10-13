@@ -10,6 +10,7 @@ type UserKeyGenerator struct {
 	UserId            string `bson:"userId"`
 	KeyDerivationSalt []byte `bson:"keyDerivationSalt"`
 	KeyHash           []byte `bson:"keyHash"`
+	KeyVersion        int64
 }
 
 func (k UserKeyGenerator) GetIdStr() string {

@@ -5,8 +5,8 @@ type BaseId struct {
 }
 
 type BaseTimestamp struct {
-	CreatedAt int64 `json:"createdAt"`
-	UpdatedAt int64 `json:"updatedAt"`
+	CreatedAt int64 `json:"createdAt"` // In unix timestamp in milliseconds
+	UpdatedAt int64 `json:"updatedAt"` // In unix timestamp in milliseconds
 }
 
 type BaseCRUDObject struct {

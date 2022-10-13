@@ -1,6 +1,9 @@
 package utils
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // StringIsBlank checks if a string is empty or only has whitespaces.
 func StringIsBlank(s string) bool {
@@ -11,4 +14,8 @@ func StringIsBlank(s string) bool {
 // character(s).
 func StringIsNotBlank(s string) bool {
 	return !StringIsBlank(s)
+}
+
+func Int64ToStr(i int64) string {
+	return strconv.FormatInt(i, 10)
 }

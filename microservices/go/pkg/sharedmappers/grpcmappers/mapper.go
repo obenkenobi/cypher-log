@@ -17,22 +17,30 @@ func UserReadDtoToUserReply(dto *userdtos.UserReadDto, reply *userpb.UserReply) 
 }
 
 func UserReplyToUserReadDto(reply *userpb.UserReply, dto *userdtos.UserReadDto) {
-	dto.Id = reply.Id
-	dto.Exists = reply.Exists
-	dto.UserName = reply.UserName
-	dto.DisplayName = reply.DisplayName
-	dto.CreatedAt = reply.CreatedAt
-	dto.UpdatedAt = reply.UpdatedAt
+	dto.Id = reply.GetId()
+	dto.Exists = reply.GetExists()
+	dto.UserName = reply.GetUserName()
+	dto.DisplayName = reply.GetDisplayName()
+	dto.CreatedAt = reply.GetCreatedAt()
+	dto.UpdatedAt = reply.GetUpdatedAt()
 }
 
 func UserKeySessionDtoToUserKeySession(source *keydtos.UserKeySessionDto, dest *userkeypb.UserKeySession) {
 	dest.ProxyKid = source.ProxyKid
 	dest.Token = source.Token
+	dest.UserId = source.UserId
+	dest.KeyVersion = source.KeyVersion
+	dest.StartTime = source.StartTime
+	dest.DurationMilli = source.DurationMilli
 }
 
 func UserKeySessionToUserKeySessionDto(source *userkeypb.UserKeySession, dest *keydtos.UserKeySessionDto) {
-	dest.ProxyKid = source.ProxyKid
-	dest.Token = source.Token
+	dest.ProxyKid = source.GetProxyKid()
+	dest.Token = source.GetToken()
+	dest.UserId = source.GetUserId()
+	dest.KeyVersion = source.GetKeyVersion()
+	dest.StartTime = source.GetStartTime()
+	dest.DurationMilli = source.GetDurationMilli()
 }
 
 func UserKeyDtoToUserKey(source *keydtos.UserKeyDto, dest *userkeypb.UserKey) {
@@ -40,5 +48,5 @@ func UserKeyDtoToUserKey(source *keydtos.UserKeyDto, dest *userkeypb.UserKey) {
 }
 
 func UserKeyToUserKeyDto(source *userkeypb.UserKey, dest *keydtos.UserKeyDto) {
-	dest.KeyBase64 = source.KeyBase64
+	dest.KeyBase64 = source.GetKeyBase64()
 }

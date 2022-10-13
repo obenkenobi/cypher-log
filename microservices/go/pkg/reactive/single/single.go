@@ -20,10 +20,10 @@ type Single[T any] struct {
 // the observable instead.)
 func (s Single[T]) ToObservable() stream.Observable[T] { return s.src }
 
-// ScheduleCachedEagerAsync takes a single and returns a new Single that is scheduled
+// ScheduleEagerAsyncCached takes a single and returns a new Single that is scheduled
 // to be evaluated eagerly and asynchronously up until point of execution of the
 // returning single. The emitted value is cached if observed twice.
-func (s Single[T]) ScheduleCachedEagerAsync(ctx context.Context) Single[T] {
+func (s Single[T]) ScheduleEagerAsyncCached(ctx context.Context) Single[T] {
 	ch, errCh := ToChannels(ctx, s)
 	return FromChannelsCached(ch, errCh)
 }
@@ -233,6 +233,45 @@ func Zip4[V1 any, V2 any, V3 any, V4 any](
 		func(t1 tuple.T2[V1, V2]) Single[tuple.T4[V1, V2, V3, V4]] {
 			return Map(Zip2(src3, src4), func(t2 tuple.T2[V3, V4]) tuple.T4[V1, V2, V3, V4] {
 				return tuple.New4(t1.V1, t1.V2, t2.V1, t2.V2)
+			})
+		},
+	)
+}
+
+// Zip5 Takes 5 Singles and returns a Single that emits a tuple of each of the
+// singles in the order they are supplied.
+func Zip5[V1 any, V2 any, V3 any, V4 any, V5 any](
+	src1 Single[V1],
+	src2 Single[V2],
+	src3 Single[V3],
+	src4 Single[V4],
+	src5 Single[V5],
+) Single[tuple.T5[V1, V2, V3, V4, V5]] {
+	return FlatMap(
+		Zip3(src1, src2, src3),
+		func(t1 tuple.T3[V1, V2, V3]) Single[tuple.T5[V1, V2, V3, V4, V5]] {
+			return Map(Zip2(src4, src5), func(t2 tuple.T2[V4, V5]) tuple.T5[V1, V2, V3, V4, V5] {
+				return tuple.New5(t1.V1, t1.V2, t1.V3, t2.V1, t2.V2)
+			})
+		},
+	)
+}
+
+// Zip6 Takes 6 Singles and returns a Single that emits a tuple of each of the
+// singles in the order they are supplied.
+func Zip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](
+	src1 Single[V1],
+	src2 Single[V2],
+	src3 Single[V3],
+	src4 Single[V4],
+	src5 Single[V5],
+	src6 Single[V6],
+) Single[tuple.T6[V1, V2, V3, V4, V5, V6]] {
+	return FlatMap(
+		Zip3(src1, src2, src3),
+		func(t1 tuple.T3[V1, V2, V3]) Single[tuple.T6[V1, V2, V3, V4, V5, V6]] {
+			return Map(Zip3(src4, src5, src6), func(t2 tuple.T3[V4, V5, V6]) tuple.T6[V1, V2, V3, V4, V5, V6] {
+				return tuple.New6(t1.V1, t1.V2, t1.V3, t2.V1, t2.V2, t2.V3)
 			})
 		},
 	)
