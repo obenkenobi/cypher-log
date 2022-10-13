@@ -193,7 +193,7 @@ func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
 		} else {
 			src = single.Map(u.distributeUserChangeTransaction(ctx, user), utils.CastToAny[userdtos.UserChangeEventDto])
 		}
-		actionSingles = append(actionSingles, src.ScheduleEagerAsync(ctx))
+		actionSingles = append(actionSingles, src.ScheduleCachedEagerAsync(ctx))
 	}
 	err := <-errCh
 	if err != nil {

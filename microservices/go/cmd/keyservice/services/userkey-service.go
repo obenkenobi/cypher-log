@@ -171,13 +171,12 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 					return single.Error[models.UserKeySession](apperrors.NewBadReqErrorFromRuleError(ruleErr))
 				})
 		},
-	)
+	).ScheduleLazyAndCache(ctx)
+
 	tokenBytesSrc := single.MapWithError(single.Just(sessionDto.Token), encodingutils.DecodeBase64String)
 	tokenHashVerifiedSrc := single.FlatMap(single.Zip2(storedSessionSrc, tokenBytesSrc),
 		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]apperrors.RuleError] {
 			session, tokenBytes := t.V1, t.V2
-			logger.Log.WithField("tokenBytes2", tokenBytes).Debug()
-			logger.Log.WithField("tokenHash2", session.TokenHash).Debug()
 			return u.userKeyBr.ValidateSessionTokenHash(session, tokenBytes)
 		},
 	)
