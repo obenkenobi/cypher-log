@@ -11,6 +11,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/commondtos"
@@ -105,6 +106,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	KeySrc := single.FlatMap(userKeyGenSrc,
 		func(userKeyGen models.UserKeyGenerator) single.Single[[]byte] {
 			newKeySrc := single.FromSupplier(func() ([]byte, error) {
+				logger.Log.Debugf("Generating key from password")
 				key, _, err := cipherutils.DeriveAESKeyFromPassword([]byte(dto.Passcode), userKeyGen.KeyDerivationSalt)
 				return key, err
 			})
@@ -174,6 +176,8 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 	tokenHashVerifiedSrc := single.FlatMap(single.Zip2(storedSessionSrc, tokenBytesSrc),
 		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]apperrors.RuleError] {
 			session, tokenBytes := t.V1, t.V2
+			logger.Log.WithField("tokenBytes2", tokenBytes).Debug()
+			logger.Log.WithField("tokenHash2", session.TokenHash).Debug()
 			return u.userKeyBr.ValidateSessionTokenHash(session, tokenBytes)
 		},
 	)

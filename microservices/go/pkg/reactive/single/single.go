@@ -37,6 +37,7 @@ type singleChanReadObservable[T any] struct {
 	_ch          <-chan T
 	_chErr       <-chan error
 	_value       T
+	_error       error
 	_valueRWLock sync.RWMutex
 }
 
@@ -55,10 +56,52 @@ func (a *singleChanReadObservable[T]) Observe(ctx context.Context, next func(T) 
 			a._channelRead = true
 			if a._chErr != nil {
 				if err := <-a._chErr; err != nil {
-					return err
+					a._error = err
 				}
 			}
-			a._value = <-a._ch
+			if a._error == nil {
+				a._value = <-a._ch
+			}
+		}
+		a._valueRWLock.Unlock()
+	}
+	a._valueRWLock.RLock()
+	value := a._value
+	err := a._error
+	a._valueRWLock.RUnlock()
+	if err != nil {
+		return err
+	}
+	return next(value)
+}
+
+type singleSupplierReadObservable[T any] struct {
+	_supplierRan bool
+	_supplier    func() (T, error)
+	_value       T
+	_err         error
+	_valueRWLock sync.RWMutex
+}
+
+func (a *singleSupplierReadObservable[T]) Observe(ctx context.Context, next func(T) error) error {
+	if ctx.Err() != nil {
+		// Context already cancelled, stop before emitting items.
+		return ctx.Err()
+	}
+	a._valueRWLock.RLock()
+	shouldAttemptWriteValue := !a._supplierRan
+	a._valueRWLock.RUnlock()
+
+	if shouldAttemptWriteValue {
+		a._valueRWLock.Lock()
+		if !a._supplierRan {
+			val, err := a._supplier()
+			if err != nil {
+				a._err = err
+			} else {
+				a._value = val
+			}
+			a._supplierRan = true
 		}
 		a._valueRWLock.Unlock()
 	}
@@ -97,17 +140,7 @@ func Error[T any](err error) Single[T] { return fromSingleObservable(stream.Erro
 //to emit. If the supplier is successful, the result value is emitted.
 //Otherwise, if an error is returned, an error id emitted.
 func FromSupplier[T any](supplier func() (T, error)) Single[T] {
-	var src stream.Observable[T] = stream.FuncObservable[T](func(ctx context.Context, next func(T) error) error {
-		if ctx.Err() != nil {
-			// Context already cancelled, stop before emitting items.
-			return ctx.Err()
-		}
-		val, err := supplier()
-		if err != nil {
-			return err
-		}
-		return next(val)
-	})
+	var src stream.Observable[T] = &singleSupplierReadObservable[T]{_supplier: supplier}
 	return fromSingleObservable(src)
 }
 
