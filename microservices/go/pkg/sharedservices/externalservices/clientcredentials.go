@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/clientcredentialsdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/clientcredentialsdtos"
 	"golang.org/x/oauth2"
 )
 

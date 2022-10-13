@@ -3,8 +3,8 @@ package grpcmappers
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/keydtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 )
 
 func UserReadDtoToUserReply(dto *userdtos.UserReadDto, reply *userpb.UserReply) {

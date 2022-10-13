@@ -4,7 +4,7 @@ import (
 	msg "github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 )
 

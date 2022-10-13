@@ -2,7 +2,7 @@ package sharedmappers
 
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded"
 )
 
 func MapMongoModelToBaseId[M datasource.MongoModel](source M, dest *embedded.BaseId) {

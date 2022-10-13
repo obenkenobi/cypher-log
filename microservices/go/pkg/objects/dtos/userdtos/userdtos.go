@@ -1,7 +1,7 @@
 package userdtos
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded/embeddeduser"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded/embeddeduser"
 )
 
 type UserIdentityDto struct {

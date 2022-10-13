@@ -7,9 +7,9 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 )
 

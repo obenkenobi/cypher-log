@@ -1,6 +1,6 @@
 package embeddeduser
 
-import "github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded"
+import "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded"
 
 type BaseUserCommon struct {
 	UserName    string `json:"userName" binding:"required,alphanumunicode,min=4,max=255"`

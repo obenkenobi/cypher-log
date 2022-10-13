@@ -5,9 +5,9 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/keydtos"
 	"google.golang.org/grpc"
 )
 

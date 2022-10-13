@@ -5,9 +5,9 @@ import (
 	"github.com/barweiss/go-tuple"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/businessobjects/userbos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 )
 

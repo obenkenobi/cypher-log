@@ -1,11 +1,11 @@
 package sharedmappers
 
 import (
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded/embeddeduser"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmodels"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/businessobjects/userbos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/embedded/embeddeduser"
 )
 
 func UserChangeEventDtoToUser(distUser userdtos.UserChangeEventDto, user *sharedmodels.User) {

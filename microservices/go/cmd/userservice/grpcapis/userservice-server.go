@@ -5,9 +5,9 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedobjects/dtos/userdtos"
 )
 
 type UserServiceServerImpl struct {
