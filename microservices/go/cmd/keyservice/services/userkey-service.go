@@ -170,9 +170,7 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 				})
 		},
 	)
-	tokenBytesSrc := single.FromSupplier(func() ([]byte, error) {
-		return encodingutils.DecodeBase64String(sessionDto.Token)
-	})
+	tokenBytesSrc := single.MapWithError(single.Just(sessionDto.Token), encodingutils.DecodeBase64String)
 	tokenHashVerifiedSrc := single.FlatMap(single.Zip2(storedSessionSrc, tokenBytesSrc),
 		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]apperrors.RuleError] {
 			session, tokenBytes := t.V1, t.V2
@@ -184,12 +182,12 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 			session := t.V2
 			return u.appSecretService.GetAppSecret(ctx, session.AppSecretKid)
 		})
-	proxyKeySrc := single.FlatMap(appSecretSrc, func(appSecret bos.AppSecretBo) single.Single[[]byte] {
-		proxyKeyCipherSrc := single.MapWithError(single.Just(sessionDto.Token), encodingutils.DecodeBase64String)
-		return single.MapWithError(proxyKeyCipherSrc, func(proxyKeyCipher []byte) ([]byte, error) {
-			return cipherutils.DecryptAES(appSecret.Key, proxyKeyCipher)
-		})
-	})
+	proxyKeySrc := single.MapWithError(single.Zip2(appSecretSrc, tokenBytesSrc),
+		func(t tuple.T2[bos.AppSecretBo, []byte]) ([]byte, error) {
+			appSecret, tokenBytes := t.V1, t.V2
+			return cipherutils.DecryptAES(appSecret.Key, tokenBytes)
+		},
+	)
 	keyBytesSrc := single.MapWithError(single.Zip2(storedSessionSrc, proxyKeySrc),
 		func(t tuple.T2[models.UserKeySession, []byte]) ([]byte, error) {
 			session, proxyKey := t.V1, t.V2
