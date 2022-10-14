@@ -5,6 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
@@ -19,7 +20,7 @@ func (u UserKeyServiceServerImpl) GetKeyFromSession(
 	ctx context.Context,
 	userKeySession *userkeypb.UserKeySession,
 ) (*userkeypb.UserKey, error) {
-	userKeySessionDto := keydtos.UserKeySessionDto{}
+	userKeySessionDto := commondtos.UserKeySessionDto{}
 	grpcmappers.UserKeySessionToUserKeySessionDto(userKeySession, &userKeySessionDto)
 	keySrc := u.userKeyService.GetKeyFromSession(ctx, userKeySessionDto)
 	replySrc := single.Map(keySrc, func(keyDto keydtos.UserKeyDto) *userkeypb.UserKey {

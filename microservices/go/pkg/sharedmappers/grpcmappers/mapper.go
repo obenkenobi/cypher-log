@@ -3,6 +3,7 @@ package grpcmappers
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 )
@@ -25,7 +26,7 @@ func UserReplyToUserReadDto(reply *userpb.UserReply, dto *userdtos.UserReadDto) 
 	dto.UpdatedAt = reply.GetUpdatedAt()
 }
 
-func UserKeySessionDtoToUserKeySession(source *keydtos.UserKeySessionDto, dest *userkeypb.UserKeySession) {
+func UserKeySessionDtoToUserKeySession(source *commondtos.UserKeySessionDto, dest *userkeypb.UserKeySession) {
 	dest.ProxyKid = source.ProxyKid
 	dest.Token = source.Token
 	dest.UserId = source.UserId
@@ -34,7 +35,7 @@ func UserKeySessionDtoToUserKeySession(source *keydtos.UserKeySessionDto, dest *
 	dest.DurationMilli = source.DurationMilli
 }
 
-func UserKeySessionToUserKeySessionDto(source *userkeypb.UserKeySession, dest *keydtos.UserKeySessionDto) {
+func UserKeySessionToUserKeySessionDto(source *userkeypb.UserKeySession, dest *commondtos.UserKeySessionDto) {
 	dest.ProxyKid = source.GetProxyKid()
 	dest.Token = source.GetToken()
 	dest.UserId = source.GetUserId()

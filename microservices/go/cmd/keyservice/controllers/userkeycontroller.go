@@ -64,7 +64,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 			bodySrc := ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
 			businessLogicSrc := single.FlatMap(single.Zip2(reqUserSrc, bodySrc),
-				func(t tuple.T2[userbos.UserBo, keydtos.PasscodeDto]) single.Single[keydtos.UserKeySessionDto] {
+				func(t tuple.T2[userbos.UserBo, keydtos.PasscodeDto]) single.Single[commondtos.UserKeySessionDto] {
 					userBos, passcodeDto := t.V1, t.V2
 					return u.userKeyService.NewKeySession(c, userBos, passcodeDto)
 				},
@@ -76,9 +76,9 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 	userKeyGroupV1.POST("/getKeyFromSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
-			bodySrc := ginservices.ReadValueFromBody[keydtos.UserKeySessionDto](u.ginCtxService, c)
+			bodySrc := ginservices.ReadValueFromBody[commondtos.UserKeySessionDto](u.ginCtxService, c)
 			businessLogicSrc := single.FlatMap(bodySrc,
-				func(sessionDto keydtos.UserKeySessionDto) single.Single[keydtos.UserKeyDto] {
+				func(sessionDto commondtos.UserKeySessionDto) single.Single[keydtos.UserKeyDto] {
 					return u.userKeyService.GetKeyFromSession(c, sessionDto)
 				},
 			)

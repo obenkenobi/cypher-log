@@ -37,11 +37,11 @@ type UserKeyService interface {
 		ctx context.Context,
 		userBo userbos.UserBo,
 		dto keydtos.PasscodeDto,
-	) single.Single[keydtos.UserKeySessionDto]
+	) single.Single[commondtos.UserKeySessionDto]
 
 	GetKeyFromSession(
 		ctx context.Context,
-		sessionDto keydtos.UserKeySessionDto,
+		sessionDto commondtos.UserKeySessionDto,
 	) single.Single[keydtos.UserKeyDto]
 }
 
@@ -107,7 +107,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	dto keydtos.PasscodeDto,
-) single.Single[keydtos.UserKeySessionDto] {
+) single.Single[commondtos.UserKeySessionDto] {
 	userKeyGenSrc := u.getUserKeyGenerator(ctx, userBo).ScheduleLazyAndCache(ctx)
 	KeySrc := single.FlatMap(userKeyGenSrc,
 		func(userKeyGen models.UserKeyGenerator) single.Single[[]byte] {
@@ -126,7 +126,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	proxyKeySrc := single.FromSupplierCached(cipherutils.GenerateRandomKeyAES)
 	appSecretSrc := u.appSecretService.GetPrimaryAppSecret(ctx)
 	return single.FlatMap(single.Zip4(proxyKeySrc, appSecretSrc, KeySrc, userKeyGenSrc),
-		func(t tuple.T4[[]byte, bos.AppSecretBo, []byte, models.UserKeyGenerator]) single.Single[keydtos.UserKeySessionDto] {
+		func(t tuple.T4[[]byte, bos.AppSecretBo, []byte, models.UserKeyGenerator]) single.Single[commondtos.UserKeySessionDto] {
 			proxyKey, appSecret, key, userKeyGen := t.V1, t.V2, t.V3, t.V4
 			tokenBytesSrc := single.FromSupplierCached(func() ([]byte, error) {
 				return cipherutils.EncryptAES(appSecret.Key, proxyKey)
@@ -154,7 +154,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 			})
 			return single.FlatMap(
 				single.Zip6(tokenHashSrc, tokenSrc, proxyKidSrc, keyCipherSrc, userIdCipherSrc, keyVersionCipherSrc),
-				func(t tuple.T6[[]byte, string, string, []byte, []byte, []byte]) single.Single[keydtos.UserKeySessionDto] {
+				func(t tuple.T6[[]byte, string, string, []byte, []byte, []byte]) single.Single[commondtos.UserKeySessionDto] {
 					tokenHash, token, proxyKid := t.V1, t.V2, t.V3
 					keyCipher, userIdCipher, keyVersionCipher := t.V4, t.V5, t.V6
 					keySessionModel := models.UserKeySession{
@@ -167,8 +167,8 @@ func (u UserKeyServiceImpl) NewKeySession(
 					startTime := time.Now().UnixMilli()
 					sessionDuration := u.keyConf.GetTokenSessionDuration()
 					savedKeySession := u.userKeySessionRepository.Set(ctx, proxyKid, keySessionModel, sessionDuration)
-					return single.Map(savedKeySession, func(_ models.UserKeySession) keydtos.UserKeySessionDto {
-						return keydtos.UserKeySessionDto{
+					return single.Map(savedKeySession, func(_ models.UserKeySession) commondtos.UserKeySessionDto {
+						return commondtos.UserKeySessionDto{
 							Token:         token,
 							ProxyKid:      proxyKid,
 							UserId:        userBo.Id,
@@ -185,7 +185,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 
 func (u UserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
-	sessionDto keydtos.UserKeySessionDto,
+	sessionDto commondtos.UserKeySessionDto,
 ) single.Single[keydtos.UserKeyDto] {
 	storedSessionSrc := single.FlatMap(u.userKeySessionRepository.Get(ctx, sessionDto.ProxyKid),
 		func(maybe option.Maybe[models.UserKeySession]) single.Single[models.UserKeySession] {

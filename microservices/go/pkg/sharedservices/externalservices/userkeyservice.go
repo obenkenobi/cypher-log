@@ -5,6 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
@@ -14,7 +15,7 @@ import (
 type ExtUserKeyService interface {
 	GetKeyFromSession(
 		ctx context.Context,
-		userKeySessionDto keydtos.UserKeySessionDto,
+		userKeySessionDto commondtos.UserKeySessionDto,
 	) single.Single[keydtos.UserKeyDto]
 }
 
@@ -25,7 +26,7 @@ type ExtUserKeyServiceImpl struct {
 
 func (e ExtUserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
-	userKeySessionDto keydtos.UserKeySessionDto,
+	userKeySessionDto commondtos.UserKeySessionDto,
 ) single.Single[keydtos.UserKeyDto] {
 	connectionSrc := e.coreGrpcConnProvider.CreateConnectionSingle(ctx, e.grpcClientConf.KeyServiceAddress())
 	replySrc := single.MapWithError(connectionSrc, func(conn *grpc.ClientConn) (*userkeypb.UserKey, error) {
