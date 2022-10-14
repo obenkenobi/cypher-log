@@ -71,15 +71,19 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 	validateProxyKeyCiphersSrc := single.FromSupplierCached(func() ([]apperrors.RuleError, error) {
 		var ruleErrs []apperrors.RuleError
 
-		decryptedUserIdBytes, err := cipherutils.DecryptAES(proxyKey, session.UserIdCipher)
-		userIdInvalid := err != nil || string(decryptedUserIdBytes) != userId
+		savedUserIdBytes, err := cipherutils.DecryptAES(proxyKey, session.UserIdCipher)
+		if err != nil {
+			logger.Log.WithError(err).Debug()
+			return ruleErrs, nil
+		}
+		userIdInvalid := string(savedUserIdBytes) != userId
 
-		logger.Log.WithError(err).Debug()
-
-		decryptedKeyBytes, err := cipherutils.DecryptAES(proxyKey, session.KeyCipher)
-		keyInvalid := err != nil || string(decryptedKeyBytes) != utils.Int64ToStr(keyVersion)
-
-		logger.Log.WithError(err).Debug()
+		savedKeyVersionBytes, err := cipherutils.DecryptAES(proxyKey, session.KeyVersionCipher)
+		if err != nil {
+			logger.Log.WithError(err).Debug()
+			return ruleErrs, nil
+		}
+		keyInvalid := string(savedKeyVersionBytes) != utils.Int64ToStr(keyVersion)
 
 		if userIdInvalid || keyInvalid {
 			ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
