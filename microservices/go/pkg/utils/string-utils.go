@@ -19,3 +19,7 @@ func StringIsNotBlank(s string) bool {
 func Int64ToStr(i int64) string {
 	return strconv.FormatInt(i, 10)
 }
+
+func StrToInt64(s string) (int64, error) {
+	return strconv.ParseInt(s, 10, 64)
+}
