@@ -16,23 +16,38 @@ type NoteBr interface {
 		session commondtos.UKeySessionDto,
 		existing models.Note,
 	) single.Single[[]apperrors.RuleError]
+	ValidateNoteRead(
+		userBo userbos.UserBo,
+		session commondtos.UKeySessionDto,
+		existing models.Note,
+	) single.Single[[]apperrors.RuleError]
+	ValidateNoteDelete(userBo userbos.UserBo, existing models.Note) single.Single[[]apperrors.RuleError]
 }
 
 type NoteBrImpl struct {
 	errorService sharedservices.ErrorService
 }
 
-func (n NoteBrImpl) ValidateNoteUpdate(userBo userbos.UserBo, session commondtos.UKeySessionDto, existing models.Note) single.Single[[]apperrors.RuleError] {
+func (n NoteBrImpl) ValidateNoteRead(userBo userbos.UserBo, session commondtos.UKeySessionDto, existing models.Note) single.Single[[]apperrors.RuleError] {
 	validateKeyVersionSrc := n.validateKeyVersion(session, existing)
-	validateNoteOwnedByUser := single.FromSupplierCached(func() ([]apperrors.RuleError, error) {
-		var ruleErrs []apperrors.RuleError
-		if userBo.Id != existing.UserId {
-			ruleErrs = append(ruleErrs, n.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
-		}
-		return ruleErrs, nil
-	})
+	validateNoteOwnedByUser := n.validateNoteOwnership(userBo, existing)
 	ruleErrs := validationutils.ConcatSinglesOfRuleErrs(validateKeyVersionSrc, validateNoteOwnedByUser)
 	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrs)
+}
+
+func (n NoteBrImpl) ValidateNoteUpdate(userBo userbos.UserBo, session commondtos.UKeySessionDto, existing models.Note) single.Single[[]apperrors.RuleError] {
+	validateKeyVersionSrc := n.validateKeyVersion(session, existing)
+	validateNoteOwnedByUser := n.validateNoteOwnership(userBo, existing)
+	ruleErrs := validationutils.ConcatSinglesOfRuleErrs(validateKeyVersionSrc, validateNoteOwnedByUser)
+	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrs)
+}
+
+func (n NoteBrImpl) ValidateNoteDelete(
+	userBo userbos.UserBo,
+	existing models.Note,
+) single.Single[[]apperrors.RuleError] {
+	validateNoteOwnedByUser := n.validateNoteOwnership(userBo, existing)
+	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(validateNoteOwnedByUser)
 }
 
 func (n NoteBrImpl) validateKeyVersion(session commondtos.UKeySessionDto, existing models.Note) single.Single[[]apperrors.RuleError] {
@@ -40,6 +55,16 @@ func (n NoteBrImpl) validateKeyVersion(session commondtos.UKeySessionDto, existi
 		var ruleErrs []apperrors.RuleError
 		if session.KeyVersion != existing.KeyVersion {
 			ruleErrs = append(ruleErrs, n.errorService.RuleErrorFromCode(apperrors.ErrCodeDataRace))
+		}
+		return ruleErrs, nil
+	})
+}
+
+func (n NoteBrImpl) validateNoteOwnership(userBo userbos.UserBo, existing models.Note) single.Single[[]apperrors.RuleError] {
+	return single.FromSupplierCached(func() ([]apperrors.RuleError, error) {
+		var ruleErrs []apperrors.RuleError
+		if userBo.Id != existing.UserId {
+			ruleErrs = append(ruleErrs, n.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
 		}
 		return ruleErrs, nil
 	})
