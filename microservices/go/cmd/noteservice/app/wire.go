@@ -59,6 +59,8 @@ func InitializeApp() *App {
 		wire.Bind(new(sharedservices.ErrorService), new(*sharedservices.ErrorServiceImpl)),
 		services.NewUserChangeEventServiceImpl,
 		wire.Bind(new(services.UserChangeEventService), new(*services.UserChangeEventServiceImpl)),
+		services.NewNoteServiceImpl,
+		wire.Bind(new(services.NoteService), new(*services.NoteServiceImpl)),
 		securityservices.NewJwtValidateWebAppServiceImpl,
 		wire.Bind(new(securityservices.JwtValidateWebAppService), new(*securityservices.JwtValidateWebAppServiceImpl)),
 		middlewares.NewAuthMiddlewareImpl,
