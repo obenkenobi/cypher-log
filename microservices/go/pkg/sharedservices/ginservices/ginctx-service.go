@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/queryreq"
 	"net/http"
 )
 
@@ -17,6 +18,9 @@ import (
 type GinCtxService interface {
 	// ParamStr returns the value of a URL param as a string
 	ParamStr(c *gin.Context, name string) string
+
+	// ReqQueryReader returns a reader to parse your request query params
+	ReqQueryReader(c *gin.Context) queryreq.ReqQueryReader
 
 	// HandleErrorResponse takes an error and parses it to set the appropriate http
 	// response. Certain errors relating to user input will trigger a 4XX status
@@ -36,11 +40,15 @@ type GinCtxServiceImpl struct {
 	errorMessageService sharedservices.ErrorService
 }
 
-func (h GinCtxServiceImpl) ParamStr(c *gin.Context, key string) string {
+func (g GinCtxServiceImpl) ParamStr(c *gin.Context, key string) string {
 	return c.Param(key)
 }
 
-func (h GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError {
+func (q GinCtxServiceImpl) ReqQueryReader(c *gin.Context) queryreq.ReqQueryReader {
+	return queryreq.NewGinCtxReqQueryReaderImpl(c, q.errorMessageService)
+}
+
+func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError {
 	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
 		appValErrors := slice.Map(fieldErrors, func(fieldError validator.FieldError) apperrors.ValidationError {
 			return apperrors.ValidationError{Field: fieldError.Field(), Message: fieldError.ActualTag()}
@@ -48,11 +56,11 @@ func (h GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError
 		return apperrors.NewBadReqErrorFromValidationErrors(appValErrors)
 	}
 	logger.Log.WithError(err).Info("Unable to bind json")
-	cannotBindJsonRuleErr := h.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson)
+	cannotBindJsonRuleErr := g.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson)
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
 }
 
-func (h GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
+func (g GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		c.JSON(http.StatusBadRequest, badReqErr)
 	} else {
@@ -61,9 +69,9 @@ func (h GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 	}
 }
 
-func (h GinCtxServiceImpl) RespondJsonOkOrError(c *gin.Context, model any, err error) {
+func (g GinCtxServiceImpl) RespondJsonOkOrError(c *gin.Context, model any, err error) {
 	if err != nil {
-		h.HandleErrorResponse(c, err)
+		g.HandleErrorResponse(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, model)

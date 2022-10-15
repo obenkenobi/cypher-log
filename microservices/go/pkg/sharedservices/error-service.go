@@ -36,6 +36,8 @@ func NewErrorServiceImpl() *ErrorServiceImpl {
 		apperrors.ErrCodeUserRequireFail:        "User is not found or incomplete",
 		apperrors.ErrCodeIncorrectPasscode:      "Incorrect passcode",
 		apperrors.ErrCodeInvalidSession:         "Invalid session",
+		apperrors.ErrCodeReqQueryIntParseFail:   "Failed to parse an integer from the request query",
+		apperrors.ErrCodeReqQueryRequired:       "Query param %v is required",
 	}
 	return &ErrorServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

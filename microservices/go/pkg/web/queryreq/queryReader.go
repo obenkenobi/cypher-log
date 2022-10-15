@@ -3,6 +3,7 @@ package queryreq
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"strconv"
 )
@@ -18,12 +19,9 @@ type ReqQueryReader interface {
 }
 
 type GinCtxReqQueryReaderImpl struct {
-	requiredQueryRuleErr apperrors.RuleError
-	stringReadRuleErr    apperrors.RuleError
-	intReadRuleErr       apperrors.RuleError
-	int64ReadRuleErr     apperrors.RuleError
-	ginContext           *gin.Context
-	ruleErrors           []apperrors.RuleError
+	errorService sharedservices.ErrorService
+	ginContext   *gin.Context
+	ruleErrors   []apperrors.RuleError
 }
 
 func (q GinCtxReqQueryReaderImpl) ReadString(key string, value *string) ReqQueryReader {
@@ -31,7 +29,10 @@ func (q GinCtxReqQueryReaderImpl) ReadString(key string, value *string) ReqQuery
 	if queryVal, ok := q.ginContext.GetQuery(key); ok {
 		*value = queryVal
 	} else {
-		queryReader.ruleErrors = append(q.ruleErrors, q.requiredQueryRuleErr)
+		queryReader.ruleErrors = append(
+			q.ruleErrors,
+			q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryRequired, key),
+		)
 	}
 	return queryReader
 }
@@ -52,10 +53,16 @@ func (q GinCtxReqQueryReaderImpl) ReadInt(key string, value *int) ReqQueryReader
 		if intVal, err := strconv.Atoi(queryVal); err == nil {
 			*value = intVal
 		} else {
-			queryReader.ruleErrors = append(q.ruleErrors, q.intReadRuleErr)
+			queryReader.ruleErrors = append(
+				q.ruleErrors,
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+			)
 		}
 	} else {
-		queryReader.ruleErrors = append(q.ruleErrors, q.requiredQueryRuleErr)
+		queryReader.ruleErrors = append(
+			q.ruleErrors,
+			q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryRequired, key),
+		)
 	}
 	return queryReader
 }
@@ -66,7 +73,10 @@ func (q GinCtxReqQueryReaderImpl) ReadIntOrDefault(key string, value *int, defau
 		if intVal, err := strconv.Atoi(queryVal); err == nil {
 			*value = intVal
 		} else {
-			queryReader.ruleErrors = append(q.ruleErrors, q.intReadRuleErr)
+			queryReader.ruleErrors = append(
+				q.ruleErrors,
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+			)
 		}
 	} else {
 		*value = defaultValue
@@ -80,10 +90,16 @@ func (q GinCtxReqQueryReaderImpl) ReadInt64(key string, value *int64) ReqQueryRe
 		if intVal, err := utils.StrToInt64(queryVal); err == nil {
 			*value = intVal
 		} else {
-			queryReader.ruleErrors = append(q.ruleErrors, q.int64ReadRuleErr)
+			queryReader.ruleErrors = append(
+				q.ruleErrors,
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+			)
 		}
 	} else {
-		queryReader.ruleErrors = append(q.ruleErrors, q.requiredQueryRuleErr)
+		queryReader.ruleErrors = append(
+			q.ruleErrors,
+			q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryRequired, key),
+		)
 	}
 	return queryReader
 }
@@ -94,10 +110,13 @@ func (q GinCtxReqQueryReaderImpl) ReadInt64OrDefault(key string, value *int64, d
 		if intVal, err := utils.StrToInt64(queryVal); err == nil {
 			*value = intVal
 		} else {
-			*value = defaultValue
+			queryReader.ruleErrors = append(
+				q.ruleErrors,
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+			)
 		}
 	} else {
-		queryReader.ruleErrors = append(q.ruleErrors, q.requiredQueryRuleErr)
+		*value = defaultValue
 	}
 	return queryReader
 }
@@ -111,16 +130,10 @@ func (q GinCtxReqQueryReaderImpl) Complete() error {
 
 func NewGinCtxReqQueryReaderImpl(
 	ginContext *gin.Context,
-	requiredQueryRuleErr apperrors.RuleError,
-	stringReadRuleErr apperrors.RuleError,
-	intReadRuleErr apperrors.RuleError,
-	int64ReadRuleErr apperrors.RuleError,
+	errorService sharedservices.ErrorService,
 ) GinCtxReqQueryReaderImpl {
 	return GinCtxReqQueryReaderImpl{
-		ginContext:           ginContext,
-		requiredQueryRuleErr: requiredQueryRuleErr,
-		stringReadRuleErr:    stringReadRuleErr,
-		intReadRuleErr:       intReadRuleErr,
-		int64ReadRuleErr:     int64ReadRuleErr,
+		ginContext:   ginContext,
+		errorService: errorService,
 	}
 }
