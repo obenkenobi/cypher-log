@@ -1,7 +1,7 @@
 import { mongoMigrateCli } from 'mongo-migrate-ts';
 import * as dotenv from 'dotenv'
 
-if (process.env.IGNORE_ENV !== "true") {
+if (process.env.IGNORE_ENV_FILE !== "true") {
     dotenv.config()
 }
 
