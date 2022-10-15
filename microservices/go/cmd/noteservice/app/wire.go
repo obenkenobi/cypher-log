@@ -5,6 +5,7 @@ package app
 
 import (
 	"github.com/google/wire"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/listeners"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/repositories"
@@ -48,6 +49,8 @@ func InitializeApp() *App {
 		wire.Bind(new(externalservices.ExtUserService), new(*externalservices.ExtUserServiceImpl)),
 		externalservices.NewCoreGrpcConnProviderImpl,
 		wire.Bind(new(externalservices.CoreGrpcConnProvider), new(*externalservices.CoreGrpcConnProviderImpl)),
+		externalservices.NewExtUserKeyServiceImpl,
+		wire.Bind(new(externalservices.ExtUserKeyService), new(*externalservices.ExtUserKeyServiceImpl)),
 		dshandlers.NewMongoDBHandler,
 		wire.Bind(new(dshandlers.CrudDSHandler), new(*dshandlers.MongoDBHandler)),
 		sharedrepos.NewUserRepositoryImpl,
@@ -60,6 +63,8 @@ func InitializeApp() *App {
 		wire.Bind(new(sharedservices.ErrorService), new(*sharedservices.ErrorServiceImpl)),
 		repositories.NewNoteRepositoryImpl,
 		wire.Bind(new(repositories.NoteRepository), new(*repositories.NoteRepositoryImpl)),
+		businessrules.NewNoteBrImpl,
+		wire.Bind(new(businessrules.NoteBr), new(*businessrules.NoteBrImpl)),
 		services.NewUserChangeEventServiceImpl,
 		wire.Bind(new(services.UserChangeEventService), new(*services.UserChangeEventServiceImpl)),
 		services.NewNoteServiceImpl,

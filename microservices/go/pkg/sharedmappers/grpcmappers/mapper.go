@@ -26,7 +26,7 @@ func UserReplyToUserReadDto(reply *userpb.UserReply, dto *userdtos.UserReadDto) 
 	dto.UpdatedAt = reply.GetUpdatedAt()
 }
 
-func UserKeySessionDtoToUserKeySession(source *commondtos.UserKeySessionDto, dest *userkeypb.UserKeySession) {
+func UserKeySessionDtoToUserKeySession(source *commondtos.UKeySessionDto, dest *userkeypb.UserKeySession) {
 	dest.ProxyKid = source.ProxyKid
 	dest.Token = source.Token
 	dest.UserId = source.UserId
@@ -35,7 +35,7 @@ func UserKeySessionDtoToUserKeySession(source *commondtos.UserKeySessionDto, des
 	dest.DurationMilli = source.DurationMilli
 }
 
-func UserKeySessionToUserKeySessionDto(source *userkeypb.UserKeySession, dest *commondtos.UserKeySessionDto) {
+func UserKeySessionToUserKeySessionDto(source *userkeypb.UserKeySession, dest *commondtos.UKeySessionDto) {
 	dest.ProxyKid = source.GetProxyKid()
 	dest.Token = source.GetToken()
 	dest.UserId = source.GetUserId()

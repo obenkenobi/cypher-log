@@ -8,7 +8,14 @@ type CoreNoteDto struct {
 
 type CoreNoteDetailsDto struct {
 	CoreNoteDto
-	Text string `json:"text" binding:"max=40000"`
+	Text *string `json:"text" binding:"max=40000"`
+}
+
+func (c CoreNoteDetailsDto) GetText() string {
+	if c.Text != nil {
+		return *c.Text
+	}
+	return ""
 }
 
 type NoteCreateDto struct {

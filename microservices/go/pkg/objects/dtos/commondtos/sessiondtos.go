@@ -1,6 +1,6 @@
 package commondtos
 
-type UserKeySessionDto struct {
+type UKeySessionDto struct {
 	ProxyKid      string `json:"proxyKid" binding:"required"`
 	Token         string `json:"token" binding:"required"`
 	UserId        string `json:"userId" binding:"required"`
@@ -9,7 +9,7 @@ type UserKeySessionDto struct {
 	DurationMilli int64  `json:"durationMilli"` // In milliseconds
 }
 
-type UserKeySessionPayloadDto[T any] struct {
-	Session UserKeySessionDto `json:"session"`
-	Payload T                 `json:"payload"`
+type UKeySessionReqDto[T any] struct {
+	Session UKeySessionDto `json:"session"`
+	Value   T              `json:"payload"`
 }

@@ -20,7 +20,7 @@ func (u UserKeyServiceServerImpl) GetKeyFromSession(
 	ctx context.Context,
 	userKeySession *userkeypb.UserKeySession,
 ) (*userkeypb.UserKey, error) {
-	userKeySessionDto := commondtos.UserKeySessionDto{}
+	userKeySessionDto := commondtos.UKeySessionDto{}
 	grpcmappers.UserKeySessionToUserKeySessionDto(userKeySession, &userKeySessionDto)
 	keySrc := u.userKeyService.GetKeyFromSession(ctx, userKeySessionDto)
 	replySrc := single.Map(keySrc, func(keyDto keydtos.UserKeyDto) *userkeypb.UserKey {

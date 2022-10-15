@@ -15,7 +15,7 @@ import (
 type ExtUserKeyService interface {
 	GetKeyFromSession(
 		ctx context.Context,
-		userKeySessionDto commondtos.UserKeySessionDto,
+		userKeySessionDto commondtos.UKeySessionDto,
 	) single.Single[keydtos.UserKeyDto]
 }
 
@@ -26,7 +26,7 @@ type ExtUserKeyServiceImpl struct {
 
 func (e ExtUserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
-	userKeySessionDto commondtos.UserKeySessionDto,
+	userKeySessionDto commondtos.UKeySessionDto,
 ) single.Single[keydtos.UserKeyDto] {
 	connectionSrc := e.coreGrpcConnProvider.CreateConnectionSingle(ctx, e.grpcClientConf.KeyServiceAddress())
 	replySrc := single.MapWithError(connectionSrc, func(conn *grpc.ClientConn) (*userkeypb.UserKey, error) {
