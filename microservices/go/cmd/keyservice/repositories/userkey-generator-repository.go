@@ -97,5 +97,3 @@ func NewUserKeyRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserKe
 		),
 	}
 }
-
-// Delete from userkeys where u.userId = "243234"
