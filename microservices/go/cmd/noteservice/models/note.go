@@ -8,7 +8,8 @@ import (
 type Note struct {
 	mgm.DefaultModel `bson:",inline"`
 	UserId           string `bson:"userId"`
-	CipherText       []byte `bson:"cipherText"`
+	TitleCipher      []byte `bson:"titleCipher"`
+	TextCipher       []byte `bson:"cipherText"`
 	KeyVersion       int64
 }
 
