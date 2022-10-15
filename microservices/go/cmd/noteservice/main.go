@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/app"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	environment.ReadEnvFiles(".env", "noteservice.env") // Load env files
+	logger.ConfigureLoggerFromEnv()
+	app.Start()
 }

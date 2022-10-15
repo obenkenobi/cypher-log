@@ -29,5 +29,6 @@ go.work
 .env
 userservice.env
 keyservice.env
+noteservice.env
 
 wire_gen.go

@@ -17,7 +17,6 @@ type App struct {
 
 func (a App) Start() {
 	defer a.rmqPublisher.Close()
-	// Add task dependencies
 	var taskRunners []taskrunner.TaskRunner
 	if environment.ActivateAppServer() { // Add app server
 		taskRunners = append(taskRunners, a.appServer)
@@ -28,7 +27,6 @@ func (a App) Start() {
 	if environment.ActivateCronRunner() { // Add Cron runner
 		taskRunners = append(taskRunners, a.cronRunner)
 	}
-	// Run taskRunners
 	taskrunner.RunAndWait(taskRunners...)
 
 }

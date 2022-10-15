@@ -18,7 +18,6 @@ type App struct {
 func (a App) Start() {
 	defer a.rabbitConsumer.Close()
 
-	// Add task dependencies
 	var taskRunners []taskrunner.TaskRunner
 	if environment.ActivateAppServer() { // Add app server
 		taskRunners = append(taskRunners, a.appServer)
@@ -29,7 +28,6 @@ func (a App) Start() {
 	if environment.ActivateRabbitMqListener() {
 		taskRunners = append(taskRunners, a.rmqListener)
 	}
-	// Run tasks
 	taskrunner.RunAndWait(taskRunners...)
 }
 
