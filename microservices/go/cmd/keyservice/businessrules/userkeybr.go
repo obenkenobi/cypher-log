@@ -12,25 +12,22 @@ import (
 )
 
 type UserKeyBr interface {
-	ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) single.Single[[]apperrors.RuleError]
-	ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) single.Single[[]apperrors.RuleError]
-	ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) single.Single[[]apperrors.RuleError]
+	ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) single.Single[any]
+	ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any]
+	ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any]
 	ValidateProxyKeyCiphersFromSession(
 		proxyKey []byte,
 		userId string,
 		keyVersion int64,
 		session models.UserKeySession,
-	) single.Single[[]apperrors.RuleError]
+	) single.Single[any]
 }
 
 type UserKeyBrImpl struct {
 	errorService sharedservices.ErrorService
 }
 
-func (u UserKeyBrImpl) ValidateSessionTokenHash(
-	session models.UserKeySession,
-	tokenBytes []byte,
-) single.Single[[]apperrors.RuleError] {
+func (u UserKeyBrImpl) ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) single.Single[any] {
 	hashCheckSrc := single.FromSupplierCached(func() (bool, error) {
 		return cipherutils.VerifyHashWithSaltSHA256(session.TokenHash, tokenBytes)
 	})
@@ -45,10 +42,7 @@ func (u UserKeyBrImpl) ValidateSessionTokenHash(
 
 }
 
-func (u UserKeyBrImpl) ValidateKeyFromSession(
-	userKeyGen models.UserKeyGenerator,
-	key []byte,
-) single.Single[[]apperrors.RuleError] {
+func (u UserKeyBrImpl) ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any] {
 	verifiedKeyHashSrc := single.FromSupplierCached(func() (bool, error) {
 		return cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
 	})
@@ -67,7 +61,7 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 	userId string,
 	keyVersion int64,
 	session models.UserKeySession,
-) single.Single[[]apperrors.RuleError] {
+) single.Single[any] {
 	validateProxyKeyCiphersSrc := single.FromSupplierCached(func() ([]apperrors.RuleError, error) {
 		var ruleErrs []apperrors.RuleError
 
@@ -96,7 +90,7 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 func (u UserKeyBrImpl) ValidateKeyFromPassword(
 	userKeyGen models.UserKeyGenerator,
 	key []byte,
-) single.Single[[]apperrors.RuleError] {
+) single.Single[any] {
 	verifiedKeyHashSrc := single.FromSupplierCached(func() (bool, error) {
 		return cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
 	})

@@ -51,22 +51,17 @@ func (u UserServiceImpl) AddUserTransaction(
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserReadDto] {
-	return dshandlers.TransactionalSingle(
-		ctx,
-		u.crudDSHandler,
+	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
 			userCreateValidationSrc := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
-			userCreateSrc := single.FlatMap(
-				userCreateValidationSrc,
-				func([]apperrors.RuleError) single.Single[models.User] {
-					user := models.User{}
-					mappers.UserSaveDtoToUser(userSaveDto, &user)
-					user.AuthId = identity.GetAuthId()
-					user.Distributed = false
-					user.ToBeDeleted = false
-					return u.userRepository.Create(ctx, user)
-				},
-			)
+			userCreateSrc := single.FlatMap(userCreateValidationSrc, func(any2 any) single.Single[models.User] {
+				user := models.User{}
+				mappers.UserSaveDtoToUser(userSaveDto, &user)
+				user.AuthId = identity.GetAuthId()
+				user.Distributed = false
+				user.ToBeDeleted = false
+				return u.userRepository.Create(ctx, user)
+			})
 			return single.Map(userCreateSrc, func(user models.User) userdtos.UserReadDto {
 				logger.Log.Debug("Saved user ", user)
 				return userToUserReadDto(user)
@@ -81,13 +76,10 @@ func (u UserServiceImpl) UpdateUserTransaction(
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
 ) single.Single[userdtos.UserReadDto] {
-	return dshandlers.TransactionalSingle(
-		ctx,
-		u.crudDSHandler,
+	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
 			userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
-			userExistsSrc := single.MapWithError(
-				userSearchSrc,
+			userExistsSrc := single.MapWithError(userSearchSrc,
 				func(userMaybe option.Maybe[models.User]) (models.User, error) {
 					if user, isPresent := userMaybe.Get(); isPresent {
 						return user, nil
@@ -98,11 +90,10 @@ func (u UserServiceImpl) UpdateUserTransaction(
 					}
 				},
 			)
-			userValidatedSrc := single.FlatMap(
-				userExistsSrc,
+			userValidatedSrc := single.FlatMap(userExistsSrc,
 				func(existingUser models.User) single.Single[models.User] {
 					validationSrc := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
-					return single.Map(validationSrc, func([]apperrors.RuleError) models.User { return existingUser })
+					return single.Map(validationSrc, func(any2 any) models.User { return existingUser })
 				},
 			)
 			userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
@@ -124,9 +115,7 @@ func (u UserServiceImpl) BeginDeletingUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
 ) single.Single[userdtos.UserReadDto] {
-	return dshandlers.TransactionalSingle(
-		ctx,
-		u.crudDSHandler,
+	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
 			userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
 			userExistsSrc := single.MapWithError(
@@ -211,9 +200,7 @@ func (u UserServiceImpl) deleteUserTransaction(
 	ctx context.Context,
 	user models.User,
 ) single.Single[userdtos.UserChangeEventDto] {
-	return dshandlers.TransactionalSingle(
-		ctx,
-		u.crudDSHandler,
+	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
 			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserDelete)
 			userDeletedLocalDBSrc := u.userRepository.Delete(ctx, user)
@@ -238,9 +225,7 @@ func (u UserServiceImpl) distributeUserChangeTransaction(
 	ctx context.Context,
 	user models.User,
 ) single.Single[userdtos.UserChangeEventDto] {
-	return dshandlers.TransactionalSingle(
-		ctx,
-		u.crudDSHandler,
+	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(session dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
 			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserSave)
 			return single.FlatMap(

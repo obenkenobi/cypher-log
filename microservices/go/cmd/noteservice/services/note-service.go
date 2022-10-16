@@ -95,8 +95,8 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 			keySrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
 				func(t tuple.T2[models.Note, keydtos.UserKeyDto]) single.Single[[]byte] {
 					existing, keyDto := t.V1, t.V2
-					noteUpdateValidationSrc := n.noteBr.ValidateNoteUpdate(userBo, sessDto, existing)
-					return single.MapWithError(noteUpdateValidationSrc, func(_ []apperrors.RuleError) ([]byte, error) {
+					noteUpdateValidationSrc := n.noteBr.ValidateNoteUpdate(userBo, keyDto, existing)
+					return single.MapWithError(noteUpdateValidationSrc, func(_ any) ([]byte, error) {
 						return keyDto.GetKey()
 					})
 				}).ScheduleLazyAndCache(ctx)
@@ -129,11 +129,11 @@ func (n NoteServiceImpl) DeleteNoteTransaction(
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
 			existingSrc := n.getExistingNote(ctx, noteId).ScheduleLazyAndCache(ctx)
 			validateDeleteSrc := single.FlatMap(existingSrc,
-				func(existing models.Note) single.Single[[]apperrors.RuleError] {
+				func(existing models.Note) single.Single[any] {
 					return n.noteBr.ValidateNoteDelete(userBo, existing)
 				})
 			noteDeleteSrc := single.FlatMap(single.Zip2(existingSrc, validateDeleteSrc),
-				func(t tuple.T2[models.Note, []apperrors.RuleError]) single.Single[models.Note] {
+				func(t tuple.T2[models.Note, any]) single.Single[models.Note] {
 					existing := t.V1
 					return n.noteRepository.Delete(ctx, existing)
 				})

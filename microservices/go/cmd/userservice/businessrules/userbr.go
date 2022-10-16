@@ -14,17 +14,8 @@ import (
 )
 
 type UserBr interface {
-	ValidateUserCreate(
-		ctx context.Context,
-		identity security.Identity,
-		dto userdtos.UserSaveDto,
-	) single.Single[[]apperrors.RuleError]
-
-	ValidateUserUpdate(
-		ctx context.Context,
-		dto userdtos.UserSaveDto,
-		existing models.User,
-	) single.Single[[]apperrors.RuleError]
+	ValidateUserCreate(ctx context.Context, identity security.Identity, dto userdtos.UserSaveDto) single.Single[any]
+	ValidateUserUpdate(ctx context.Context, dto userdtos.UserSaveDto, existing models.User) single.Single[any]
 }
 
 type UserBrImpl struct {
@@ -37,7 +28,7 @@ func (u UserBrImpl) ValidateUserCreate(
 	ctx context.Context,
 	identity security.Identity,
 	dto userdtos.UserSaveDto,
-) single.Single[[]apperrors.RuleError] {
+) single.Single[any] {
 	userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto)
 	userNotCreatedValidationSrc := validationutils.ValidateValueIsNotPresent(
 		u.errorService,
@@ -52,7 +43,7 @@ func (u UserBrImpl) ValidateUserUpdate(
 	ctx context.Context,
 	dto userdtos.UserSaveDto,
 	existing models.User,
-) single.Single[[]apperrors.RuleError] {
+) single.Single[any] {
 	ruleErrorsSrc := single.Just([]apperrors.RuleError{})
 	if dto.UserName != existing.UserName {
 		userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto)
