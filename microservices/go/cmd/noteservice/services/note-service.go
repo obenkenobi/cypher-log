@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/barweiss/go-tuple"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/businessrules"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/mappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
@@ -13,7 +14,6 @@ import (
 	cDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	kDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	nDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/notedtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
@@ -182,24 +182,10 @@ func (n NoteServiceImpl) GetNoteById(
 			})
 			return single.Map(single.Zip2(textSrc, titleSrc), func(t tuple.T2[*string, string]) nDTOs.NoteDetailsDto {
 				text, title := t.V1, t.V2
-				// Todo use a mapper
-				return nDTOs.NoteDetailsDto{
-					BaseCRUDObject: embedded.BaseCRUDObject{
-						BaseId: embedded.BaseId{
-							Id: existing.GetIdStr(),
-						},
-						BaseTimestamp: embedded.BaseTimestamp{
-							CreatedAt: existing.CreatedAt.UnixMilli(),
-							UpdatedAt: existing.UpdatedAt.UnixMilli(),
-						},
-					},
-					CoreNoteDetailsDto: nDTOs.CoreNoteDetailsDto{
-						Text: text,
-						CoreNoteDto: nDTOs.CoreNoteDto{
-							Title: title,
-						},
-					},
-				}
+				coreNoteDetails := nDTOs.NewCoreNoteDetailsDto(title, text)
+				noteDetailsDto := nDTOs.NoteDetailsDto{}
+				mappers.MapCoreNoteDetailsAndNoteToNoteDetailsDto(&coreNoteDetails, &existing, &noteDetailsDto)
+				return noteDetailsDto
 			})
 		})
 }
