@@ -116,10 +116,10 @@ func (u UserKeyServiceImpl) NewKeySession(
 				key, _, err := cipherutils.DeriveAESKeyFromPassword([]byte(dto.Passcode), userKeyGen.KeyDerivationSalt)
 				return key, err
 			})
-			keyValidated := single.FlatMap(newKeySrc, func(key []byte) single.Single[[]apperrors.RuleError] {
+			keyValidated := single.FlatMap(newKeySrc, func(key []byte) single.Single[any] {
 				return u.userKeyBr.ValidateKeyFromPassword(userKeyGen, key)
 			})
-			return single.FlatMap(keyValidated, func(_ []apperrors.RuleError) single.Single[[]byte] {
+			return single.FlatMap(keyValidated, func(_ any) single.Single[[]byte] {
 				return newKeySrc
 			})
 		})
@@ -199,13 +199,13 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 
 	tokenBytesSrc := single.MapWithError(single.Just(sessionDto.Token), encodingutils.DecodeBase64String)
 	tokenHashVerifiedSrc := single.FlatMap(single.Zip2(storedSessionSrc, tokenBytesSrc),
-		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]apperrors.RuleError] {
+		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[any] {
 			session, tokenBytes := t.V1, t.V2
 			return u.userKeyBr.ValidateSessionTokenHash(session, tokenBytes)
 		},
 	)
 	appSecretSrc := single.FlatMap(single.Zip2(tokenHashVerifiedSrc, storedSessionSrc),
-		func(t tuple.T2[[]apperrors.RuleError, models.UserKeySession]) single.Single[bos.AppSecretBo] {
+		func(t tuple.T2[any, models.UserKeySession]) single.Single[bos.AppSecretBo] {
 			session := t.V2
 			return u.appSecretService.GetAppSecret(ctx, session.AppSecretKid)
 		})
@@ -224,7 +224,7 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 				sessionDto.KeyVersion,
 				session,
 			)
-			return single.MapWithError(validateProxyKeysSrc, func(_ []apperrors.RuleError) ([]byte, error) {
+			return single.MapWithError(validateProxyKeysSrc, func(_ any) ([]byte, error) {
 				return cipherutils.DecryptAES(proxyKey, session.KeyCipher)
 			})
 		},
