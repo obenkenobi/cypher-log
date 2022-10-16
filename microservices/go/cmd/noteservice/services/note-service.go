@@ -11,8 +11,9 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/pagination"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	cDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
+	kDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	nDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/notedtos"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
@@ -32,7 +33,11 @@ type NoteService interface {
 		dto cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto],
 	) single.Single[cDTOs.SuccessDto]
 	DeleteNoteTransaction(ctx context.Context, userBo userbos.UserBo, noteId string) single.Single[cDTOs.SuccessDto]
-	GetNoteById(ctx context.Context, userBo userbos.UserBo, noteId string) single.Single[nDTOs.NoteDetailsDto]
+	GetNoteById(
+		ctx context.Context,
+		userBo userbos.UserBo,
+		sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto],
+	) single.Single[nDTOs.NoteDetailsDto]
 	GetNotes(
 		ctx context.Context,
 		userBo userbos.UserBo,
@@ -57,7 +62,7 @@ func (n NoteServiceImpl) AddNoteTransaction(
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
 			sessDto, noteCreateDto := sessReqDto.Session, sessReqDto.Value
 			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
-			keySrc := single.MapWithError(keyDtoSrc, keydtos.UserKeyDto.GetKey).ScheduleLazyAndCache(ctx)
+			keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey).ScheduleLazyAndCache(ctx)
 			titleCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteCreateDto.Title))
 			})
@@ -65,7 +70,7 @@ func (n NoteServiceImpl) AddNoteTransaction(
 				return cipherutils.EncryptAES(key, []byte(noteCreateDto.GetText()))
 			})
 			noteSaveSrc := single.FlatMap(single.Zip3(keyDtoSrc, titleCipherSrc, textCipherSrc),
-				func(t tuple.T3[keydtos.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
+				func(t tuple.T3[kDTOs.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
 					keyDto, titleCipher, textCipher := t.V1, t.V2, t.V3
 					note := models.Note{
 						UserId:      userBo.Id,
@@ -93,7 +98,7 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 			existingSrc := n.getExistingNote(ctx, noteUpdateDto.Id).ScheduleLazyAndCache(ctx)
 			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
 			keySrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
-				func(t tuple.T2[models.Note, keydtos.UserKeyDto]) single.Single[[]byte] {
+				func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) single.Single[[]byte] {
 					existing, keyDto := t.V1, t.V2
 					noteUpdateValidationSrc := n.noteBr.ValidateNoteUpdate(userBo, keyDto, existing)
 					return single.MapWithError(noteUpdateValidationSrc, func(_ any) ([]byte, error) {
@@ -107,7 +112,7 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.GetText()))
 			})
 			noteSaveSrc := single.FlatMap(single.Zip4(existingSrc, keyDtoSrc, titleCipherSrc, textCipherSrc),
-				func(t tuple.T4[models.Note, keydtos.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
+				func(t tuple.T4[models.Note, kDTOs.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
 					existing, keyDto, titleCipher, textCipher := t.V1, t.V2, t.V3, t.V4
 					existing.TitleCipher = titleCipher
 					existing.TextCipher = textCipher
@@ -146,10 +151,57 @@ func (n NoteServiceImpl) DeleteNoteTransaction(
 func (n NoteServiceImpl) GetNoteById(
 	ctx context.Context,
 	userBo userbos.UserBo,
-	noteId string,
+	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto],
 ) single.Single[nDTOs.NoteDetailsDto] {
-	//TODO implement me
-	panic("implement me")
+	sessDto, noteIdDto := sessReqDto.Session, sessReqDto.Value
+	existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
+	keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
+	validationSrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
+		func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) single.Single[any] {
+			existing, keyDto := t.V1, t.V2
+			return n.noteBr.ValidateNoteRead(userBo, keyDto, existing)
+		})
+	keySrc := single.MapWithError(single.Zip2(keyDtoSrc, validationSrc),
+		func(t tuple.T2[kDTOs.UserKeyDto, any]) ([]byte, error) {
+			keyDto := t.V1
+			return keyDto.GetKey()
+		},
+	).ScheduleLazyAndCache(ctx)
+
+	return single.FlatMap(single.Zip3(existingSrc, keySrc, validationSrc),
+		func(t tuple.T3[models.Note, []byte, any]) single.Single[nDTOs.NoteDetailsDto] {
+			existing, keyBytes := t.V1, t.V2
+			textSrc := single.FromSupplierCached(func() (*string, error) {
+				txtBytes, err := cipherutils.DecryptAES(keyBytes, existing.TextCipher)
+				txt := string(txtBytes)
+				return &txt, err
+			})
+			titleSrc := single.FromSupplierCached(func() (string, error) {
+				titleBytes, err := cipherutils.DecryptAES(keyBytes, existing.TitleCipher)
+				return string(titleBytes), err
+			})
+			return single.Map(single.Zip2(textSrc, titleSrc), func(t tuple.T2[*string, string]) nDTOs.NoteDetailsDto {
+				text, title := t.V1, t.V2
+				// Todo use a mapper
+				return nDTOs.NoteDetailsDto{
+					BaseCRUDObject: embedded.BaseCRUDObject{
+						BaseId: embedded.BaseId{
+							Id: existing.GetIdStr(),
+						},
+						BaseTimestamp: embedded.BaseTimestamp{
+							CreatedAt: existing.CreatedAt.UnixMilli(),
+							UpdatedAt: existing.UpdatedAt.UnixMilli(),
+						},
+					},
+					CoreNoteDetailsDto: nDTOs.CoreNoteDetailsDto{
+						Text: text,
+						CoreNoteDto: nDTOs.CoreNoteDto{
+							Title: title,
+						},
+					},
+				}
+			})
+		})
 }
 
 func (n NoteServiceImpl) GetNotes(

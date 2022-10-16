@@ -37,3 +37,7 @@ type NoteDetailsDto struct {
 	embedded.BaseCRUDObject
 	CoreNoteDetailsDto
 }
+
+type NoteIdDto struct {
+	embedded.BaseId
+}
