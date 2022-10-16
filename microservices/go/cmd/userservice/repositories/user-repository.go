@@ -88,24 +88,20 @@ func (u UserRepositoryImpl) FindByUsernameAndNotToBeDeleted(
 }
 
 func (u UserRepositoryImpl) SampleUndistributedUsers(ctx context.Context, size int64) stream.Observable[models.User] {
-	src, start := stream.Deferred[models.User]()
-	go func() {
+	return stream.FlatMap(stream.Just(any(true)), func(_ any) stream.Observable[models.User] {
 		var results []models.User
 		cursor, err := mgm.Coll(u.ModelColl).Aggregate(ctx, mongo.Pipeline{
 			{{operator.Match, bson.D{{"distributed", bson.D{{operator.Ne, true}}}}}},
 			{{operator.Sample, bson.D{{"size", size}}}},
 		})
 		if err != nil {
-			start(stream.Error[models.User](err))
-			return
+			return stream.Error[models.User](err)
 		}
 		if err = cursor.All(context.TODO(), &results); err != nil {
-			start(stream.Error[models.User](err))
-			return
+			return stream.Error[models.User](err)
 		}
-		start(stream.FromSlice(results))
-	}()
-	return src
+		return stream.FromSlice(results)
+	})
 }
 
 func NewUserRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *UserRepositoryImpl {
