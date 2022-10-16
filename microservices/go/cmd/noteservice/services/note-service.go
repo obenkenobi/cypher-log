@@ -125,8 +125,22 @@ func (n NoteServiceImpl) DeleteNoteTransaction(
 	userBo userbos.UserBo,
 	noteId string,
 ) single.Single[cDTOs.SuccessDto] {
-	//TODO implement me
-	panic("implement me")
+	return dshandlers.TransactionalSingle(ctx, n.crudDSHandler,
+		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
+			existingSrc := n.getExistingNote(ctx, noteId).ScheduleLazyAndCache(ctx)
+			validateDeleteSrc := single.FlatMap(existingSrc,
+				func(existing models.Note) single.Single[[]apperrors.RuleError] {
+					return n.noteBr.ValidateNoteDelete(userBo, existing)
+				})
+			noteDeleteSrc := single.FlatMap(single.Zip2(existingSrc, validateDeleteSrc),
+				func(t tuple.T2[models.Note, []apperrors.RuleError]) single.Single[models.Note] {
+					existing := t.V1
+					return n.noteRepository.Delete(ctx, existing)
+				})
+			return single.Map(noteDeleteSrc, func(_ models.Note) cDTOs.SuccessDto {
+				return cDTOs.NewSuccessTrue()
+			})
+		})
 }
 
 func (n NoteServiceImpl) GetNoteById(
