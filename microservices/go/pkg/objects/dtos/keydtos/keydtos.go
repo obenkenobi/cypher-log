@@ -13,12 +13,14 @@ type PasscodeDto struct {
 }
 
 type UserKeyDto struct {
-	KeyBase64 string `json:"key"`
+	KeyBase64  string `json:"key"`
+	KeyVersion int64  `json:"keyVersion"`
 }
 
-func NewUserKeyDto(keyBytes []byte) UserKeyDto {
+func NewUserKeyDto(keyBytes []byte, keyVersion int64) UserKeyDto {
 	return UserKeyDto{
-		KeyBase64: encodingutils.EncodeBase64String(keyBytes),
+		KeyBase64:  encodingutils.EncodeBase64String(keyBytes),
+		KeyVersion: keyVersion,
 	}
 }
 

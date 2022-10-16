@@ -229,7 +229,9 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 			})
 		},
 	)
-	return single.Map(keyBytesSrc, keydtos.NewUserKeyDto)
+	return single.Map(keyBytesSrc, func(keyBytes []byte) keydtos.UserKeyDto {
+		return keydtos.NewUserKeyDto(keyBytes, sessionDto.KeyVersion)
+	})
 }
 
 func (u UserKeyServiceImpl) getUserKeyGenerator(

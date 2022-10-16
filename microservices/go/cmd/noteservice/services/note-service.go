@@ -64,14 +64,14 @@ func (n NoteServiceImpl) AddNoteTransaction(
 			textCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteCreateDto.GetText()))
 			})
-			noteSaveSrc := single.FlatMap(single.Zip2(titleCipherSrc, textCipherSrc),
-				func(t tuple.T2[[]byte, []byte]) single.Single[models.Note] {
-					titleCipher, textCipher := t.V1, t.V2
+			noteSaveSrc := single.FlatMap(single.Zip3(keyDtoSrc, titleCipherSrc, textCipherSrc),
+				func(t tuple.T3[keydtos.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
+					keyDto, titleCipher, textCipher := t.V1, t.V2, t.V3
 					note := models.Note{
 						UserId:      userBo.Id,
 						TextCipher:  textCipher,
 						TitleCipher: titleCipher,
-						KeyVersion:  sessDto.KeyVersion,
+						KeyVersion:  keyDto.KeyVersion,
 					}
 					return n.noteRepository.Create(ctx, note)
 				})
@@ -106,11 +106,12 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 			textCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.GetText()))
 			})
-			noteSaveSrc := single.FlatMap(single.Zip3(existingSrc, titleCipherSrc, textCipherSrc),
-				func(t tuple.T3[models.Note, []byte, []byte]) single.Single[models.Note] {
-					existing, titleCipher, textCipher := t.V1, t.V2, t.V3
+			noteSaveSrc := single.FlatMap(single.Zip4(existingSrc, keyDtoSrc, titleCipherSrc, textCipherSrc),
+				func(t tuple.T4[models.Note, keydtos.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
+					existing, keyDto, titleCipher, textCipher := t.V1, t.V2, t.V3, t.V4
 					existing.TitleCipher = titleCipher
 					existing.TextCipher = textCipher
+					existing.KeyVersion = keyDto.KeyVersion
 					return n.noteRepository.Update(ctx, existing)
 				})
 			return single.Map(noteSaveSrc, func(_ models.Note) cDTOs.SuccessDto {

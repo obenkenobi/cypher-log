@@ -13,6 +13,7 @@ message UserKeySession {
 
 message UserKey {
   string keyBase64 = 1;
+  int64 keyVersion = 2;
 }
 
 service UserKeyService {

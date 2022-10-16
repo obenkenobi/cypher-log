@@ -46,8 +46,10 @@ func UserKeySessionToUserKeySessionDto(source *userkeypb.UserKeySession, dest *c
 
 func UserKeyDtoToUserKey(source *keydtos.UserKeyDto, dest *userkeypb.UserKey) {
 	dest.KeyBase64 = source.KeyBase64
+	dest.KeyVersion = source.KeyVersion
 }
 
 func UserKeyToUserKeyDto(source *userkeypb.UserKey, dest *keydtos.UserKeyDto) {
 	dest.KeyBase64 = source.GetKeyBase64()
+	dest.KeyVersion = source.GetKeyVersion()
 }
