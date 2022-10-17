@@ -17,6 +17,7 @@ import (
 type NoteRepository interface {
 	baserepos.CRUDRepository[models.Note, string]
 	FindManyByUserId(ctx context.Context, userId string, pageReq pagination.PageRequest) stream.Observable[models.Note]
+	CountByUserId(ctx context.Context, userId string) single.Single[int64]
 }
 
 type NoteRepositoryImpl struct {
@@ -57,11 +58,19 @@ func (u NoteRepositoryImpl) FindManyByUserId(
 	userId string,
 	pageReq pagination.PageRequest,
 ) stream.Observable[models.Note] {
-	return stream.FlatMap(stream.Just([]models.Note{}), func(results []models.Note) stream.Observable[models.Note] {
+	return stream.FlatMap(stream.Just(any(true)), func(_ any) stream.Observable[models.Note] {
 		findOpts := mgmtools.CreatePaginatedFindOpts(pageReq)
 		filter := bson.D{{"userId", userId}}
-		cursor, err := mgm.Coll(u.ModelColl).Find(u.MongoDBHandler.ToChildCtx(ctx), filter, findOpts)
-		return mgmtools.HandleFindManyRes(ctx, results, cursor, err)
+		ctx := u.MongoDBHandler.ToChildCtx(ctx)
+		cursor, err := mgm.Coll(u.ModelColl).Find(ctx, filter, findOpts)
+		return mgmtools.HandleFindManyRes(ctx, cursor, err)
+	})
+}
+
+func (u NoteRepositoryImpl) CountByUserId(ctx context.Context, userId string) single.Single[int64] {
+	return single.FromSupplierCached(func() (int64, error) {
+		filter := bson.D{{"userId", userId}}
+		return mgm.Coll(u.ModelColl).CountDocuments(u.MongoDBHandler.ToChildCtx(ctx), filter)
 	})
 }
 

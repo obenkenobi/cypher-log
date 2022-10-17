@@ -32,7 +32,8 @@ func SetPaginatedFindOpts(findOpt *options.FindOptions, pageReq pagination.PageR
 
 // HandleFindManyRes handles the result of a find many method of *mgm.Collection
 // and transforms it into an observable.
-func HandleFindManyRes[T any](ctx context.Context, results []T, cursor *mongo.Cursor, err error) stream.Observable[T] {
+func HandleFindManyRes[T any](ctx context.Context, cursor *mongo.Cursor, err error) stream.Observable[T] {
+	var results []T
 	if err != nil {
 		return stream.Error[models.Note](err)
 	}
