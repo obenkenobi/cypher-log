@@ -1,10 +1,25 @@
 package pagination
 
-import "github.com/akrennmair/slice"
+import (
+	"github.com/akrennmair/slice"
+)
+
+type Direction string
+
+const (
+	Ascending  Direction = "asc"
+	Descending Direction = "desc"
+)
+
+type SortField struct {
+	Field     string
+	Direction Direction
+}
 
 type PageRequest struct {
 	Page int
 	Size int
+	Sort []SortField
 }
 
 func NewPageRequest(page int, size int) PageRequest {
