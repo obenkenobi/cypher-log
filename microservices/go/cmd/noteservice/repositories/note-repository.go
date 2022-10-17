@@ -16,6 +16,7 @@ import (
 
 type NoteRepository interface {
 	baserepos.CRUDRepository[models.Note, string]
+	FindManyByUserId(ctx context.Context, userId string, pageReq pagination.PageRequest) stream.Observable[models.Note]
 }
 
 type NoteRepositoryImpl struct {
