@@ -23,21 +23,21 @@ type UserRepositoryImpl struct {
 
 func (u UserRepositoryImpl) Create(ctx context.Context, user sharedmodels.User) single.Single[sharedmodels.User] {
 	return single.FromSupplierCached(func() (sharedmodels.User, error) {
-		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &user)
+		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &user)
 		return user, err
 	})
 }
 
 func (u UserRepositoryImpl) Update(ctx context.Context, user sharedmodels.User) single.Single[sharedmodels.User] {
 	return single.FromSupplierCached(func() (sharedmodels.User, error) {
-		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &user)
+		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &user)
 		return user, err
 	})
 }
 
 func (u UserRepositoryImpl) Delete(ctx context.Context, user sharedmodels.User) single.Single[sharedmodels.User] {
 	return single.FromSupplierCached(func() (sharedmodels.User, error) {
-		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &user)
+		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &user)
 		return user, err
 	})
 }
@@ -45,7 +45,7 @@ func (u UserRepositoryImpl) Delete(ctx context.Context, user sharedmodels.User) 
 func (u UserRepositoryImpl) FindById(ctx context.Context, id string) single.Single[option.Maybe[sharedmodels.User]] {
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (sharedmodels.User, error) {
 		user := sharedmodels.User{}
-		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), id, &user)
+		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.ToChildCtx(ctx), id, &user)
 		return user, err
 	})
 }
@@ -53,7 +53,7 @@ func (u UserRepositoryImpl) FindById(ctx context.Context, id string) single.Sing
 func (u UserRepositoryImpl) FindByUserId(ctx context.Context, userId string) single.Single[option.Maybe[sharedmodels.User]] {
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (sharedmodels.User, error) {
 		user := sharedmodels.User{}
-		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"userId": userId}, &user)
+		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.ToChildCtx(ctx), bson.M{"userId": userId}, &user)
 		return user, err
 	})
 }
@@ -61,7 +61,7 @@ func (u UserRepositoryImpl) FindByUserId(ctx context.Context, userId string) sin
 func (u UserRepositoryImpl) FindByAuthId(ctx context.Context, authId string) single.Single[option.Maybe[sharedmodels.User]] {
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (sharedmodels.User, error) {
 		user := sharedmodels.User{}
-		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"authId": authId}, &user)
+		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.ToChildCtx(ctx), bson.M{"authId": authId}, &user)
 		return user, err
 	})
 }

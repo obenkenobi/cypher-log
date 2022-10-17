@@ -27,7 +27,7 @@ func (u UserKeyGeneratorRepositoryImpl) Create(
 	model models.UserKeyGenerator,
 ) single.Single[models.UserKeyGenerator] {
 	return single.FromSupplierCached(func() (models.UserKeyGenerator, error) {
-		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
+		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &model)
 		return model, err
 	})
 }
@@ -37,7 +37,7 @@ func (u UserKeyGeneratorRepositoryImpl) Update(
 	model models.UserKeyGenerator,
 ) single.Single[models.UserKeyGenerator] {
 	return single.FromSupplierCached(func() (models.UserKeyGenerator, error) {
-		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
+		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &model)
 		return model, err
 	})
 }
@@ -47,7 +47,7 @@ func (u UserKeyGeneratorRepositoryImpl) Delete(
 	model models.UserKeyGenerator,
 ) single.Single[models.UserKeyGenerator] {
 	return single.FromSupplierCached(func() (models.UserKeyGenerator, error) {
-		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
+		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &model)
 		return model, err
 	})
 }
@@ -58,7 +58,7 @@ func (u UserKeyGeneratorRepositoryImpl) FindById(
 ) single.Single[option.Maybe[models.UserKeyGenerator]] {
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.UserKeyGenerator, error) {
 		model := models.UserKeyGenerator{}
-		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), id, &model)
+		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.ToChildCtx(ctx), id, &model)
 		return model, err
 	})
 }
@@ -70,7 +70,7 @@ func (u UserKeyGeneratorRepositoryImpl) FindOneByUserId(
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.UserKeyGenerator, error) {
 		user := models.UserKeyGenerator{}
 		err := mgm.Coll(u.ModelColl).
-			FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), bson.M{"userId": userId}, &user)
+			FirstWithCtx(u.MongoDBHandler.ToChildCtx(ctx), bson.M{"userId": userId}, &user)
 		return user, err
 	})
 }
@@ -80,7 +80,7 @@ func (u UserKeyGeneratorRepositoryImpl) DeleteByUserIdAndGetCount(
 	userId string,
 ) single.Single[int64] {
 	return single.FromSupplierCached(func() (int64, error) {
-		res, err := mgm.Coll(u.ModelColl).DeleteMany(ctx, bson.M{"userId": userId})
+		res, err := mgm.Coll(u.ModelColl).DeleteMany(u.MongoDBHandler.ToChildCtx(ctx), bson.M{"userId": userId})
 		deletedCount := option.
 			Map(option.Perhaps(res), func(r *mongo.DeleteResult) int64 { return r.DeletedCount }).
 			OrElse(-1)

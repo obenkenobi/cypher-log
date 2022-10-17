@@ -23,8 +23,8 @@ type CrudDSHandler interface {
 	DataSourceHandler
 	// GetChildDBCtxWithCancel creates a new context to be sent to other database queries with a cancel function
 	GetChildDBCtxWithCancel(ctx context.Context) (context.Context, context.CancelFunc)
-	// GetChildDBCtx creates a new context to be sent to other database queries
-	GetChildDBCtx(ctx context.Context) context.Context
+	// ToChildCtx creates a new context to be sent to other database queries
+	ToChildCtx(ctx context.Context) context.Context
 	// ExecTransaction executes a transaction synchronously from the runner function.
 	ExecTransaction(ctx context.Context, runner func(Session, context.Context) error) error
 }
@@ -98,7 +98,7 @@ func (d MongoDBHandler) GetChildDBCtxWithCancel(ctx context.Context) (context.Co
 	return context.WithTimeout(ctx, d.mongoConf.GetConnectionTimeout())
 }
 
-func (d MongoDBHandler) GetChildDBCtx(ctx context.Context) context.Context {
+func (d MongoDBHandler) ToChildCtx(ctx context.Context) context.Context {
 	dbCtx, _ := d.GetChildDBCtxWithCancel(ctx)
 	return dbCtx
 }

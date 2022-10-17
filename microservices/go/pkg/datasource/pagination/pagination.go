@@ -17,12 +17,16 @@ type SortField struct {
 }
 
 type PageRequest struct {
-	Page int
-	Size int
+	Page int64
+	Size int64
 	Sort []SortField
 }
 
-func NewPageRequest(page int, size int) PageRequest {
+func (p PageRequest) SkipCount() int64 {
+	return p.Page * p.Size
+}
+
+func NewPageRequest(page int64, size int64) PageRequest {
 	return PageRequest{Page: page, Size: size}
 }
 

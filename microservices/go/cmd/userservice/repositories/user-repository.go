@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/baserepos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/mgmtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
@@ -27,21 +28,21 @@ type UserRepositoryImpl struct {
 
 func (u UserRepositoryImpl) Create(ctx context.Context, model models.User) single.Single[models.User] {
 	return single.FromSupplierCached(func() (models.User, error) {
-		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
+		err := mgm.Coll(u.ModelColl).CreateWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &model)
 		return model, err
 	})
 }
 
 func (u UserRepositoryImpl) Update(ctx context.Context, model models.User) single.Single[models.User] {
 	return single.FromSupplierCached(func() (models.User, error) {
-		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
+		err := mgm.Coll(u.ModelColl).UpdateWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &model)
 		return model, err
 	})
 }
 
 func (u UserRepositoryImpl) Delete(ctx context.Context, model models.User) single.Single[models.User] {
 	return single.FromSupplierCached(func() (models.User, error) {
-		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), &model)
+		err := mgm.Coll(u.ModelColl).DeleteWithCtx(u.MongoDBHandler.ToChildCtx(ctx), &model)
 		return model, err
 	})
 }
@@ -49,7 +50,7 @@ func (u UserRepositoryImpl) Delete(ctx context.Context, model models.User) singl
 func (u UserRepositoryImpl) FindById(ctx context.Context, id string) single.Single[option.Maybe[models.User]] {
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		model := models.User{}
-		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx), id, &model)
+		err := mgm.Coll(u.ModelColl).FindByIDWithCtx(u.MongoDBHandler.ToChildCtx(ctx), id, &model)
 		return model, err
 	})
 }
@@ -60,7 +61,7 @@ func (u UserRepositoryImpl) FindByAuthIdAndNotToBeDeleted(
 ) single.Single[option.Maybe[models.User]] {
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		user := models.User{}
-		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.GetChildDBCtx(ctx),
+		err := mgm.Coll(u.ModelColl).FirstWithCtx(u.MongoDBHandler.ToChildCtx(ctx),
 			bson.M{
 				"authId":      authId,
 				"toBeDeleted": bson.M{operator.Ne: true}},
@@ -76,7 +77,7 @@ func (u UserRepositoryImpl) FindByUsernameAndNotToBeDeleted(
 	return dshandlers.OptionalSingleQuerySrc(u.MongoDBHandler, func() (models.User, error) {
 		user := models.User{}
 		err := mgm.Coll(u.ModelColl).FirstWithCtx(
-			u.MongoDBHandler.GetChildDBCtx(ctx),
+			u.MongoDBHandler.ToChildCtx(ctx),
 			bson.M{
 				"userName":    username,
 				"toBeDeleted": bson.M{operator.Ne: true},
@@ -89,17 +90,12 @@ func (u UserRepositoryImpl) FindByUsernameAndNotToBeDeleted(
 
 func (u UserRepositoryImpl) SampleUndistributedUsers(ctx context.Context, size int64) stream.Observable[models.User] {
 	return stream.FlatMap(stream.Just([]models.User{}), func(results []models.User) stream.Observable[models.User] {
+		ctx := u.MongoDBHandler.ToChildCtx(ctx)
 		cursor, err := mgm.Coll(u.ModelColl).Aggregate(ctx, mongo.Pipeline{
 			{{operator.Match, bson.D{{"distributed", bson.D{{operator.Ne, true}}}}}},
 			{{operator.Sample, bson.D{{"size", size}}}},
 		})
-		if err != nil {
-			return stream.Error[models.User](err)
-		}
-		if err = cursor.All(context.TODO(), &results); err != nil {
-			return stream.Error[models.User](err)
-		}
-		return stream.FromSlice(results)
+		return mgmtools.HandleFindManyRes(ctx, results, cursor, err)
 	})
 }
 
