@@ -5,12 +5,10 @@ import (
 	"github.com/joamaki/goreactive/stream"
 	"github.com/kamva/mgm/v3"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/pagination"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
 )
 
 type Session interface {
@@ -112,13 +110,6 @@ func (d MongoDBHandler) ExecTransaction(ctx context.Context, transactionFunc fun
 			return transactionFunc(session, sc)
 		},
 	)
-}
-
-func (d MongoDBHandler) ConvertSortDirection(dir pagination.Direction) int {
-	if strings.EqualFold(string(dir), string(pagination.Descending)) {
-		return -1
-	}
-	return 1
 }
 
 func NewMongoDBHandler(mongoConf conf.MongoConf) *MongoDBHandler {
