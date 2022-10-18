@@ -40,6 +40,8 @@ func NewErrorServiceImpl() *ErrorServiceImpl {
 		apperrors.ErrCodeReqQueryIntParseFail:   "Failed to parse an integer from the request query",
 		apperrors.ErrCodeReqQueryRequired:       "Query param %v is required",
 		apperrors.ErrCodeReqQuerySortParseFail:  "Could not parse sort query parameter",
+		apperrors.ErrCodeMustSortByOneOption:    "Must sort by one option",
+		apperrors.ErrCodeInvalidSortOptions:     "Invalid sort options",
 	}
 	return &ErrorServiceImpl{errorCodeToMsgMap: errorCodeToMsgMap}
 }

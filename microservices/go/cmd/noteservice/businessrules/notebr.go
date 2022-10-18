@@ -4,6 +4,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/pagination"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
@@ -18,10 +19,25 @@ type NoteBr interface {
 	) single.Single[any]
 	ValidateNoteRead(userBo userbos.UserBo, keyDto keydtos.UserKeyDto, existing models.Note) single.Single[any]
 	ValidateNoteDelete(userBo userbos.UserBo, existing models.Note) single.Single[any]
+	ValidateGetNotes(pageRequest pagination.PageRequest) single.Single[any]
 }
 
 type NoteBrImpl struct {
-	errorService sharedservices.ErrorService
+	errorService    sharedservices.ErrorService
+	validSortFields map[string]any
+}
+
+func (n NoteBrImpl) ValidateGetNotes(pageRequest pagination.PageRequest) single.Single[any] {
+	validateSortingSrc := single.FromSupplierCached(func() ([]apperrors.RuleError, error) {
+		var ruleErrors []apperrors.RuleError
+		if len(pageRequest.Sort) != 1 {
+			ruleErrors = append(ruleErrors, n.errorService.RuleErrorFromCode(apperrors.ErrCodeMustSortByOneOption))
+		} else if _, ok := n.validSortFields[pageRequest.Sort[1].Field]; !ok {
+			ruleErrors = append(ruleErrors, n.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSortOptions))
+		}
+		return ruleErrors, nil
+	})
+	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(validateSortingSrc)
 }
 
 func (n NoteBrImpl) ValidateNoteRead(
