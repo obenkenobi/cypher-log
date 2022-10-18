@@ -12,8 +12,8 @@ const (
 )
 
 type SortField struct {
-	Field     string
-	Direction Direction
+	Field     string    `json:"field"`
+	Direction Direction `json:"direction"`
 }
 
 func NewSortField(field string, direction Direction) SortField {
@@ -21,9 +21,9 @@ func NewSortField(field string, direction Direction) SortField {
 }
 
 type PageRequest struct {
-	Page int64
-	Size int64
-	Sort []SortField
+	Page int64       `json:"page"`
+	Size int64       `json:"size"`
+	Sort []SortField `json:"sort"`
 }
 
 func (p PageRequest) SkipCount() int64 {
@@ -35,8 +35,8 @@ func NewPageRequest(page int64, size int64) PageRequest {
 }
 
 type Page[T any] struct {
-	Contents []T
-	Total    int64
+	Contents []T   `json:"contents"`
+	Total    int64 `json:"total"`
 }
 
 func NewPage[T any](contents []T, total int64) Page[T] {
