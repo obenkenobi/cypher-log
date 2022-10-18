@@ -2,6 +2,7 @@ package apperrors
 
 const ErrCodeReqQueryRequired = "ReqQueryRequired"
 const ErrCodeReqQueryIntParseFail = "ReqQueryIntParseFail"
+const ErrCodeReqQuerySortParseFail = "ReqQuerySortParseFail"
 const ErrCodeReqResourcesNotFound = "ReqItemsNotFound"
 const ErrCodeCannotBindJson = "CannotBindJson"
 const ErrCodeResourceAlreadyCreated = "UserAlreadyCreated"

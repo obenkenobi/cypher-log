@@ -16,6 +16,10 @@ type SortField struct {
 	Direction Direction
 }
 
+func NewSortField(field string, direction Direction) SortField {
+	return SortField{Field: field, Direction: direction}
+}
+
 type PageRequest struct {
 	Page int64
 	Size int64

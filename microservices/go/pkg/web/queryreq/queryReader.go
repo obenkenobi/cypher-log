@@ -1,11 +1,14 @@
 package queryreq
 
 import (
+	"github.com/akrennmair/slice"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/pagination"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"strconv"
+	"strings"
 )
 
 type ReqQueryReader interface {
@@ -15,6 +18,16 @@ type ReqQueryReader interface {
 	ReadIntOrDefault(key string, value *int, defaultValue int) ReqQueryReader
 	ReadInt64(key string, value *int64) ReqQueryReader
 	ReadInt64OrDefault(key string, value *int64, defaultValue int64) ReqQueryReader
+	ReadSort(key string, value *[]pagination.SortField) ReqQueryReader
+	ReadSortOrDefault(key string, value *[]pagination.SortField, defaultValue []pagination.SortField) ReqQueryReader
+	ReadPageRequest(pageKey string, sizeKey string, sortKey string, request *pagination.PageRequest) ReqQueryReader
+	ReadPageRequestOrDefault(
+		pageKey string,
+		sizeKey string,
+		sortKey string,
+		request *pagination.PageRequest,
+		defaultValue pagination.PageRequest,
+	) ReqQueryReader
 	Complete() error
 }
 
@@ -119,6 +132,73 @@ func (q GinCtxReqQueryReaderImpl) ReadInt64OrDefault(key string, value *int64, d
 		*value = defaultValue
 	}
 	return queryReader
+}
+
+func (q GinCtxReqQueryReaderImpl) ReadSort(key string, value *[]pagination.SortField) ReqQueryReader {
+	queryReader := q
+	queryValues, _ := q.ginContext.GetQueryArray(key)
+	sortFields := q.parseSortQueryStrings(queryValues)
+	*value = sortFields
+	return queryReader
+}
+
+func (q GinCtxReqQueryReaderImpl) ReadSortOrDefault(
+	key string,
+	value *[]pagination.SortField,
+	defaultValue []pagination.SortField,
+) ReqQueryReader {
+	queryReader := q
+	queryValues, ok := q.ginContext.GetQueryArray(key)
+	if ok {
+		sortFields := q.parseSortQueryStrings(queryValues)
+		*value = sortFields
+	} else {
+		*value = defaultValue
+	}
+	return queryReader
+}
+
+func (q GinCtxReqQueryReaderImpl) parseSortQueryStrings(values []string) []pagination.SortField {
+	mappedSortFields := slice.Map(values, func(v string) pagination.SortField {
+		splitValues := strings.SplitN(v, ",", 2)
+		if len(splitValues) == 0 {
+			return pagination.NewSortField("", pagination.Ascending)
+		}
+		field := splitValues[0]
+		var direction pagination.Direction
+		if len(splitValues) > 1 && strings.EqualFold(splitValues[1], string(pagination.Descending)) {
+			direction = pagination.Descending
+		} else {
+			direction = pagination.Ascending
+		}
+		return pagination.NewSortField(field, direction)
+	})
+	return slice.Filter(mappedSortFields, func(sf pagination.SortField) bool {
+		return utils.StringIsBlank(sf.Field)
+	})
+}
+
+func (q GinCtxReqQueryReaderImpl) ReadPageRequest(
+	pageKey string,
+	sizeKey string,
+	sortKey string,
+	request *pagination.PageRequest,
+) ReqQueryReader {
+	return q.ReadInt64(pageKey, &(request.Page)).
+		ReadInt64(sizeKey, &(request.Size)).
+		ReadSort(sortKey, &(request.Sort))
+}
+
+func (q GinCtxReqQueryReaderImpl) ReadPageRequestOrDefault(
+	pageKey string,
+	sizeKey string,
+	sortKey string,
+	request *pagination.PageRequest,
+	defaultReq pagination.PageRequest,
+) ReqQueryReader {
+	return q.ReadInt64OrDefault(pageKey, &(request.Page), defaultReq.Page).
+		ReadInt64OrDefault(sizeKey, &(request.Size), defaultReq.Size).
+		ReadSortOrDefault(sortKey, &(request.Sort), defaultReq.Sort)
 }
 
 func (q GinCtxReqQueryReaderImpl) Complete() error {
