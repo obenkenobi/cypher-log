@@ -42,7 +42,7 @@ type NoteService interface {
 	GetNotes(
 		ctx context.Context,
 		userBo userbos.UserBo,
-		pageRequest pagination.PageRequest,
+		sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
 	) single.Single[pagination.Page[nDTOs.NoteReadDto]]
 }
 
@@ -194,9 +194,9 @@ func (n NoteServiceImpl) GetNoteById(
 func (n NoteServiceImpl) GetNotes(
 	ctx context.Context,
 	userBo userbos.UserBo,
-	pageRequest pagination.PageRequest,
-	sessionDto cDTOs.UKeySessionDto,
+	sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
 ) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
+	sessionDto, pageRequest := sessReqDto.Session, sessReqDto.Value
 	validationSrc := n.noteBr.ValidateGetNotes(pageRequest)
 	zippedSrc := single.FlatMap(validationSrc, func(_ any) single.Single[tuple.T3[kDTOs.UserKeyDto, []byte, int64]] {
 		keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessionDto)
