@@ -16,6 +16,17 @@ func StringIsNotBlank(s string) bool {
 	return !StringIsBlank(s)
 }
 
+func StringFirstNChars(s string, n int) string {
+	i := 0
+	for j := range s {
+		if i == n {
+			return s[:j]
+		}
+		i++
+	}
+	return s
+}
+
 func Int64ToStr(i int64) string {
 	return strconv.FormatInt(i, 10)
 }

@@ -12,21 +12,14 @@ func NewCoreNoteDto(title string) CoreNoteDto {
 
 type CoreNoteDetailsDto struct {
 	CoreNoteDto
-	Text *string `json:"text" binding:"max=40000"`
+	Text string `json:"text" binding:"max=40000"`
 }
 
-func NewCoreNoteDetailsDto(title string, text *string) CoreNoteDetailsDto {
+func NewCoreNoteDetailsDto(title string, text string) CoreNoteDetailsDto {
 	return CoreNoteDetailsDto{
 		CoreNoteDto: NewCoreNoteDto(title),
 		Text:        text,
 	}
-}
-
-func (c CoreNoteDetailsDto) GetText() string {
-	if c.Text != nil {
-		return *c.Text
-	}
-	return ""
 }
 
 type NoteCreateDto struct {

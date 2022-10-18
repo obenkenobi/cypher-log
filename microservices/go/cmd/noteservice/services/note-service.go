@@ -18,6 +18,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/cipherutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
@@ -68,7 +69,7 @@ func (n NoteServiceImpl) AddNoteTransaction(
 				return cipherutils.EncryptAES(key, []byte(noteCreateDto.Title))
 			})
 			textCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
-				return cipherutils.EncryptAES(key, []byte(noteCreateDto.GetText()))
+				return cipherutils.EncryptAES(key, []byte(noteCreateDto.Text))
 			})
 			noteSaveSrc := single.FlatMap(single.Zip3(keyDtoSrc, titleCipherSrc, textCipherSrc),
 				func(t tuple.T3[kDTOs.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
@@ -110,7 +111,7 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.Title))
 			})
 			textCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
-				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.GetText()))
+				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.Text))
 			})
 			noteSaveSrc := single.FlatMap(single.Zip4(existingSrc, keyDtoSrc, titleCipherSrc, textCipherSrc),
 				func(t tuple.T4[models.Note, kDTOs.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
@@ -172,16 +173,15 @@ func (n NoteServiceImpl) GetNoteById(
 	return single.FlatMap(single.Zip3(existingSrc, keySrc, validationSrc),
 		func(t tuple.T3[models.Note, []byte, any]) single.Single[nDTOs.NoteDetailsDto] {
 			existing, keyBytes := t.V1, t.V2
-			textSrc := single.FromSupplierCached(func() (*string, error) {
+			textSrc := single.FromSupplierCached(func() (string, error) {
 				txtBytes, err := cipherutils.DecryptAES(keyBytes, existing.TextCipher)
-				txt := string(txtBytes)
-				return &txt, err
+				return string(txtBytes), err
 			})
 			titleSrc := single.FromSupplierCached(func() (string, error) {
 				titleBytes, err := cipherutils.DecryptAES(keyBytes, existing.TitleCipher)
 				return string(titleBytes), err
 			})
-			return single.Map(single.Zip2(textSrc, titleSrc), func(t tuple.T2[*string, string]) nDTOs.NoteDetailsDto {
+			return single.Map(single.Zip2(textSrc, titleSrc), func(t tuple.T2[string, string]) nDTOs.NoteDetailsDto {
 				text, title := t.V1, t.V2
 				coreNoteDetails := nDTOs.NewCoreNoteDetailsDto(title, text)
 				noteDetailsDto := nDTOs.NoteDetailsDto{}
@@ -221,13 +221,8 @@ func (n NoteServiceImpl) GetNotes(
 				if err != nil {
 					return stream.Error(err)
 				}
-				txt := string(txtBytes)
-				title := string(titleBytes)
-				previewLimit := 60
-				if len(txt) < 60 {
-					previewLimit = len(txt)
-				}
-				textPreview := txt[:previewLimit]
+				txt, title := string(txtBytes), string(titleBytes)
+				textPreview := utils.StringFirstNChars(txt, 60)
 				coreNoteDto := nDTOs.NewCoreNoteDto(title)
 				noteReadDto := nDTOs.NoteReadDto{}
 				mappers.MapTextPreviewAndCoreNoteAndNoteToNoteReadDto(textPreview, &coreNoteDto, &note, &noteReadDto)
