@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"github.com/barweiss/go-tuple"
+	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/mappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/models"
@@ -194,9 +195,49 @@ func (n NoteServiceImpl) GetNotes(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	pageRequest pagination.PageRequest,
+	sessionDto cDTOs.UKeySessionDto,
 ) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
-	//TODO implement me
-	panic("implement me")
+	validationSrc := n.noteBr.ValidateGetNotes(pageRequest)
+	zippedSrc := single.FlatMap(validationSrc, func(_ any) single.Single[tuple.T3[kDTOs.UserKeyDto, []byte, int64]] {
+		keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessionDto)
+		keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey)
+		countSrc := n.noteRepository.CountByUserId(ctx, userBo.Id)
+		return single.Zip3(keyDtoSrc, keySrc, countSrc)
+	})
+	return single.FlatMap(zippedSrc,
+		func(t tuple.T3[kDTOs.UserKeyDto, []byte, int64]) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
+			keyDto, keyBytes, count := t.V1, t.V2, t.V3
+			findManyObs := n.noteRepository.FindManyByUserId(ctx, userBo.Id, pageRequest)
+			noteDetailsObs := stream.FlatMap(findManyObs, func(note models.Note) stream.Observable[nDTOs.NoteReadDto] {
+				if note.KeyVersion != keyDto.KeyVersion {
+					ruleErr := n.errorService.RuleErrorFromCode(apperrors.ErrCodeDataRace)
+					return stream.Error(apperrors.NewBadReqErrorFromRuleError(ruleErr))
+				}
+				txtBytes, err := cipherutils.DecryptAES(keyBytes, note.TextCipher)
+				if err != nil {
+					return stream.Error(err)
+				}
+				titleBytes, err := cipherutils.DecryptAES(keyBytes, note.TitleCipher)
+				if err != nil {
+					return stream.Error(err)
+				}
+				txt := string(txtBytes)
+				title := string(titleBytes)
+				previewLimit := 60
+				if len(txt) < 60 {
+					previewLimit = len(txt)
+				}
+				textPreview := txt[:previewLimit]
+				coreNoteDto := nDTOs.NewCoreNoteDto(title)
+				noteReadDto := nDTOs.NoteReadDto{}
+				mappers.MapTextPreviewAndCoreNoteAndNoteToNoteReadDto(textPreview, &coreNoteDto, &note, &noteReadDto)
+				return stream.Just(noteReadDto)
+			})
+			noteDTOsSrc := single.FromObservableAsList(noteDetailsObs)
+			return single.Map(noteDTOsSrc, func(noteDTOs []nDTOs.NoteReadDto) pagination.Page[nDTOs.NoteReadDto] {
+				return pagination.NewPage(noteDTOs, count)
+			})
+		})
 }
 
 func (n NoteServiceImpl) getExistingNote(ctx context.Context, id string) single.Single[models.Note] {

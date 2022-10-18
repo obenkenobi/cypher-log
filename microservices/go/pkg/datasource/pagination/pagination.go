@@ -36,10 +36,10 @@ func NewPageRequest(page int64, size int64) PageRequest {
 
 type Page[T any] struct {
 	Contents []T
-	Total    int
+	Total    int64
 }
 
-func NewPage[T any](contents []T, total int) Page[T] {
+func NewPage[T any](contents []T, total int64) Page[T] {
 	return Page[T]{Contents: contents, Total: total}
 }
 

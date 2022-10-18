@@ -19,9 +19,9 @@ func MapTextPreviewAndCoreNoteAndNoteToNoteReadDto(
 	textPreview string,
 	coreNoteDto *nDTOs.CoreNoteDto,
 	note *models.Note,
-	noteDetailsDto *nDTOs.NoteReadDto,
+	noteReadDto *nDTOs.NoteReadDto,
 ) {
-	sharedmappers.MapMongoModelToBaseCrudObject(note, &(noteDetailsDto.BaseCRUDObject))
-	noteDetailsDto.CoreNoteDto = *coreNoteDto
-	noteDetailsDto.TextPreview = textPreview
+	sharedmappers.MapMongoModelToBaseCrudObject(note, &(noteReadDto.BaseCRUDObject))
+	noteReadDto.CoreNoteDto = *coreNoteDto
+	noteReadDto.TextPreview = textPreview
 }

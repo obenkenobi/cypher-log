@@ -134,7 +134,7 @@ func (a *singleSupplierReadObservable[T]) Observe(ctx context.Context, next func
 }
 
 func FromObservableAsList[T any](obs stream.Observable[T]) Single[[]T] {
-	listObs := stream.Reduce(obs, []T{}, func(res []T, v T) []T { return append(res, v) })
+	listObs := stream.Reduce(obs, []T{}, func(list []T, v T) []T { return append(list, v) })
 	return fromSingleObservable(listObs)
 }
 
