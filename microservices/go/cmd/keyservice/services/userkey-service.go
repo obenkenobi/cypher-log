@@ -43,6 +43,8 @@ type UserKeyService interface {
 		ctx context.Context,
 		sessionDto commondtos.UKeySessionDto,
 	) single.Single[keydtos.UserKeyDto]
+
+	DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64]
 }
 
 type UserKeyServiceImpl struct {
@@ -247,6 +249,10 @@ func (u UserKeyServiceImpl) getUserKeyGenerator(
 				})
 		},
 	)
+}
+
+func (u UserKeyServiceImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
+	return u.userKeyGeneratorRepository.DeleteByUserIdAndGetCount(ctx, userId)
 }
 
 func NewUserKeyServiceImpl(

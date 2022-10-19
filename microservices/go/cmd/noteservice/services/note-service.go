@@ -49,6 +49,7 @@ type NoteService interface {
 		userBo userbos.UserBo,
 		sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
 	) single.Single[pagination.Page[nDTOs.NotePreviewDto]]
+	DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64]
 }
 
 type NoteServiceImpl struct {
@@ -248,6 +249,10 @@ func (n NoteServiceImpl) getExistingNote(ctx context.Context, id string) single.
 				return single.Error[models.Note](apperrors.NewBadReqErrorFromRuleError(ruleErr))
 			})
 	})
+}
+
+func (u NoteServiceImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
+	return u.noteRepository.DeleteByUserIdAndGetCount(ctx, userId)
 }
 
 func NewNoteServiceImpl(

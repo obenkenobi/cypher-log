@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"github.com/barweiss/go-tuple"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
@@ -19,9 +18,9 @@ type UserChangeEventService interface {
 }
 
 type UserChangeEventServiceImpl struct {
-	userService                sharedservices.UserService
-	userKeyGeneratorRepository repositories.UserKeyGeneratorRepository
-	crudDSHandler              dshandlers.CrudDSHandler
+	userService    sharedservices.UserService
+	userKeyService UserKeyService
+	crudDSHandler  dshandlers.CrudDSHandler
 }
 
 func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
@@ -41,7 +40,7 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 				})
 			case userdtos.UserDelete:
 				userDeleteSrc := u.userService.DeleteUser(ctx, userEventDto)
-				userKeyDeleteSrc := u.userKeyGeneratorRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
+				userKeyDeleteSrc := u.userKeyService.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
 				userResSrc = single.Map(single.Zip2(userDeleteSrc, userKeyDeleteSrc),
 					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
 						return userdtos.UserChangeEventResponseDto{Discarded: false}
@@ -58,12 +57,12 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 
 func NewUserChangeEventServiceImpl(
 	userService sharedservices.UserService,
-	userKeyRepository repositories.UserKeyGeneratorRepository,
+	userKeyService UserKeyService,
 	crudDSHandler dshandlers.CrudDSHandler,
 ) *UserChangeEventServiceImpl {
 	return &UserChangeEventServiceImpl{
-		userService:                userService,
-		userKeyGeneratorRepository: userKeyRepository,
-		crudDSHandler:              crudDSHandler,
+		userService:    userService,
+		userKeyService: userKeyService,
+		crudDSHandler:  crudDSHandler,
 	}
 }

@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"github.com/barweiss/go-tuple"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
@@ -19,9 +18,9 @@ type UserChangeEventService interface {
 }
 
 type UserChangeEventServiceImpl struct {
-	userService    sharedservices.UserService
-	crudDSHandler  dshandlers.CrudDSHandler
-	noteRepository repositories.NoteRepository
+	userService   sharedservices.UserService
+	crudDSHandler dshandlers.CrudDSHandler
+	noteService   NoteService
 }
 
 func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
@@ -41,7 +40,7 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 				})
 			case userdtos.UserDelete:
 				userDeleteSrc := u.userService.DeleteUser(ctx, userEventDto)
-				noteDeleteSrc := u.noteRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
+				noteDeleteSrc := u.noteService.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
 				userResSrc = single.Map(single.Zip2(userDeleteSrc, noteDeleteSrc),
 					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
 						return userdtos.UserChangeEventResponseDto{Discarded: false}
@@ -59,11 +58,11 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 func NewUserChangeEventServiceImpl(
 	userService sharedservices.UserService,
 	crudDSHandler dshandlers.CrudDSHandler,
-	noteRepository repositories.NoteRepository,
+	noteService NoteService,
 ) *UserChangeEventServiceImpl {
 	return &UserChangeEventServiceImpl{
-		userService:    userService,
-		crudDSHandler:  crudDSHandler,
-		noteRepository: noteRepository,
+		userService:   userService,
+		crudDSHandler: crudDSHandler,
+		noteService:   noteService,
 	}
 }
