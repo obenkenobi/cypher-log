@@ -42,8 +42,7 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 			case userdtos.UserDelete:
 				userDeleteSrc := u.userService.DeleteUser(ctx, userEventDto)
 				userKeyDeleteSrc := u.userKeyGeneratorRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
-				userResSrc = single.Map(
-					single.Zip2(userDeleteSrc, userKeyDeleteSrc),
+				userResSrc = single.Map(single.Zip2(userDeleteSrc, userKeyDeleteSrc),
 					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
 						return userdtos.UserChangeEventResponseDto{Discarded: false}
 					},
