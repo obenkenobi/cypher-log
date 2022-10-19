@@ -43,5 +43,5 @@ type NoteReadDto struct {
 }
 
 type NoteIdDto struct {
-	embedded.BaseId
+	embedded.BaseRequiredId
 }
