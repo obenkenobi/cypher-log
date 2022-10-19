@@ -4,6 +4,9 @@ import (
 	"github.com/akrennmair/slice"
 )
 
+const SortFieldCreatedAt = "createdAt"
+const SortFieldUpdatedAt = "updatedAt"
+
 type Direction string
 
 const (

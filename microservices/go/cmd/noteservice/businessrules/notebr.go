@@ -97,8 +97,8 @@ func NewNoteBrImpl(errorService sharedservices.ErrorService) *NoteBrImpl {
 	return &NoteBrImpl{
 		errorService: errorService,
 		validSortFields: map[string]any{
-			"created_at": any(true),
-			"updated_at": any(true),
+			pagination.SortFieldCreatedAt: any(true),
+			pagination.SortFieldUpdatedAt: any(true),
 		},
 	}
 }

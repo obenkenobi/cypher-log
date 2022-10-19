@@ -240,6 +240,10 @@ func (n NoteServiceImpl) GetNotesPage(
 		})
 }
 
+func (u NoteServiceImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
+	return u.noteRepository.DeleteByUserIdAndGetCount(ctx, userId)
+}
+
 func (n NoteServiceImpl) getExistingNote(ctx context.Context, id string) single.Single[models.Note] {
 	findSrc := n.noteRepository.FindById(ctx, id)
 	return single.FlatMap(findSrc, func(m option.Maybe[models.Note]) single.Single[models.Note] {
@@ -249,10 +253,6 @@ func (n NoteServiceImpl) getExistingNote(ctx context.Context, id string) single.
 				return single.Error[models.Note](apperrors.NewBadReqErrorFromRuleError(ruleErr))
 			})
 	})
-}
-
-func (u NoteServiceImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
-	return u.noteRepository.DeleteByUserIdAndGetCount(ctx, userId)
 }
 
 func NewNoteServiceImpl(

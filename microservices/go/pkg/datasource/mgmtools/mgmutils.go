@@ -17,6 +17,17 @@ func ConvertSortDirection(dir pagination.Direction) int {
 	return 1
 }
 
+func SortFieldToMongoField(sortField string) string {
+	switch sortField {
+	case pagination.SortFieldCreatedAt:
+		return "created_at"
+	case pagination.SortFieldUpdatedAt:
+		return "updated_at"
+	default:
+		return sortField
+	}
+}
+
 func CreatePaginatedFindOpts(pageReq pagination.PageRequest) *options.FindOptions {
 	return SetPaginatedFindOpts(options.Find(), pageReq)
 }
@@ -24,7 +35,7 @@ func CreatePaginatedFindOpts(pageReq pagination.PageRequest) *options.FindOption
 func SetPaginatedFindOpts(findOpt *options.FindOptions, pageReq pagination.PageRequest) *options.FindOptions {
 	findOpt = findOpt.SetSkip(pageReq.SkipCount()).SetLimit(pageReq.Size)
 	for _, s := range pageReq.Sort {
-		findOpt = findOpt.SetSort(bson.D{{s.Field, ConvertSortDirection(s.Direction)}})
+		findOpt = findOpt.SetSort(bson.D{{SortFieldToMongoField(s.Field), ConvertSortDirection(s.Direction)}})
 	}
 	return findOpt
 }
