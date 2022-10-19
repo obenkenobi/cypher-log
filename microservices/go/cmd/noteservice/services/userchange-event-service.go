@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"github.com/barweiss/go-tuple"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
@@ -17,8 +19,9 @@ type UserChangeEventService interface {
 }
 
 type UserChangeEventServiceImpl struct {
-	userService   sharedservices.UserService
-	crudDSHandler dshandlers.CrudDSHandler
+	userService    sharedservices.UserService
+	crudDSHandler  dshandlers.CrudDSHandler
+	noteRepository repositories.NoteRepository
 }
 
 func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
@@ -38,9 +41,13 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 				})
 			case userdtos.UserDelete:
 				userDeleteSrc := u.userService.DeleteUser(ctx, userEventDto)
-				userResSrc = single.Map(userDeleteSrc, func(_ userbos.UserBo) userdtos.UserChangeEventResponseDto {
-					return userdtos.UserChangeEventResponseDto{Discarded: false}
-				})
+				noteDeleteSrc := u.noteRepository.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
+				userResSrc = single.Map(
+					single.Zip2(userDeleteSrc, noteDeleteSrc),
+					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {
+						return userdtos.UserChangeEventResponseDto{Discarded: false}
+					},
+				)
 			default:
 				userResSrc = single.Just(userdtos.UserChangeEventResponseDto{Discarded: true})
 			}
@@ -53,9 +60,11 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 func NewUserChangeEventServiceImpl(
 	userService sharedservices.UserService,
 	crudDSHandler dshandlers.CrudDSHandler,
+	noteRepository repositories.NoteRepository,
 ) *UserChangeEventServiceImpl {
 	return &UserChangeEventServiceImpl{
-		userService:   userService,
-		crudDSHandler: crudDSHandler,
+		userService:    userService,
+		crudDSHandler:  crudDSHandler,
+		noteRepository: noteRepository,
 	}
 }

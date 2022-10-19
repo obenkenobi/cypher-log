@@ -12,6 +12,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type NoteRepository interface {
@@ -22,6 +23,7 @@ type NoteRepository interface {
 		pageReq pagination.PageRequest,
 	) stream.Observable[models.Note]
 	CountByUserId(ctx context.Context, userId string) single.Single[int64]
+	DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64]
 }
 
 type NoteRepositoryImpl struct {
@@ -76,6 +78,17 @@ func (u NoteRepositoryImpl) CountByUserId(ctx context.Context, userId string) si
 		filter := bson.D{{"userId", userId}}
 		return mgm.Coll(u.ModelColl).CountDocuments(u.MongoDBHandler.ToChildCtx(ctx), filter)
 	})
+}
+
+func (u NoteRepositoryImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
+	return single.FromSupplierCached(func() (int64, error) {
+		res, err := mgm.Coll(u.ModelColl).DeleteMany(u.MongoDBHandler.ToChildCtx(ctx), bson.M{"userId": userId})
+		deletedCount := option.
+			Map(option.Perhaps(res), func(r *mongo.DeleteResult) int64 { return r.DeletedCount }).
+			OrElse(-1)
+		return deletedCount, err
+	})
+
 }
 
 func NewNoteRepositoryImpl(mongoDBHandler *dshandlers.MongoDBHandler) *NoteRepositoryImpl {
