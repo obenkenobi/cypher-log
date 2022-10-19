@@ -1,6 +1,7 @@
 package businessrules
 
 import (
+	"context"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
@@ -16,6 +17,7 @@ type UserKeyBr interface {
 	ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any]
 	ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any]
 	ValidateProxyKeyCiphersFromSession(
+		ctx context.Context,
 		proxyKey []byte,
 		userId string,
 		keyVersion int64,
@@ -25,6 +27,7 @@ type UserKeyBr interface {
 
 type UserKeyBrImpl struct {
 	errorService sharedservices.ErrorService
+	userService  sharedservices.UserService
 }
 
 func (u UserKeyBrImpl) ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) single.Single[any] {
@@ -57,6 +60,7 @@ func (u UserKeyBrImpl) ValidateKeyFromSession(userKeyGen models.UserKeyGenerator
 }
 
 func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
+	ctx context.Context,
 	proxyKey []byte,
 	userId string,
 	keyVersion int64,
@@ -68,14 +72,14 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 		savedUserIdBytes, err := cipherutils.DecryptAES(proxyKey, session.UserIdCipher)
 		if err != nil {
 			logger.Log.WithError(err).Debug()
-			return ruleErrs, nil
+			return ruleErrs, err
 		}
 		userIdInvalid := string(savedUserIdBytes) != userId
 
 		savedKeyVersionBytes, err := cipherutils.DecryptAES(proxyKey, session.KeyVersionCipher)
 		if err != nil {
 			logger.Log.WithError(err).Debug()
-			return ruleErrs, nil
+			return ruleErrs, err
 		}
 		keyInvalid := string(savedKeyVersionBytes) != utils.Int64ToStr(keyVersion)
 
@@ -84,7 +88,16 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 		}
 		return ruleErrs, nil
 	})
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(validateProxyKeyCiphersSrc)
+	validateUserExists := single.MapWithError(u.userService.UserExistsWithId(ctx, userId),
+		func(exists bool) ([]apperrors.RuleError, error) {
+			var ruleErrs []apperrors.RuleError
+			if !exists {
+				ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
+			}
+			return ruleErrs, nil
+		})
+	ruleErrs := validationutils.ConcatSinglesOfRuleErrs(validateProxyKeyCiphersSrc, validateUserExists)
+	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrs)
 }
 
 func (u UserKeyBrImpl) ValidateKeyFromPassword(
@@ -104,6 +117,6 @@ func (u UserKeyBrImpl) ValidateKeyFromPassword(
 	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(keyHashValidationSrc)
 }
 
-func NewUserKeyBrImpl(errorService sharedservices.ErrorService) *UserKeyBrImpl {
-	return &UserKeyBrImpl{errorService: errorService}
+func NewUserKeyBrImpl(errorService sharedservices.ErrorService, userService sharedservices.UserService) *UserKeyBrImpl {
+	return &UserKeyBrImpl{errorService: errorService, userService: userService}
 }

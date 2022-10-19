@@ -221,6 +221,7 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]byte] {
 			session, proxyKey := t.V1, t.V2
 			validateProxyKeysSrc := u.userKeyBr.ValidateProxyKeyCiphersFromSession(
+				ctx,
 				proxyKey,
 				sessionDto.UserId,
 				sessionDto.KeyVersion,

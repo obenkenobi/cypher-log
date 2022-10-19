@@ -67,7 +67,7 @@ func (n NoteServiceImpl) AddNoteTransaction(
 ) single.Single[cDTOs.SuccessDto] {
 	return dshandlers.TransactionalSingle(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
-			sessDto, noteCreateDto := sessReqDto.Session, sessReqDto.Value
+			sessDto, noteCreateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
 			keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey).ScheduleLazyAndCache(ctx)
 			titleCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
@@ -101,7 +101,7 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 ) single.Single[cDTOs.SuccessDto] {
 	return dshandlers.TransactionalSingle(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
-			sessDto, noteUpdateDto := sessReqDto.Session, sessReqDto.Value
+			sessDto, noteUpdateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 			existingSrc := n.getExistingNote(ctx, noteUpdateDto.Id).ScheduleLazyAndCache(ctx)
 			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
 			keySrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
@@ -160,7 +160,7 @@ func (n NoteServiceImpl) GetNoteById(
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto],
 ) single.Single[nDTOs.NoteReadDto] {
-	sessDto, noteIdDto := sessReqDto.Session, sessReqDto.Value
+	sessDto, noteIdDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 	existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
 	keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
 	validationSrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
@@ -201,7 +201,7 @@ func (n NoteServiceImpl) GetNotesPage(
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
 ) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
-	sessionDto, pageRequest := sessReqDto.Session, sessReqDto.Value
+	sessionDto, pageRequest := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 	validationSrc := n.noteBr.ValidateGetNotes(pageRequest)
 	zippedSrc := single.FlatMap(validationSrc, func(_ any) single.Single[tuple.T3[kDTOs.UserKeyDto, []byte, int64]] {
 		keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessionDto)

@@ -13,3 +13,8 @@ type UKeySessionReqDto[T any] struct {
 	Session UKeySessionDto `json:"session"`
 	Value   T              `json:"value"`
 }
+
+func (u *UKeySessionReqDto[T]) SetUserIdAndUnwrap(userId string) (UKeySessionDto, T) {
+	u.Session.UserId = userId
+	return u.Session, u.Value
+}

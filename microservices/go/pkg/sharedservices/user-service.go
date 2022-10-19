@@ -20,6 +20,7 @@ type UserService interface {
 	RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo]
 	SaveUser(ctx context.Context, userEventDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
 	DeleteUser(ctx context.Context, userEventDto userdtos.UserChangeEventDto) single.Single[userbos.UserBo]
+	UserExistsWithId(ctx context.Context, userId string) single.Single[bool]
 }
 
 type UserServiceImpl struct {
@@ -85,6 +86,20 @@ func (u UserServiceImpl) RequireUser(ctx context.Context, identity security.Iden
 		userBo := userbos.UserBo{}
 		sharedmappers.UserModelToUserBo(user, &userBo)
 		return userBo
+	})
+}
+
+func (u UserServiceImpl) UserExistsWithId(ctx context.Context, userId string) single.Single[bool] {
+	userFindSrc := u.userRepository.FindByUserId(ctx, userId)
+	return single.FlatMap(userFindSrc, func(userMaybe option.Maybe[cModels.User]) single.Single[bool] {
+		return option.Map(userMaybe, func(_ cModels.User) single.Single[bool] {
+			return single.Just(true)
+		}).OrElseGet(func() single.Single[bool] {
+			extUserFindSrc := u.extUserService.GetById(ctx, userId)
+			return single.FlatMap(extUserFindSrc, func(extUserDto userdtos.UserReadDto) single.Single[bool] {
+				return single.Just(extUserDto.Exists)
+			})
+		})
 	})
 }
 
