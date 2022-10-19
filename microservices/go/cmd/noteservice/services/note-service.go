@@ -34,13 +34,17 @@ type NoteService interface {
 		userBo userbos.UserBo,
 		dto cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto],
 	) single.Single[cDTOs.SuccessDto]
-	DeleteNoteTransaction(ctx context.Context, userBo userbos.UserBo, noteId string) single.Single[cDTOs.SuccessDto]
+	DeleteNoteTransaction(
+		ctx context.Context,
+		userBo userbos.UserBo,
+		noteIdDto nDTOs.NoteIdDto,
+	) single.Single[cDTOs.SuccessDto]
 	GetNoteById(
 		ctx context.Context,
 		userBo userbos.UserBo,
 		sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto],
 	) single.Single[nDTOs.NoteDetailsDto]
-	GetNotes(
+	GetNotesPage(
 		ctx context.Context,
 		userBo userbos.UserBo,
 		sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
@@ -130,11 +134,11 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 func (n NoteServiceImpl) DeleteNoteTransaction(
 	ctx context.Context,
 	userBo userbos.UserBo,
-	noteId string,
+	noteIdDto nDTOs.NoteIdDto,
 ) single.Single[cDTOs.SuccessDto] {
 	return dshandlers.TransactionalSingle(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
-			existingSrc := n.getExistingNote(ctx, noteId).ScheduleLazyAndCache(ctx)
+			existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
 			validateDeleteSrc := single.FlatMap(existingSrc,
 				func(existing models.Note) single.Single[any] {
 					return n.noteBr.ValidateNoteDelete(userBo, existing)
@@ -191,7 +195,7 @@ func (n NoteServiceImpl) GetNoteById(
 		})
 }
 
-func (n NoteServiceImpl) GetNotes(
+func (n NoteServiceImpl) GetNotesPage(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
@@ -207,7 +211,7 @@ func (n NoteServiceImpl) GetNotes(
 	return single.FlatMap(zippedSrc,
 		func(t tuple.T3[kDTOs.UserKeyDto, []byte, int64]) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
 			keyDto, keyBytes, count := t.V1, t.V2, t.V3
-			findManyObs := n.noteRepository.FindManyByUserId(ctx, userBo.Id, pageRequest)
+			findManyObs := n.noteRepository.GetPaginatedByUserId(ctx, userBo.Id, pageRequest)
 			noteDetailsObs := stream.FlatMap(findManyObs, func(note models.Note) stream.Observable[nDTOs.NoteReadDto] {
 				if note.KeyVersion != keyDto.KeyVersion {
 					ruleErr := n.errorService.RuleErrorFromCode(apperrors.ErrCodeDataRace)

@@ -16,7 +16,11 @@ import (
 
 type NoteRepository interface {
 	baserepos.CRUDRepository[models.Note, string]
-	FindManyByUserId(ctx context.Context, userId string, pageReq pagination.PageRequest) stream.Observable[models.Note]
+	GetPaginatedByUserId(
+		ctx context.Context,
+		userId string,
+		pageReq pagination.PageRequest,
+	) stream.Observable[models.Note]
 	CountByUserId(ctx context.Context, userId string) single.Single[int64]
 }
 
@@ -53,7 +57,7 @@ func (u NoteRepositoryImpl) FindById(ctx context.Context, id string) single.Sing
 	})
 }
 
-func (u NoteRepositoryImpl) FindManyByUserId(
+func (u NoteRepositoryImpl) GetPaginatedByUserId(
 	ctx context.Context,
 	userId string,
 	pageReq pagination.PageRequest,
