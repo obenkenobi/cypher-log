@@ -11,5 +11,5 @@ type UKeySessionDto struct {
 
 type UKeySessionReqDto[T any] struct {
 	Session UKeySessionDto `json:"session"`
-	Value   T              `json:"payload"`
+	Value   T              `json:"value"`
 }

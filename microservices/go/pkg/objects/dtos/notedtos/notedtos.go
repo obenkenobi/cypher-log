@@ -3,7 +3,7 @@ package notedtos
 import "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded"
 
 type CoreNoteDto struct {
-	Title string `json:"title" binding:"required,alphanumunicode,min=4,max=1000"`
+	Title string `json:"title" binding:"required,min=4,max=1000"`
 }
 
 func NewCoreNoteDto(title string) CoreNoteDto {

@@ -32,7 +32,7 @@ func (n NoteBrImpl) ValidateGetNotes(pageRequest pagination.PageRequest) single.
 		var ruleErrors []apperrors.RuleError
 		if len(pageRequest.Sort) != 1 {
 			ruleErrors = append(ruleErrors, n.errorService.RuleErrorFromCode(apperrors.ErrCodeMustSortByOneOption))
-		} else if _, ok := n.validSortFields[pageRequest.Sort[1].Field]; !ok {
+		} else if _, ok := n.validSortFields[pageRequest.Sort[0].Field]; !ok {
 			ruleErrors = append(ruleErrors, n.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSortOptions))
 		}
 		return ruleErrors, nil
@@ -94,5 +94,11 @@ func (n NoteBrImpl) validateNoteOwnership(
 }
 
 func NewNoteBrImpl(errorService sharedservices.ErrorService) *NoteBrImpl {
-	return &NoteBrImpl{errorService: errorService}
+	return &NoteBrImpl{
+		errorService: errorService,
+		validSortFields: map[string]any{
+			"created_at": any(true),
+			"updated_at": any(true),
+		},
+	}
 }
