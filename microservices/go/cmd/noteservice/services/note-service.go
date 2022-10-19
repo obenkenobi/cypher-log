@@ -216,15 +216,15 @@ func (n NoteServiceImpl) GetNotesPage(
 			noteDetailsObs := stream.FlatMap(findManyObs, func(note models.Note) stream.Observable[nDTOs.NotePreviewDto] {
 				if note.KeyVersion != keyDto.KeyVersion {
 					ruleErr := n.errorService.RuleErrorFromCode(apperrors.ErrCodeDataRace)
-					return stream.Error(apperrors.NewBadReqErrorFromRuleError(ruleErr))
+					return stream.Error[nDTOs.NotePreviewDto](apperrors.NewBadReqErrorFromRuleError(ruleErr))
 				}
 				txtBytes, err := cipherutils.DecryptAES(keyBytes, note.TextCipher)
 				if err != nil {
-					return stream.Error(err)
+					return stream.Error[nDTOs.NotePreviewDto](err)
 				}
 				titleBytes, err := cipherutils.DecryptAES(keyBytes, note.TitleCipher)
 				if err != nil {
-					return stream.Error(err)
+					return stream.Error[nDTOs.NotePreviewDto](err)
 				}
 				txt, title := string(txtBytes), string(titleBytes)
 				textPreview := utils.StringFirstNChars(txt, 60)

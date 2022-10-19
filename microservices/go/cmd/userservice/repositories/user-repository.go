@@ -95,7 +95,7 @@ func (u UserRepositoryImpl) SampleUndistributedUsers(ctx context.Context, size i
 			{{operator.Match, bson.D{{"distributed", bson.D{{operator.Ne, true}}}}}},
 			{{operator.Sample, bson.D{{"size", size}}}},
 		})
-		return mgmtools.HandleFindManyRes(ctx, cursor, err)
+		return mgmtools.HandleFindManyRes[models.User](ctx, cursor, err)
 	})
 }
 

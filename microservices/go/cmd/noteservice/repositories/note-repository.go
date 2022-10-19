@@ -69,7 +69,7 @@ func (u NoteRepositoryImpl) GetPaginatedByUserId(
 		filter := bson.D{{"userId", userId}}
 		ctx := u.MongoDBHandler.ToChildCtx(ctx)
 		cursor, err := mgm.Coll(u.ModelColl).Find(ctx, filter, findOpts)
-		return mgmtools.HandleFindManyRes(ctx, cursor, err)
+		return mgmtools.HandleFindManyRes[models.Note](ctx, cursor, err)
 	})
 }
 
