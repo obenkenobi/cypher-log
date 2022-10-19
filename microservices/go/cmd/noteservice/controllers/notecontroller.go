@@ -79,7 +79,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 			bodySrc := ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]](n.ginCtxService, c)
 			businessLogicSrc := single.FlatMap(single.Zip2(reqUserSrc, bodySrc),
-				func(t tuple.T2[userbos.UserBo, cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]]) single.Single[nDTOs.NoteDetailsDto] {
+				func(t tuple.T2[userbos.UserBo, cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]]) single.Single[nDTOs.NoteReadDto] {
 					userBos, dto := t.V1, t.V2
 					return n.noteService.GetNoteById(c, userBos, dto)
 				},
@@ -93,7 +93,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 			bodySrc := ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[pagination.PageRequest]](n.ginCtxService, c)
 			businessLogicSrc := single.FlatMap(single.Zip2(reqUserSrc, bodySrc),
-				func(t tuple.T2[userbos.UserBo, cDTOs.UKeySessionReqDto[pagination.PageRequest]]) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
+				func(t tuple.T2[userbos.UserBo, cDTOs.UKeySessionReqDto[pagination.PageRequest]]) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
 					userBos, dto := t.V1, t.V2
 					return n.noteService.GetNotesPage(c, userBos, dto)
 				},

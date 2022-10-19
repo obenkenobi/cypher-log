@@ -31,13 +31,13 @@ type NoteUpdateDto struct {
 	CoreNoteDetailsDto
 }
 
-type NoteReadDto struct {
+type NotePreviewDto struct {
 	embedded.BaseCRUDObject
 	CoreNoteDto
 	TextPreview string
 }
 
-type NoteDetailsDto struct {
+type NoteReadDto struct {
 	embedded.BaseCRUDObject
 	CoreNoteDetailsDto
 }

@@ -43,12 +43,12 @@ type NoteService interface {
 		ctx context.Context,
 		userBo userbos.UserBo,
 		sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto],
-	) single.Single[nDTOs.NoteDetailsDto]
+	) single.Single[nDTOs.NoteReadDto]
 	GetNotesPage(
 		ctx context.Context,
 		userBo userbos.UserBo,
 		sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
-	) single.Single[pagination.Page[nDTOs.NoteReadDto]]
+	) single.Single[pagination.Page[nDTOs.NotePreviewDto]]
 }
 
 type NoteServiceImpl struct {
@@ -158,7 +158,7 @@ func (n NoteServiceImpl) GetNoteById(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto],
-) single.Single[nDTOs.NoteDetailsDto] {
+) single.Single[nDTOs.NoteReadDto] {
 	sessDto, noteIdDto := sessReqDto.Session, sessReqDto.Value
 	existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
 	keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
@@ -175,7 +175,7 @@ func (n NoteServiceImpl) GetNoteById(
 	).ScheduleLazyAndCache(ctx)
 
 	return single.FlatMap(single.Zip3(existingSrc, keySrc, validationSrc),
-		func(t tuple.T3[models.Note, []byte, any]) single.Single[nDTOs.NoteDetailsDto] {
+		func(t tuple.T3[models.Note, []byte, any]) single.Single[nDTOs.NoteReadDto] {
 			existing, keyBytes := t.V1, t.V2
 			textSrc := single.FromSupplierCached(func() (string, error) {
 				txtBytes, err := cipherutils.DecryptAES(keyBytes, existing.TextCipher)
@@ -185,11 +185,11 @@ func (n NoteServiceImpl) GetNoteById(
 				titleBytes, err := cipherutils.DecryptAES(keyBytes, existing.TitleCipher)
 				return string(titleBytes), err
 			})
-			return single.Map(single.Zip2(textSrc, titleSrc), func(t tuple.T2[string, string]) nDTOs.NoteDetailsDto {
+			return single.Map(single.Zip2(textSrc, titleSrc), func(t tuple.T2[string, string]) nDTOs.NoteReadDto {
 				text, title := t.V1, t.V2
 				coreNoteDetails := nDTOs.NewCoreNoteDetailsDto(title, text)
-				noteDetailsDto := nDTOs.NoteDetailsDto{}
-				mappers.MapCoreNoteDetailsAndNoteToNoteDetailsDto(&coreNoteDetails, &existing, &noteDetailsDto)
+				noteDetailsDto := nDTOs.NoteReadDto{}
+				mappers.MapCoreNoteDetailsAndNoteToNoteReadDto(&coreNoteDetails, &existing, &noteDetailsDto)
 				return noteDetailsDto
 			})
 		})
@@ -199,7 +199,7 @@ func (n NoteServiceImpl) GetNotesPage(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
-) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
+) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
 	sessionDto, pageRequest := sessReqDto.Session, sessReqDto.Value
 	validationSrc := n.noteBr.ValidateGetNotes(pageRequest)
 	zippedSrc := single.FlatMap(validationSrc, func(_ any) single.Single[tuple.T3[kDTOs.UserKeyDto, []byte, int64]] {
@@ -209,10 +209,10 @@ func (n NoteServiceImpl) GetNotesPage(
 		return single.Zip3(keyDtoSrc, keySrc, countSrc)
 	})
 	return single.FlatMap(zippedSrc,
-		func(t tuple.T3[kDTOs.UserKeyDto, []byte, int64]) single.Single[pagination.Page[nDTOs.NoteReadDto]] {
+		func(t tuple.T3[kDTOs.UserKeyDto, []byte, int64]) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
 			keyDto, keyBytes, count := t.V1, t.V2, t.V3
 			findManyObs := n.noteRepository.GetPaginatedByUserId(ctx, userBo.Id, pageRequest)
-			noteDetailsObs := stream.FlatMap(findManyObs, func(note models.Note) stream.Observable[nDTOs.NoteReadDto] {
+			noteDetailsObs := stream.FlatMap(findManyObs, func(note models.Note) stream.Observable[nDTOs.NotePreviewDto] {
 				if note.KeyVersion != keyDto.KeyVersion {
 					ruleErr := n.errorService.RuleErrorFromCode(apperrors.ErrCodeDataRace)
 					return stream.Error(apperrors.NewBadReqErrorFromRuleError(ruleErr))
@@ -228,12 +228,12 @@ func (n NoteServiceImpl) GetNotesPage(
 				txt, title := string(txtBytes), string(titleBytes)
 				textPreview := utils.StringFirstNChars(txt, 60)
 				coreNoteDto := nDTOs.NewCoreNoteDto(title)
-				noteReadDto := nDTOs.NoteReadDto{}
-				mappers.MapTextPreviewAndCoreNoteAndNoteToNoteReadDto(textPreview, &coreNoteDto, &note, &noteReadDto)
+				noteReadDto := nDTOs.NotePreviewDto{}
+				mappers.MapTextPreviewAndCoreNoteAndNoteToNotePreviewDto(textPreview, &coreNoteDto, &note, &noteReadDto)
 				return stream.Just(noteReadDto)
 			})
 			noteDTOsSrc := single.FromObservableAsList(noteDetailsObs)
-			return single.Map(noteDTOsSrc, func(noteDTOs []nDTOs.NoteReadDto) pagination.Page[nDTOs.NoteReadDto] {
+			return single.Map(noteDTOsSrc, func(noteDTOs []nDTOs.NotePreviewDto) pagination.Page[nDTOs.NotePreviewDto] {
 				return pagination.NewPage(noteDTOs, count)
 			})
 		})

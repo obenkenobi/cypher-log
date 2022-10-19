@@ -6,22 +6,22 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers"
 )
 
-func MapCoreNoteDetailsAndNoteToNoteDetailsDto(
+func MapCoreNoteDetailsAndNoteToNoteReadDto(
 	coreNoteDetailsDto *nDTOs.CoreNoteDetailsDto,
-	note *models.Note,
-	noteDetailsDto *nDTOs.NoteDetailsDto,
-) {
-	sharedmappers.MapMongoModelToBaseCrudObject(note, &(noteDetailsDto.BaseCRUDObject))
-	noteDetailsDto.CoreNoteDetailsDto = *coreNoteDetailsDto
-}
-
-func MapTextPreviewAndCoreNoteAndNoteToNoteReadDto(
-	textPreview string,
-	coreNoteDto *nDTOs.CoreNoteDto,
 	note *models.Note,
 	noteReadDto *nDTOs.NoteReadDto,
 ) {
 	sharedmappers.MapMongoModelToBaseCrudObject(note, &(noteReadDto.BaseCRUDObject))
-	noteReadDto.CoreNoteDto = *coreNoteDto
-	noteReadDto.TextPreview = textPreview
+	noteReadDto.CoreNoteDetailsDto = *coreNoteDetailsDto
+}
+
+func MapTextPreviewAndCoreNoteAndNoteToNotePreviewDto(
+	textPreview string,
+	coreNoteDto *nDTOs.CoreNoteDto,
+	note *models.Note,
+	notePreviewDto *nDTOs.NotePreviewDto,
+) {
+	sharedmappers.MapMongoModelToBaseCrudObject(note, &(notePreviewDto.BaseCRUDObject))
+	notePreviewDto.CoreNoteDto = *coreNoteDto
+	notePreviewDto.TextPreview = textPreview
 }
