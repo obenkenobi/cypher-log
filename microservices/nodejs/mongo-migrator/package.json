@@ -1,5 +1,5 @@
 {
-  "name": "mongo-migrations",
+  "name": "mongo-migrator",
   "version": "1.0.0",
   "description": "migrator for user service",
   "main": "index.js",

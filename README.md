@@ -54,11 +54,11 @@ If on MacOS add the following to your `/etc/hosts` file and use localhost as the
 
 ### Database Migrations
 #### Mongo Migrations
-Move into the directory `migrations/mongo` (this will be moved into the `microservices` directory later). 
-Here you will find a node.js project that migrates your mongodb database.
-You will also see a `sample.env` file and a `migrate-up-all-local.sh` file. You can either migrate via the terminal
-or an IDE, which in this case is Goland. We will show how to do it via both options. It is recommended regardless to 
-read the terminal section even if you are using your IDE as it will inform how to set up your run configuration.
+Move into the directory `microservices/nodejs/mongo-migrator`. Here you will find a node.js project that migrates your 
+mongodb database. You will also see a `sample.env` file and a `migrate-up-all-local.sh` file. You can either migrate 
+via the terminal or an IDE, which in this case is Goland. We will show how to do it via both options. 
+It is recommended regardless to read the terminal section even if you are using your IDE as it will inform 
+how to set up your run configuration.
 ###### 1. Plain terminal
 In this case you will need to copy your `sample.env` file into a `.env` file. You will notice `MONGO_URI` is 
 already filled with a connection string to point your locally deployed mongoDB cluster. Of course in staging/production 
