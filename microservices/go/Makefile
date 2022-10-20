@@ -1,10 +1,8 @@
 # File Paths
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-CERTS := certs
 CMD_DIR := $(ROOT_DIR)/cmd
 PKG_DIR := $(ROOT_DIR)/pkg
 BIN_DIR := $(ROOT_DIR)/bin
-CERTS_DIR := $(ROOT_DIR)/certs
 MAIN_FILE := main.go
 
 # Selected Service File Paths
@@ -114,15 +112,5 @@ else
 	go test $(TEST_PATH)/...
 endif
 
-.PHONY: certs-dev
-certs-dev: # Todo: update to not require user prompt
-ifeq ($(wildcard $(CERTS_DIR)),)
-	@echo "Did not find certs, building certs"
-	mkdir $(CERTS)
-endif
-	openssl genrsa -out $(CERTS_DIR)/private.key 4096
-	openssl req -new -x509 -sha256 -days 1825 -key $(CERTS_DIR)/private.key -out $(CERTS_DIR)/public.crt
-
 clean:
 	rm -rf $(BIN_DIR)/*
-	rm -rf $(CERTS_DIR)/*

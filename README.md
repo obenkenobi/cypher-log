@@ -104,4 +104,62 @@ Here is a list of all the environment variables used in the mongo migrator:
 - `MONGO_DB_NAME` Is the database name, it is recommended that it's value is the same as `MIGRATION_DIRECTORY`.
 - `IGNORE_ENV_FILE` If set to `true`, your .env file is ignored. This will not work if you set this in the `.env` file.
 
-## Todo: add go build and run instructions.
+### Go Microservices
+Move into the directory `microservices/go`. You will notice that there is a single Go project. 
+Now this single Go project is actually a collection of microservices that share a lot of common code. This shared code 
+is in the `pkg` directory, and it helps facilitate the communication between each microservice and provide common
+logic and abstractions that helps avoid writing boilerplate code. It acts as a shared library/package. Underneath the
+`cmd` directory, you will see more subdirectories each representing a different microservice. For example the
+subdirectory *userservice* represents a microservice.
+#### Environment Variables
+*Todo: Write about how environment variables files work in the Go microservices context*
+
+#### Building and Running your Go app
+We have 2 ways of building a Go app, Makefile and the IDE Goland. Go does offer commands to build and run your app 
+alongside additional plugins but for now, you can refer to the contents of the Makefile to see what the commands are.
+In addition, we use [Google Wire](https://github.com/google/wire) for dependency injection, 
+so we need to generate some code as a precompile step before we even compile and/or run. 
+
+###### 1. Building and running with a Makefile
+The `Makefile` you see in the `go` directory refers to the build automation commands available.
+Before you can even compile or run your Go code, you need to do a precompile step, generate code using 
+[Google Wire](https://github.com/google/wire) for dependency injection. 
+
+You can run `make wire` to generate the coded needed.
+
+Now if you wish to run your app then without compiling, just run a command in the format
+`make run service=${a subdirectory of cmd}`
+
+For example: `make run service=userservice`
+
+You can also compile and then run your code program. Assuming you are on Windows and using an amd architecture,
+run in this template `make build build-windows-amd64 service=${a subdirectory of cmd}`
+
+Similar commands exist in the makefile for different architectures and operating systems.
+The same applies to run your compiled binaries.\
+
+For Windows on an amd architecture, run in this template `make run-bin-windows-amd64 service=${a subdirectory of cmd}`
+
+To clean your build file, run `make clean`.
+
+To run unit tests via the makefile, run `make test [optionally insert relative path from the go subdirectory]`
+
+###### 2. Building and running with your IDE Goland
+Running with your IDE is simpler and the preferred way of running your Go project. Just go into the `main.go` file
+of in a microservice directory (e.g. `cmd/userservice`). When opened, a green arrow is placed on the `main` function.
+Right click that arrow and select modify configuration. Then in the before launch tab, run the command in the following
+format:
+```shell
+`run github.com/google/wire/cmd/wire gen github.com/obenkenobi/cypher-log/microservices/go/cmd/${subdirectory}/app`
+```
+${subdirectory} is just a stand in for any subdirectory of `cmd`.
+
+For example when making a before launch plan for the user service, run the following:
+```shell
+run github.com/google/wire/cmd/wire gen github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/app
+```
+
+With the run configuration ready, you can now run your app.
+
+To run unit tests on a directory or file, right-click the desired item, go to the run selection and pick the go test 
+approach. Then you have a run configuration ready to run unit tests
