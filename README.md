@@ -125,8 +125,8 @@ For example:
 cp sample.env .env
 cp sample.userservice.env userservice.env
 ```
-In your env files, you can see what each of the environment variables do and which ones to
-fill out.
+In your env files, you can see what each of the environment variables are already filled 
+and which ones to fill out.
 
 Here is a table of all the environment variables:
 
