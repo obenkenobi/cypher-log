@@ -1,24 +1,31 @@
 package environment
 
-import "github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
+import (
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
+	"go.uber.org/atomic"
+)
 
 const Development = "DEVELOPMENT"
 const Staging = "STAGING"
 const Production = "PRODUCTION"
 
-var _cachedAppEnvironment = ""
+var _cachedAppEnv = atomic.NewString("")
 
 func GetAppEnvironment() string {
-	if utils.StringIsBlank(_cachedAppEnvironment) {
-		env := GetEnvVariableOrDefault(EnvVarKeyAppEnvironment, Development)
-		switch env {
-		case Development, Staging, Production:
-			_cachedAppEnvironment = env
-		default:
-			_cachedAppEnvironment = Development
-		}
+	cachedEnv := _cachedAppEnv.Load()
+	if utils.StringIsNotBlank(cachedEnv) {
+		return cachedEnv
 	}
-	return _cachedAppEnvironment
+	loadedEnv := GetEnvVariableOrDefault(EnvVarKeyAppEnvironment, Development)
+	var appEnv string
+	switch loadedEnv {
+	case Development, Staging, Production:
+		appEnv = loadedEnv
+	default:
+		appEnv = Development
+	}
+	_cachedAppEnv.Store(appEnv)
+	return appEnv
 }
 
 func IsStaging() bool {
