@@ -6,13 +6,19 @@ const Development = "DEVELOPMENT"
 const Staging = "STAGING"
 const Production = "PRODUCTION"
 
-var cachedAppEnvironment = ""
+var _cachedAppEnvironment = ""
 
 func GetAppEnvironment() string {
-	if utils.StringIsBlank(cachedAppEnvironment) {
-		return GetEnvVariableOrDefault(EnvVarKeyAppEnvironment, Development)
+	if utils.StringIsBlank(_cachedAppEnvironment) {
+		env := GetEnvVariableOrDefault(EnvVarKeyAppEnvironment, Development)
+		switch env {
+		case Development, Staging, Production:
+			_cachedAppEnvironment = env
+		default:
+			_cachedAppEnvironment = Development
+		}
 	}
-	return cachedAppEnvironment
+	return _cachedAppEnvironment
 }
 
 func IsStaging() bool {

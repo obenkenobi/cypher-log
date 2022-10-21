@@ -98,11 +98,14 @@ go to where it says *Environment* and then add the environment variables `MONGO_
 `IGNORE_ENV_FILE` and set it to equal `true`. Make sure you are using yarn to run your migration command. 
 Click *apply*. You now know how to use the IDE to run any of the yarn commands.
 ###### Environment variables
-Here is a list of all the environment variables used in the mongo migrator:
-- `MONGO_URI` Is the connection string to your mongodb instance/cluster.
-- `MIGRATION_DIRECTORY` Is the migration directory under the `src` directory.
-- `MONGO_DB_NAME` Is the database name, it is recommended that it's value is the same as `MIGRATION_DIRECTORY`.
-- `IGNORE_ENV_FILE` If set to `true`, your .env file is ignored. This will not work if you set this in the `.env` file.
+Here is a table of all the environment variables used in the mongo migrator:
+
+| Variable            | Description                                                                                   | Default value |
+|---------------------|-----------------------------------------------------------------------------------------------|---------------|
+| MONGO_URI           | The connection string to your mongodb instance/cluster.                                       |               |
+| MONGO_DB_NAME       | Is the database name, it is recommended that it's value is the same as `MIGRATION_DIRECTORY`. |               |
+| MIGRATION_DIRECTORY | Is a migration directory under the `src` directory.                                           |               |
+| IGNORE_ENV_FILE     | If set to `true`, your .env file is ignored. This is meant to be set outside the `.env` file. |               |
 
 ### Go Microservices
 Move into the directory `microservices/go`. You will notice that there is a single Go project. 
@@ -125,7 +128,37 @@ cp sample.userservice.env userservice.env
 In your env files, you can see what each of the environment variables do and which ones to
 fill out.
 
-**Todo:** *List all the environment variables*
+Here is a table of all the environment variables:
+
+| Variable                        | Description                                                                                                                                 | Default value |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| ENVIRONMENT                     | Represents the lifecycle environment the app is supposed to run on. Could be `DEVELOPMENT`, `STAGING`, or `PRODUCTION`.                     | DEVELOPMENT   |
+| ACTIVATE_APP_SERVER             | Boolean flag that activates your HTTP app server (used for REST, static web pages, etc)                                                     | true          |
+| ACTIVATE_GRPC_SERVER            | Boolean flag that activates your GRPC server                                                                                                | true          |
+| ACTIVATE_RABBITMQ_LISTENER      | Boolean flag that activates your RabbitMQ listener                                                                                          | true          |
+| ACTIVATE_APP_SERVER_TLS         | Boolean flag that activates TLS protection is added to your HTTP app server                                                                 | true          |
+| ACTIVATE_GRPC_AUTH              | Boolean flag that activates authentication for your GRPC server and client                                                                  | true          |
+| ACTIVATE_CRON_RUNNER            | Boolean flag that activates a background task designed to run cron jobs                                                                     | true          |
+| SERVER_CERT_PATH                | Path to your TLS certificate file for your servers                                                                                          |               |
+| SERVER_KEY_PATH                 | Path to your TLS private key file for your servers                                                                                          |               |
+| CA_CERT_PATH                    | Path to your certificate authority file. This is used for self signed certificates.                                                         |               |
+| LOAD_CA_CERT                    | Boolean flag where if true, a certificate authority will be loaded from the `CA_CERT_PATH` flag. This is used for self signed certificates. | false         |
+| GRPC_USER_SERVICE_ADDRESS       | URI to the GRPC server running within the user service                                                                                      |               |
+| GRPC_KEY_SERVICE_ADDRESS        | URI to the GRPC server running within the key service                                                                                       |               |
+| APP_SERVER_PORT                 | The port your HTTP app server is running on                                                                                                 | 8080          |
+| GRPC_SERVER_PORT                | The port your GRPC app server is running on                                                                                                 | 50051         |
+| AUTH0_API_AUDIENCE              | The OATH2.0 audience provided by Auth0 for REST API endpoints that use client credentials                                                   |               |
+| AUTH0_GRPC_AUDIENCE             | The OATH2.0 audience provided by Auth0 for GRPC endpoints that use client credentials                                                       |               |
+| AUTH0_DOMAIN                    | Your Auth0 domain                                                                                                                           |               |
+| AUTH0_CLIENT_CREDENTIALS_ID     | Your Auth0 client credentials id                                                                                                            |               |
+| AUTH0_CLIENT_CREDENTIALS_SECRET | Your Auth0 client credentials secret                                                                                                        |               |
+| MONGO_URI                       | The connection string to your mongodb instance/cluster.                                                                                     |               |
+| MONGO_DB_NAME                   | MongoDB database                                                                                                                            |               |
+| MONGO_CONNECTION_TIMEOUT_MS     | The duration in milliseconds for a MongoDB connection to time out                                                                           |               |
+| RABBITMQ_URI                    | The URI to connect to RabbitMQ                                                                                                              |               |
+| REDIS_ADDRESS                   | Your Redis `host:port` address                                                                                                              |               |
+| REDIS_PASSWORD                  | Your Redis password                                                                                                                         |               |
+| REDIS_DB                        | Your Redis database (use a number)                                                                                                          | 0             |
 
 #### Building and Running your Go app
 We have 2 ways of building a Go app, Makefile and the IDE Goland. Go does offer commands to build and run your app 
