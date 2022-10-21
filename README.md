@@ -113,6 +113,19 @@ logic and abstractions that helps avoid writing boilerplate code. It acts as a s
 subdirectory *userservice* represents a microservice.
 #### Environment Variables
 *Todo: Write about how environment variables files work in the Go microservices context*
+Before you even run your Go project, you need to set your environment variables. You
+will see an env file with the name `sample.env` and env files in the format 
+`sample.${subdirectory of cmd directoryu}.env`. Copy each of the file, removing the
+prefix `sample.`
+For example:
+```shell
+cp sample.env .env
+cp sample.userservice.env userservice.env
+```
+In your env files, you can see what each of the environment variables do and which ones to
+fill out.
+
+**Todo:** *List all the environment variables*
 
 #### Building and Running your Go app
 We have 2 ways of building a Go app, Makefile and the IDE Goland. Go does offer commands to build and run your app 
