@@ -118,8 +118,9 @@ func (u UserKeyServiceImpl) NewKeySession(
 				key, _, err := cipherutils.DeriveAESKeyFromPassword([]byte(dto.Passcode), userKeyGen.KeyDerivationSalt)
 				return key, err
 			})
-			keyValidated := single.FlatMap(newKeySrc, func(key []byte) single.Single[any] {
-				return u.userKeyBr.ValidateKeyFromPassword(userKeyGen, key)
+			keyValidated := single.MapWithError(newKeySrc, func(key []byte) (any, error) {
+				err := u.userKeyBr.ValidateKeyFromPassword(userKeyGen, key)
+				return any(true), err
 			})
 			return single.FlatMap(keyValidated, func(_ any) single.Single[[]byte] {
 				return newKeySrc
@@ -200,10 +201,10 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 	).ScheduleLazyAndCache(ctx)
 
 	tokenBytesSrc := single.MapWithError(single.Just(sessionDto.Token), encodingutils.DecodeBase64String)
-	tokenHashVerifiedSrc := single.FlatMap(single.Zip2(storedSessionSrc, tokenBytesSrc),
-		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[any] {
+	tokenHashVerifiedSrc := single.MapWithError(single.Zip2(storedSessionSrc, tokenBytesSrc),
+		func(t tuple.T2[models.UserKeySession, []byte]) (any, error) {
 			session, tokenBytes := t.V1, t.V2
-			return u.userKeyBr.ValidateSessionTokenHash(session, tokenBytes)
+			return any(true), u.userKeyBr.ValidateSessionTokenHash(session, tokenBytes)
 		},
 	)
 	appSecretSrc := single.FlatMap(single.Zip2(tokenHashVerifiedSrc, storedSessionSrc),
@@ -220,14 +221,17 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 	keyBytesSrc := single.FlatMap(single.Zip2(storedSessionSrc, proxyKeySrc),
 		func(t tuple.T2[models.UserKeySession, []byte]) single.Single[[]byte] {
 			session, proxyKey := t.V1, t.V2
-			validateProxyKeysSrc := u.userKeyBr.ValidateProxyKeyCiphersFromSession(
+			err := u.userKeyBr.ValidateProxyKeyCiphersFromSession(
 				ctx,
 				proxyKey,
 				sessionDto.UserId,
 				sessionDto.KeyVersion,
 				session,
 			)
-			return single.MapWithError(validateProxyKeysSrc, func(_ any) ([]byte, error) {
+			if err != nil {
+				return single.Error[[]byte](err)
+			}
+			return single.FromSupplierCached(func() ([]byte, error) {
 				return cipherutils.DecryptAES(proxyKey, session.KeyCipher)
 			})
 		},

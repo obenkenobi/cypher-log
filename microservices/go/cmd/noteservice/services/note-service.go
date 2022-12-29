@@ -104,13 +104,14 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 			sessDto, noteUpdateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 			existingSrc := n.getExistingNote(ctx, noteUpdateDto.Id).ScheduleLazyAndCache(ctx)
 			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
-			keySrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
-				func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) single.Single[[]byte] {
+			keySrc := single.MapWithError(single.Zip2(existingSrc, keyDtoSrc),
+				func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) ([]byte, error) {
 					existing, keyDto := t.V1, t.V2
-					noteUpdateValidationSrc := n.noteBr.ValidateNoteUpdate(userBo, keyDto, existing)
-					return single.MapWithError(noteUpdateValidationSrc, func(_ any) ([]byte, error) {
-						return keyDto.GetKey()
-					})
+					err := n.noteBr.ValidateNoteUpdate(userBo, keyDto, existing)
+					if err != nil {
+						return nil, err
+					}
+					return keyDto.GetKey()
 				}).ScheduleLazyAndCache(ctx)
 			titleCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.Title))
@@ -140,9 +141,10 @@ func (n NoteServiceImpl) DeleteNoteTransaction(
 	return dshandlers.TransactionalSingle(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
 			existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
-			validateDeleteSrc := single.FlatMap(existingSrc,
-				func(existing models.Note) single.Single[any] {
-					return n.noteBr.ValidateNoteDelete(userBo, existing)
+			validateDeleteSrc := single.MapWithError(existingSrc,
+				func(existing models.Note) (any, error) {
+					err := n.noteBr.ValidateNoteDelete(userBo, existing)
+					return any(true), err
 				})
 			noteDeleteSrc := single.FlatMap(single.Zip2(existingSrc, validateDeleteSrc),
 				func(t tuple.T2[models.Note, any]) single.Single[models.Note] {
@@ -163,10 +165,10 @@ func (n NoteServiceImpl) GetNoteById(
 	sessDto, noteIdDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 	existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
 	keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
-	validationSrc := single.FlatMap(single.Zip2(existingSrc, keyDtoSrc),
-		func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) single.Single[any] {
+	validationSrc := single.MapWithError(single.Zip2(existingSrc, keyDtoSrc),
+		func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) (any, error) {
 			existing, keyDto := t.V1, t.V2
-			return n.noteBr.ValidateNoteRead(userBo, keyDto, existing)
+			return any(true), n.noteBr.ValidateNoteRead(userBo, keyDto, existing)
 		})
 	keySrc := single.MapWithError(single.Zip2(keyDtoSrc, validationSrc),
 		func(t tuple.T2[kDTOs.UserKeyDto, any]) ([]byte, error) {
@@ -202,12 +204,15 @@ func (n NoteServiceImpl) GetNotesPage(
 	sessReqDto cDTOs.UKeySessionReqDto[pagination.PageRequest],
 ) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
 	sessionDto, pageRequest := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
-	validationSrc := n.noteBr.ValidateGetNotes(pageRequest)
-	zippedSrc := single.FlatMap(validationSrc, func(_ any) single.Single[tuple.T3[kDTOs.UserKeyDto, []byte, int64]] {
+	err := n.noteBr.ValidateGetNotes(pageRequest)
+	if err != nil {
+		return single.Error[pagination.Page[nDTOs.NotePreviewDto]](err)
+	}
+	zippedSrc := single.FromSupplierCached(func() (tuple.T3[kDTOs.UserKeyDto, []byte, int64], error) {
 		keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessionDto)
 		keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey)
 		countSrc := n.noteRepository.CountByUserId(ctx, userBo.Id)
-		return single.Zip3(keyDtoSrc, keySrc, countSrc)
+		return single.RetrieveValue(ctx, single.Zip3(keyDtoSrc, keySrc, countSrc))
 	})
 	return single.FlatMap(zippedSrc,
 		func(t tuple.T3[kDTOs.UserKeyDto, []byte, int64]) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {

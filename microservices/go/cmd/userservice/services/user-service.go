@@ -53,14 +53,17 @@ func (u UserServiceImpl) AddUserTransaction(
 ) single.Single[userdtos.UserReadDto] {
 	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
-			userCreateValidationSrc := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
-			userCreateSrc := single.FlatMap(userCreateValidationSrc, func(any2 any) single.Single[models.User] {
+			err := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
+			if err != nil {
+				return single.Error[userdtos.UserReadDto](err)
+			}
+			userCreateSrc := single.FromSupplierCached(func() (models.User, error) {
 				user := models.User{}
 				mappers.UserSaveDtoToUser(userSaveDto, &user)
 				user.AuthId = identity.GetAuthId()
 				user.Distributed = false
 				user.ToBeDeleted = false
-				return u.userRepository.Create(ctx, user)
+				return single.RetrieveValue(ctx, u.userRepository.Create(ctx, user))
 			})
 			return single.Map(userCreateSrc, func(user models.User) userdtos.UserReadDto {
 				logger.Log.Debug("Saved user ", user)
@@ -68,7 +71,6 @@ func (u UserServiceImpl) AddUserTransaction(
 			})
 		},
 	)
-
 }
 
 func (u UserServiceImpl) UpdateUserTransaction(
@@ -90,10 +92,10 @@ func (u UserServiceImpl) UpdateUserTransaction(
 					}
 				},
 			)
-			userValidatedSrc := single.FlatMap(userExistsSrc,
-				func(existingUser models.User) single.Single[models.User] {
-					validationSrc := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
-					return single.Map(validationSrc, func(any2 any) models.User { return existingUser })
+			userValidatedSrc := single.MapWithError(userExistsSrc,
+				func(existingUser models.User) (models.User, error) {
+					err := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
+					return existingUser, err
 				},
 			)
 			userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
