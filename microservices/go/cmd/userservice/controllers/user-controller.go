@@ -5,7 +5,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
@@ -36,8 +35,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c,
-					u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody))
+				resBody, err = u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody)
 				return
 			}).Next(func() error {
 				c.JSON(http.StatusOK, resBody)
@@ -55,8 +53,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c,
-					u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody))
+				resBody, err = u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -70,8 +67,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody userdtos.UserReadDto
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				businessLogicSrc := u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
-				resBody, err = single.RetrieveValue(c, businessLogicSrc)
+				resBody, err = u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -85,8 +81,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody userdtos.UserIdentityDto
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				businessLogicSrc := u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
-				resBody, err = single.RetrieveValue(c, businessLogicSrc)
+				resBody, err = u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -101,8 +96,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			authId := c.Param("id")
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				businessLogicSrc := u.userService.GetByAuthId(c, authId)
-				resBody, err = single.RetrieveValue(c, businessLogicSrc)
+				resBody, err = u.userService.GetByAuthId(c, authId)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)

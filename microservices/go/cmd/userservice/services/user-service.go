@@ -10,11 +10,9 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
 type UserService interface {
@@ -22,16 +20,16 @@ type UserService interface {
 		ctx context.Context,
 		identity security.Identity,
 		userSaveDto userdtos.UserSaveDto,
-	) single.Single[userdtos.UserReadDto]
+	) (userdtos.UserReadDto, error)
 	UpdateUserTransaction(
 		ctx context.Context,
 		identity security.Identity,
 		userSaveDto userdtos.UserSaveDto,
-	) single.Single[userdtos.UserReadDto]
-	BeginDeletingUserTransaction(ctx context.Context, identity security.Identity) single.Single[userdtos.UserReadDto]
-	GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserReadDto]
-	GetById(ctx context.Context, userId string) single.Single[userdtos.UserReadDto]
-	GetUserIdentity(ctx context.Context, identity security.Identity) single.Single[userdtos.UserIdentityDto]
+	) (userdtos.UserReadDto, error)
+	BeginDeletingUserTransaction(ctx context.Context, identity security.Identity) (userdtos.UserReadDto, error)
+	GetByAuthId(ctx context.Context, authId string) (userdtos.UserReadDto, error)
+	GetById(ctx context.Context, userId string) (userdtos.UserReadDto, error)
+	GetUserIdentity(ctx context.Context, identity security.Identity) (userdtos.UserIdentityDto, error)
 	UsersChangeTask(ctx context.Context)
 }
 
@@ -48,25 +46,27 @@ func (u UserServiceImpl) AddUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
-) single.Single[userdtos.UserReadDto] {
-	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
-		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
+) (userdtos.UserReadDto, error) {
+	return dshandlers.Transactional(ctx, u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) (userdtos.UserReadDto, error) {
 			err := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
 			if err != nil {
-				return single.Error[userdtos.UserReadDto](err)
+				return userdtos.UserReadDto{}, err
 			}
-			userCreateSrc := single.FromSupplierCached(func() (models.User, error) {
-				user := models.User{}
-				mappers.UserSaveDtoToUser(userSaveDto, &user)
-				user.AuthId = identity.GetAuthId()
-				user.Distributed = false
-				user.ToBeDeleted = false
-				return u.userRepository.Create(ctx, user)
-			})
-			return single.Map(userCreateSrc, func(user models.User) userdtos.UserReadDto {
-				logger.Log.Debug("Saved user ", user)
-				return userToUserReadDto(user)
-			})
+
+			user := models.User{}
+			mappers.UserSaveDtoToUser(userSaveDto, &user)
+			user.AuthId = identity.GetAuthId()
+			user.Distributed = false
+			user.ToBeDeleted = false
+
+			createdUser, err := u.userRepository.Create(ctx, user)
+			if err != nil {
+				return userdtos.UserReadDto{}, err
+			}
+
+			logger.Log.Debug("Saved user ", user)
+			return userToUserReadDto(createdUser), nil
 		},
 	)
 }
@@ -75,39 +75,37 @@ func (u UserServiceImpl) UpdateUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
 	userSaveDto userdtos.UserSaveDto,
-) single.Single[userdtos.UserReadDto] {
-	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
-		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
-			userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
-				return u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
-			})
-			userExistsSrc := single.MapWithError(userSearchSrc,
-				func(userMaybe option.Maybe[models.User]) (models.User, error) {
-					if user, isPresent := userMaybe.Get(); isPresent {
-						return user, nil
-					} else {
-						err := apperrors.NewBadReqErrorFromRuleError(
-							u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
-						return user, err
-					}
-				},
-			)
-			userValidatedSrc := single.MapWithError(userExistsSrc,
-				func(existingUser models.User) (models.User, error) {
-					err := u.userBr.ValidateUserUpdate(ctx, userSaveDto, existingUser)
-					return existingUser, err
-				},
-			)
-			userSavedSrc := single.MapWithError(userValidatedSrc, func(user models.User) (models.User, error) {
-				mappers.UserSaveDtoToUser(userSaveDto, &user)
-				user.Distributed = false
-				user.ToBeDeleted = false
-				return u.userRepository.Update(ctx, user)
-			})
-			return single.Map(userSavedSrc, func(user models.User) userdtos.UserReadDto {
-				logger.Log.Debug("Saved user ", user)
-				return userToUserReadDto(user)
-			})
+) (userdtos.UserReadDto, error) {
+	return dshandlers.Transactional(ctx, u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) (userdtos.UserReadDto, error) {
+			userSearch, err := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+			if err != nil {
+				return userdtos.UserReadDto{}, err
+			}
+
+			user, isPresent := userSearch.Get()
+			if !isPresent {
+				err := apperrors.NewBadReqErrorFromRuleError(
+					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
+				return userdtos.UserReadDto{}, err
+			}
+
+			err = u.userBr.ValidateUserUpdate(ctx, userSaveDto, user)
+			if err != nil {
+				return userdtos.UserReadDto{}, err
+			}
+
+			mappers.UserSaveDtoToUser(userSaveDto, &user)
+			user.Distributed = false
+			user.ToBeDeleted = false
+
+			updatedUser, err := u.userRepository.Update(ctx, user)
+			if err != nil {
+				return userdtos.UserReadDto{}, err
+			}
+
+			logger.Log.Debug("Saved user ", updatedUser)
+			return userToUserReadDto(updatedUser), nil
 		},
 	)
 
@@ -116,67 +114,63 @@ func (u UserServiceImpl) UpdateUserTransaction(
 func (u UserServiceImpl) BeginDeletingUserTransaction(
 	ctx context.Context,
 	identity security.Identity,
-) single.Single[userdtos.UserReadDto] {
-	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
-		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
-			userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
-				return u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
-			})
-			userExistsSrc := single.MapWithError(
-				userSearchSrc,
-				func(userMaybe option.Maybe[models.User]) (models.User, error) {
-					if user, isPresent := userMaybe.Get(); isPresent {
-						return user, nil
-					} else {
-						err := apperrors.NewBadReqErrorFromRuleError(
-							u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
-						return user, err
-					}
-				},
-			)
-			userToBeDeletedSrc := single.MapWithError(userExistsSrc, func(user models.User) (models.User, error) {
-				user.Distributed = false
-				user.ToBeDeleted = true
-				return u.userRepository.Update(ctx, user)
-			})
-			return single.Map(userToBeDeletedSrc, func(user models.User) userdtos.UserReadDto {
-				logger.Log.Debug("Starting to delete user ", user)
-				return userToUserReadDto(user)
-			})
+) (userdtos.UserReadDto, error) {
+	return dshandlers.Transactional(ctx, u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) (userdtos.UserReadDto, error) {
+			userSearch, err := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+			if err != nil {
+				return userdtos.UserReadDto{}, err
+			}
+
+			user, isPresent := userSearch.Get()
+			if !isPresent {
+				err := apperrors.NewBadReqErrorFromRuleError(
+					u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
+				return userdtos.UserReadDto{}, err
+			}
+
+			user.Distributed = false
+			user.ToBeDeleted = true
+
+			updatedUser, err := u.userRepository.Update(ctx, user)
+			if err != nil {
+				return userdtos.UserReadDto{}, err
+			}
+
+			logger.Log.Debug("Starting to delete user ", updatedUser)
+			return userToUserReadDto(updatedUser), nil
 		})
 }
 
 func (u UserServiceImpl) GetUserIdentity(
 	ctx context.Context,
 	identity security.Identity,
-) single.Single[userdtos.UserIdentityDto] {
-	userSrc := u.GetByAuthId(ctx, identity.GetAuthId())
-	return single.Map(userSrc, func(userDto userdtos.UserReadDto) userdtos.UserIdentityDto {
-		userIdentityDto := userdtos.UserIdentityDto{}
-		sharedmappers.UserReadDtoAndIdentityToUserIdentityDto(userDto, identity, &userIdentityDto)
-		return userIdentityDto
-	})
-
+) (userdtos.UserIdentityDto, error) {
+	userDto, err := u.GetByAuthId(ctx, identity.GetAuthId())
+	if err != nil {
+		return userdtos.UserIdentityDto{}, err
+	}
+	userIdentityDto := userdtos.UserIdentityDto{}
+	sharedmappers.UserReadDtoAndIdentityToUserIdentityDto(userDto, identity, &userIdentityDto)
+	return userIdentityDto, nil
 }
 
-func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserReadDto] {
-	userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
-		return u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, authId)
-	})
-	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserReadDto {
-		user := userMaybe.OrElse(models.User{})
-		return userToUserReadDto(user)
-	})
+func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) (userdtos.UserReadDto, error) {
+	userSearch, err := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, authId)
+	if err != nil {
+		return userdtos.UserReadDto{}, err
+	}
+	user := userSearch.OrElse(models.User{})
+	return userToUserReadDto(user), nil
 }
 
-func (u UserServiceImpl) GetById(ctx context.Context, userId string) single.Single[userdtos.UserReadDto] {
-	userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
-		return u.userRepository.FindById(ctx, userId)
-	})
-	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserReadDto {
-		user := userMaybe.Filter(models.User.WillNotDeleted).OrElse(models.User{})
-		return userToUserReadDto(user)
-	})
+func (u UserServiceImpl) GetById(ctx context.Context, userId string) (userdtos.UserReadDto, error) {
+	userSearch, err := u.userRepository.FindById(ctx, userId)
+	if err != nil {
+		return userdtos.UserReadDto{}, err
+	}
+	user := userSearch.Filter(models.User.WillNotBeDeleted).OrElse(models.User{})
+	return userToUserReadDto(user), nil
 }
 
 func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
@@ -188,9 +182,9 @@ func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
 	for _, user := range userSample {
 		var err error
 		if user.ToBeDeleted {
-			_, err = single.RetrieveValue(ctx, u.deleteUserTransaction(ctx, user))
+			_, err = u.deleteUserTransaction(ctx, user)
 		} else {
-			_, err = single.RetrieveValue(ctx, u.distributeUserChangeTransaction(ctx, user))
+			_, err = u.distributeUserChangeTransaction(ctx, user)
 		}
 		if err != nil {
 			logger.Log.Error(err)
@@ -202,51 +196,47 @@ func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
 func (u UserServiceImpl) deleteUserTransaction(
 	ctx context.Context,
 	user models.User,
-) single.Single[userdtos.UserChangeEventDto] {
-	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
-		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
-			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserDelete)
-			userDeletedLocalDBSrc := single.FromSupplierCached(func() (models.User, error) {
-				return u.userRepository.Delete(ctx, user)
-			})
-			userDeletedAuthServerSrc := single.FlatMap(
-				userDeletedLocalDBSrc,
-				func(user models.User) single.Single[models.User] {
-					return single.Map(u.authServerMgmtService.DeleteUser(user.AuthId),
-						func(_ bool) models.User { return user })
-				},
-			)
-			return single.FlatMap(
-				userDeletedAuthServerSrc,
-				func(user models.User) single.Single[userdtos.UserChangeEventDto] {
-					logger.Log.Debug("Deleted user ", user)
-					return sendUserChangeSrc
-				},
-			)
+) (userdtos.UserChangeEventDto, error) {
+	return dshandlers.Transactional(ctx, u.crudDSHandler,
+		func(s dshandlers.Session, ctx context.Context) (userdtos.UserChangeEventDto, error) {
+			event, err := u.sendUserChange(user, userdtos.UserDelete)
+			if err != nil {
+				return event, err
+			}
+
+			deletedUser, err := u.userRepository.Delete(ctx, user)
+			if err != nil {
+				return event, err
+			}
+
+			_, err = u.authServerMgmtService.DeleteUser(deletedUser.AuthId)
+			if err != nil {
+				return event, err
+			}
+
+			logger.Log.Debug("Deleted user ", deletedUser)
+			return event, err
 		})
 }
 
 func (u UserServiceImpl) distributeUserChangeTransaction(
 	ctx context.Context,
 	user models.User,
-) single.Single[userdtos.UserChangeEventDto] {
-	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
-		func(session dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
-			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserSave)
-			return single.MapWithError(
-				sendUserChangeSrc,
-				func(event userdtos.UserChangeEventDto) (userdtos.UserChangeEventDto, error) {
-					user := user
-					user.ToBeDeleted = false
-					user.Distributed = true
-					updatedUser, err := u.userRepository.Update(ctx, user)
-					if err == nil {
-						logger.Log.Debugf("Sent user save event for user %v", updatedUser)
-					}
-					return event, err
-				},
-			)
+) (userdtos.UserChangeEventDto, error) {
+	return dshandlers.Transactional(ctx, u.crudDSHandler,
+		func(session dshandlers.Session, ctx context.Context) (userdtos.UserChangeEventDto, error) {
+			event, err := u.sendUserChange(user, userdtos.UserDelete)
+			if err != nil {
+				return event, err
+			}
 
+			user.ToBeDeleted = false
+			user.Distributed = true
+			updatedUser, err := u.userRepository.Update(ctx, user)
+			if err == nil {
+				logger.Log.Debugf("Sent user save event for user %v", updatedUser)
+			}
+			return event, err
 		},
 	)
 }
@@ -254,13 +244,11 @@ func (u UserServiceImpl) distributeUserChangeTransaction(
 func (u UserServiceImpl) sendUserChange(
 	user models.User,
 	action userdtos.UserChangeAction,
-) single.Single[userdtos.UserChangeEventDto] {
+) (userdtos.UserChangeEventDto, error) {
 	distUserDto := userdtos.UserChangeEventDto{}
 	mappers.UserToUserChangeEventDto(user, &distUserDto)
 	distUserDto.Action = action
-	return single.FromSupplierCached(func() (userdtos.UserChangeEventDto, error) {
-		return u.userMsgSendService.UserSaveSender().Send(distUserDto)
-	})
+	return u.userMsgSendService.UserSaveSender().Send(distUserDto)
 }
 
 func userToUserReadDto(user models.User) userdtos.UserReadDto {
