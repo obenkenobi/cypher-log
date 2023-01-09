@@ -115,7 +115,6 @@ logic and abstractions that helps avoid writing boilerplate code. It acts as a s
 `cmd` directory, you will see more subdirectories each representing a different microservice. For example the
 subdirectory *userservice* represents a microservice.
 #### Environment Variables
-*Todo: Write about how environment variables files work in the Go microservices context*
 Before you even run your Go project, you need to set your environment variables. You
 will see an env file with the name `sample.env` and env files in the format 
 `sample.${subdirectory of cmd directoryu}.env`. Copy each of the file, removing the
@@ -125,8 +124,8 @@ For example:
 cp sample.env .env
 cp sample.userservice.env userservice.env
 ```
-In your env files, you can see what each of the environment variables do and which ones to
-fill out.
+In your env files, you can see what each of the environment variables are already filled 
+and which ones to fill out.
 
 Here is a table of all the environment variables:
 
