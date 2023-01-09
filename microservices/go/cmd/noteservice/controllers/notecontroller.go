@@ -39,7 +39,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody cDTOs.SuccessDto
 
 			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto]](
@@ -61,7 +61,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody cDTOs.SuccessDto
 
 			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto]](
@@ -83,7 +83,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody cDTOs.SuccessDto
 
 			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[nDTOs.NoteIdDto](n.ginCtxService, c)
@@ -104,7 +104,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody nDTOs.NoteReadDto
 
 			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]](
@@ -126,7 +126,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody pagination.Page[nDTOs.NotePreviewDto]
 
 			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[pagination.PageRequest]](

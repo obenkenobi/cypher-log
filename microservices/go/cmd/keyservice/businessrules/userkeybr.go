@@ -6,7 +6,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/cipherutils"
@@ -85,7 +84,7 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 	}
 
 	// Validate User Exists
-	exists, err := single.RetrieveValue(ctx, u.userService.UserExistsWithId(ctx, userId))
+	exists, err := u.userService.UserExistsWithId(ctx, userId)
 	if !exists {
 		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
 	}

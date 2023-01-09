@@ -34,12 +34,16 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 			var userResSrc single.Single[userdtos.UserChangeEventResponseDto]
 			switch userEventDto.Action {
 			case userdtos.UserSave:
-				saveUserSrc := u.userService.SaveUser(ctx, userEventDto)
+				saveUserSrc := single.FromSupplierCached(func() (userbos.UserBo, error) {
+					return u.userService.SaveUser(ctx, userEventDto)
+				})
 				userResSrc = single.Map(saveUserSrc, func(a userbos.UserBo) userdtos.UserChangeEventResponseDto {
 					return userdtos.UserChangeEventResponseDto{Discarded: false}
 				})
 			case userdtos.UserDelete:
-				userDeleteSrc := u.userService.DeleteUser(ctx, userEventDto)
+				userDeleteSrc := single.FromSupplierCached(func() (userbos.UserBo, error) {
+					return u.userService.DeleteUser(ctx, userEventDto)
+				})
 				userKeyDeleteSrc := u.userKeyService.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
 				userResSrc = single.Map(single.Zip2(userDeleteSrc, userKeyDeleteSrc),
 					func(_ tuple.T2[userbos.UserBo, int64]) userdtos.UserChangeEventResponseDto {

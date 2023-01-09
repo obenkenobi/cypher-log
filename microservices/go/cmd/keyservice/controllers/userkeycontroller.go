@@ -37,7 +37,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody commondtos.ExistsDto
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				resBody, err = single.RetrieveValue(c, u.userKeyService.UserKeyExists(c, userBo))
@@ -56,7 +56,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody commondtos.SuccessDto
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[keydtos.PasscodeCreateDto](u.ginCtxService, c)
@@ -78,7 +78,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody commondtos.UKeySessionDto
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				userBo, err = single.RetrieveValue(c, u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				userBo, err = u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
