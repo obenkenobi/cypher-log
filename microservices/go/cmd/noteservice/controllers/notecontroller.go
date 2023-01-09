@@ -14,6 +14,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/routing"
+	"net/http"
 )
 
 type NoteController interface {
@@ -33,86 +34,111 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 	noteGroupV1.POST("",
 		n.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto]](n.ginCtxService, c)
-			if err != nil {
-				n.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto]
+			var resBody cDTOs.SuccessDto
+
+			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc, func(userBos userbos.UserBo) single.Single[cDTOs.SuccessDto] {
-				return n.noteService.AddNoteTransaction(c, userBos, body)
-			},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			n.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto]](
+					n.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, n.noteService.AddNoteTransaction(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 	noteGroupV1.PUT("",
 		n.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto]](n.ginCtxService, c)
-			if err != nil {
-				n.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto]
+			var resBody cDTOs.SuccessDto
+
+			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[cDTOs.SuccessDto] {
-					return n.noteService.UpdateNoteTransaction(c, userBos, body)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			n.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto]](
+					n.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, n.noteService.UpdateNoteTransaction(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 	noteGroupV1.DELETE("",
 		n.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[nDTOs.NoteIdDto](n.ginCtxService, c)
-			if err != nil {
-				n.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody nDTOs.NoteIdDto
+			var resBody cDTOs.SuccessDto
+
+			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[cDTOs.SuccessDto] {
-					return n.noteService.DeleteNoteTransaction(c, userBos, body)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			n.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[nDTOs.NoteIdDto](n.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, n.noteService.DeleteNoteTransaction(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 	noteGroupV1.POST("/getById",
 		n.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]](n.ginCtxService, c)
-			if err != nil {
-				n.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]
+			var resBody nDTOs.NoteReadDto
+
+			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[nDTOs.NoteReadDto] {
-					return n.noteService.GetNoteById(c, userBos, body)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			n.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]](
+					n.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, n.noteService.GetNoteById(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 	noteGroupV1.POST("/getPage",
 		n.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[pagination.PageRequest]](n.ginCtxService, c)
-			if err != nil {
-				n.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody cDTOs.UKeySessionReqDto[pagination.PageRequest]
+			var resBody pagination.Page[nDTOs.NotePreviewDto]
+
+			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, n.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
-					return n.noteService.GetNotesPage(c, userBos, body)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			n.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[cDTOs.UKeySessionReqDto[pagination.PageRequest]](
+					n.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, n.noteService.GetNotesPage(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 }
 

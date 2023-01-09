@@ -7,6 +7,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/queryreq"
 	"net/http"
 )
@@ -21,11 +22,11 @@ type GinCtxService interface {
 	// ReqQueryReader returns a reader to parse your request query params
 	ReqQueryReader(c *gin.Context) queryreq.ReqQueryReader
 
-	// HandleErrorResponse takes an error and parses it to set the appropriate http
+	// RespondError takes an error and parses it to set the appropriate http
 	// response. Certain errors relating to user input will trigger a 4XX status
 	// code. Otherwise, a 5XX code will be thrown indicating the error means
 	// something went wrong with the server.
-	HandleErrorResponse(c *gin.Context, err error)
+	RespondError(c *gin.Context, err error)
 
 	// RespondJsonOk responds with json value with a 200 status code or an
 	// error if the error != nil.
@@ -33,6 +34,8 @@ type GinCtxService interface {
 
 	// processBindError takes an error from binding a value from a request body processes it into a BadRequestError.
 	processBindError(err error) apperrors.BadRequestError
+
+	StartCtxPipeline(c *gin.Context) controller.Pipeline
 }
 
 type GinCtxServiceImpl struct {
@@ -47,7 +50,7 @@ func (q GinCtxServiceImpl) ReqQueryReader(c *gin.Context) queryreq.ReqQueryReade
 	return queryreq.NewGinCtxReqQueryReaderImpl(c, q.errorMessageService)
 }
 
-func (g GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
+func (g GinCtxServiceImpl) RespondError(c *gin.Context, err error) {
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		c.JSON(http.StatusBadRequest, badReqErr)
 	} else {
@@ -58,7 +61,7 @@ func (g GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
 
 func (g GinCtxServiceImpl) RespondJsonOk(c *gin.Context, model any, err error) {
 	if err != nil {
-		g.HandleErrorResponse(c, err)
+		g.RespondError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, model)
@@ -74,6 +77,12 @@ func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError
 	logger.Log.WithError(err).Info("Unable to bind json")
 	cannotBindJsonRuleErr := g.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson)
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
+}
+
+func (g GinCtxServiceImpl) StartCtxPipeline(c *gin.Context) controller.Pipeline {
+	return controller.NewPipelineImpl(func(err error) {
+		g.RespondError(c, err)
+	})
 }
 
 // NewGinCtxServiceImpl creates a new GinCtxService instance

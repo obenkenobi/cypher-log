@@ -13,6 +13,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/routing"
+	"net/http"
 )
 
 type UserKeyController interface {
@@ -32,62 +33,81 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 	userKeyGroupV1.GET("/exists",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[commondtos.ExistsDto] {
-					return u.userKeyService.UserKeyExists(c, userBos)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOk(c, resBody, err)
+			var userBo userbos.UserBo
+			var resBody commondtos.ExistsDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, u.userKeyService.UserKeyExists(c, userBo))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 
 	userKeyGroupV1.POST("/passcode",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[keydtos.PasscodeCreateDto](u.ginCtxService, c)
-			if err != nil {
-				u.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody keydtos.PasscodeCreateDto
+			var resBody commondtos.SuccessDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[commondtos.SuccessDto] {
-					return u.userKeyService.CreateUserKey(c, userBos, body)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[keydtos.PasscodeCreateDto](u.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, u.userKeyService.CreateUserKey(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 
 	userKeyGroupV1.POST("/newSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			body, err := ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
-			if err != nil {
-				u.ginCtxService.HandleErrorResponse(c, err)
+			var userBo userbos.UserBo
+			var reqBody keydtos.PasscodeDto
+			var resBody commondtos.UKeySessionDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				userBo, err = single.RetrieveValue(c, u.userService.RequireUser(c, security.GetIdentityFromGinContext(c)))
 				return
-			}
-			businessLogicSrc := single.FlatMap(reqUserSrc,
-				func(userBos userbos.UserBo) single.Single[commondtos.UKeySessionDto] {
-					return u.userKeyService.NewKeySession(c, userBos, body)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, u.userKeyService.NewKeySession(c, userBo, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 
 	userKeyGroupV1.POST("/getKeyFromSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
-			body, err := ginservices.ReadValueFromBody[commondtos.UKeySessionDto](u.ginCtxService, c)
-			if err != nil {
-				u.ginCtxService.HandleErrorResponse(c, err)
+			var reqBody commondtos.UKeySessionDto
+			var resBody keydtos.UserKeyDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[commondtos.UKeySessionDto](u.ginCtxService, c)
 				return
-			}
-			resBody, err := single.RetrieveValue(c, u.userKeyService.GetKeyFromSession(c, body))
-			u.ginCtxService.RespondJsonOk(c, resBody, err)
+			}).Next(func() (err error) {
+				resBody, err = single.RetrieveValue(c, u.userKeyService.GetKeyFromSession(c, reqBody))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 }
 
