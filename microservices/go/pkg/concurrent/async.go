@@ -1,6 +1,9 @@
 package concurrent
 
-import "sync"
+import (
+	"github.com/barweiss/go-tuple"
+	"sync"
+)
 
 type Future[T any] interface {
 	Await() (T, error)
@@ -8,8 +11,7 @@ type Future[T any] interface {
 
 type FutureImpl[T any] struct {
 	_channelRead bool
-	_ch          <-chan T
-	_chErr       <-chan error
+	_ch          <-chan tuple.T2[T, error]
 	_value       T
 	_error       error
 	_valueRWLock sync.RWMutex
@@ -28,14 +30,9 @@ func (a FutureImpl[T]) Await() (T, error) {
 			defer a._valueRWLock.Unlock()
 			if !a._channelRead {
 				a._channelRead = true
-				if a._chErr != nil {
-					if err := <-a._chErr; err != nil {
-						a._error = err
-					}
-				}
-				if a._error == nil {
-					a._value = <-a._ch
-				}
+				t := <-a._ch
+				a._value = t.V1
+				a._error = t.V2
 			}
 		}()
 	}
@@ -47,16 +44,11 @@ func (a FutureImpl[T]) Await() (T, error) {
 }
 
 func Async[T any](supplier func() (T, error)) *FutureImpl[T] {
-	ch := make(chan T)
-	chErr := make(chan error)
+	ch := make(chan tuple.T2[T, error])
 	go func() {
-		defer func() {
-			close(ch)
-			close(chErr)
-		}()
+		defer close(ch)
 		v, err := supplier()
-		ch <- v
-		chErr <- err
+		ch <- tuple.New2(v, err)
 	}()
-	return &FutureImpl[T]{_channelRead: false, _error: nil}
+	return &FutureImpl[T]{_channelRead: false, _error: nil, _ch: ch}
 }

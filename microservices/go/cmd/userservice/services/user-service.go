@@ -222,7 +222,7 @@ func (u UserServiceImpl) distributeUserChangeTransaction(
 ) (userdtos.UserChangeEventDto, error) {
 	return dshandlers.Transactional(ctx, u.crudDSHandler,
 		func(session dshandlers.Session, ctx context.Context) (userdtos.UserChangeEventDto, error) {
-			event, err := u.sendUserChange(user, userdtos.UserDelete)
+			event, err := u.sendUserChange(user, userdtos.UserSave)
 			if err != nil {
 				return event, err
 			}
