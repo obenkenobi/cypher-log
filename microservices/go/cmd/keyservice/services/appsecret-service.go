@@ -3,14 +3,12 @@ package services
 import (
 	"context"
 	"errors"
-	"github.com/barweiss/go-tuple"
 	"github.com/google/uuid"
 	bos "github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/businessobjects"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/cipherutils"
@@ -19,11 +17,11 @@ import (
 
 type AppSecretService interface {
 	// GetAppSecret gets the app secret marked by the KID
-	GetAppSecret(ctx context.Context, kid string) single.Single[bos.AppSecretBo]
+	GetAppSecret(ctx context.Context, kid string) (bos.AppSecretBo, error)
 	// GetPrimaryAppSecret gets the primary app secret
-	GetPrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo]
+	GetPrimaryAppSecret(ctx context.Context) (bos.AppSecretBo, error)
 	// GeneratePrimaryAppSecret generates a new primary app secret
-	GeneratePrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo]
+	GeneratePrimaryAppSecret(ctx context.Context) (bos.AppSecretBo, error)
 }
 
 type AppSecretServiceImpl struct {
@@ -33,65 +31,61 @@ type AppSecretServiceImpl struct {
 	errorService                  sharedservices.ErrorService
 }
 
-func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo] {
-	refFindSrc := single.FromSupplierCached(func() (option.Maybe[models.PrimaryAppSecretRef], error) {
-		return a.primaryAppSecretRefRepository.Get(ctx)
-	})
-	return single.FlatMap(refFindSrc,
-		func(maybe option.Maybe[models.PrimaryAppSecretRef]) single.Single[bos.AppSecretBo] {
-			if ref, ok := maybe.Get(); ok {
-				return a.GetAppSecret(ctx, ref.Kid)
-			}
-			return a.GeneratePrimaryAppSecret(ctx)
-		},
-	)
+func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) (bos.AppSecretBo, error) {
+	refFind, err := a.primaryAppSecretRefRepository.Get(ctx)
+	if err != nil {
+		return bos.AppSecretBo{}, err
+	}
+	if ref, ok := refFind.Get(); ok {
+		return a.GetAppSecret(ctx, ref.Kid)
+	}
+	return a.GeneratePrimaryAppSecret(ctx)
 }
 
-func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) single.Single[bos.AppSecretBo] {
-	appSecretFindSrc := single.FromSupplierCached(func() (option.Maybe[models.AppSecret], error) {
-		return a.appSecretRepository.Get(ctx, kid)
+func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) (bos.AppSecretBo, error) {
+	appSecretFind, err := a.appSecretRepository.Get(ctx, kid)
+	if err != nil {
+		return bos.AppSecretBo{}, err
+	}
+	appSecretBoMaybe := option.Map(appSecretFind, func(appSecret models.AppSecret) bos.AppSecretBo {
+		return bos.NewAppSecretBo(kid, appSecret.SecretKey)
 	})
-	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (bos.AppSecretBo, error) {
-		appSecretBoMaybe := option.Map(maybe, func(appSecret models.AppSecret) bos.AppSecretBo {
-			return bos.NewAppSecretBo(kid, appSecret.SecretKey)
-		})
-		return appSecretServiceReadMaybeModel(a, appSecretBoMaybe)
-	})
+	return appSecretServiceReadMaybeModel(a, appSecretBoMaybe)
+
 }
 
-func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo] {
-	kidGuidSrc := single.FromSupplierCached(uuid.NewRandom)
-	kidSrc := single.MapWithError(kidGuidSrc, func(kidGuid uuid.UUID) (string, error) {
-		newKid := kidGuid.String()
-		if utils.StringIsBlank(newKid) {
-			return newKid, errors.New("generated KID is blank")
-		}
-		return newKid, nil
-	})
-	newKeySrc := single.FromSupplierCached(cipherutils.GenerateRandomKeyAES)
-	kidKeySrc := single.Zip2(kidSrc, newKeySrc)
-	return single.FlatMap(kidKeySrc, func(t tuple.T2[string, []byte]) single.Single[bos.AppSecretBo] {
-		ref := models.PrimaryAppSecretRef{Kid: t.V1}
-		appSecret := models.AppSecret{SecretKey: t.V2}
-		secretSaveSrc := single.FromSupplierCached(func() (models.AppSecret, error) {
-			return a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration())
-		})
-		refSavedSrc := single.MapWithError(secretSaveSrc, func(_ models.AppSecret) (models.PrimaryAppSecretRef, error) {
-			return a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration())
-		})
-		return single.Map(refSavedSrc, func(_ models.PrimaryAppSecretRef) bos.AppSecretBo {
-			return bos.NewAppSecretBo(ref.Kid, appSecret.SecretKey)
-		})
-	})
+func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) (bos.AppSecretBo, error) {
+	kidGuid, err := uuid.NewRandom()
+	if err != nil {
+		return bos.AppSecretBo{}, err
+	}
+	kid := kidGuid.String()
+	if utils.StringIsBlank(kid) {
+		return bos.AppSecretBo{}, errors.New("generated KID is blank")
+	}
+	key, err := cipherutils.GenerateRandomKeyAES()
+	if err != nil {
+		return bos.AppSecretBo{}, err
+	}
+
+	ref := models.PrimaryAppSecretRef{Kid: kid}
+	appSecret := models.AppSecret{SecretKey: key}
+
+	if _, err := a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration()); err != nil {
+		return bos.AppSecretBo{}, err
+	}
+	if _, err = a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration()); err != nil {
+		return bos.AppSecretBo{}, err
+	}
+	return bos.NewAppSecretBo(ref.Kid, appSecret.SecretKey), nil
 }
 
 func appSecretServiceReadMaybeModel[T any](a AppSecretServiceImpl, maybe option.Maybe[T]) (T, error) {
 	val, ok := maybe.Get()
 	var err error = nil
 	if !ok {
-		err = apperrors.NewBadReqErrorFromRuleError(
-			a.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound),
-		)
+		ruleErr := a.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound)
+		err = apperrors.NewBadReqErrorFromRuleError(ruleErr)
 	}
 	return val, err
 }

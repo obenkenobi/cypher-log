@@ -38,7 +38,7 @@ func (u UserKeyBrImpl) ValidateSessionTokenHash(session models.UserKeySession, t
 	if !verified {
 		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
 	}
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 
 }
 
@@ -53,7 +53,7 @@ func (u UserKeyBrImpl) ValidateKeyFromSession(userKeyGen models.UserKeyGenerator
 		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
 	}
 
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
@@ -84,12 +84,12 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 	}
 
 	// Validate User Exists
-	exists, err := u.userService.UserExistsWithId(ctx, userId)
-	if !exists {
+	userExists, err := u.userService.UserExistsWithId(ctx, userId)
+	if !userExists {
 		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
 	}
 
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (u UserKeyBrImpl) ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) error {
@@ -100,7 +100,7 @@ func (u UserKeyBrImpl) ValidateKeyFromPassword(userKeyGen models.UserKeyGenerato
 	} else if !verified {
 		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeIncorrectPasscode))
 	}
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func NewUserKeyBrImpl(errorService sharedservices.ErrorService, userService sharedservices.UserService) *UserKeyBrImpl {

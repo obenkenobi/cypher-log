@@ -29,21 +29,21 @@ func (n NoteBrImpl) ValidateGetNotes(pageRequest pagination.PageRequest) error {
 	} else if _, ok := n.validSortFields[pageRequest.Sort[0].Field]; !ok {
 		ruleErrors = append(ruleErrors, n.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSortOptions))
 	}
-	return validationutils.MergeAppErrors(ruleErrors)
+	return validationutils.MergeRuleErrors(ruleErrors)
 }
 
 func (n NoteBrImpl) ValidateNoteRead(userBo userbos.UserBo, keyDto keydtos.UserKeyDto, existing models.Note) error {
 	ruleErrs := append(n.validateKeyVersion(keyDto, existing), n.validateNoteOwnership(userBo, existing)...)
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (n NoteBrImpl) ValidateNoteUpdate(userBo userbos.UserBo, keyDto keydtos.UserKeyDto, existing models.Note) error {
 	ruleErrs := append(n.validateKeyVersion(keyDto, existing), n.validateNoteOwnership(userBo, existing)...)
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (n NoteBrImpl) ValidateNoteDelete(userBo userbos.UserBo, existing models.Note) error {
-	return validationutils.MergeAppErrors(n.validateNoteOwnership(userBo, existing))
+	return validationutils.MergeRuleErrors(n.validateNoteOwnership(userBo, existing))
 }
 
 func (n NoteBrImpl) validateKeyVersion(keyDto keydtos.UserKeyDto, existing models.Note) []apperrors.RuleError {

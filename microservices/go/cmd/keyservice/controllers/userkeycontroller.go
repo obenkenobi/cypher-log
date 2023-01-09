@@ -7,7 +7,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
@@ -40,7 +39,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 				userBo, err = u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, u.userKeyService.UserKeyExists(c, userBo))
+				resBody, err = u.userKeyService.UserKeyExists(c, userBo)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -62,7 +61,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[keydtos.PasscodeCreateDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, u.userKeyService.CreateUserKey(c, userBo, reqBody))
+				resBody, err = u.userKeyService.CreateUserKey(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -84,7 +83,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, u.userKeyService.NewKeySession(c, userBo, reqBody))
+				resBody, err = u.userKeyService.NewKeySession(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -102,7 +101,7 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[commondtos.UKeySessionDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, u.userKeyService.GetKeyFromSession(c, reqBody))
+				resBody, err = u.userKeyService.GetKeyFromSession(c, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)

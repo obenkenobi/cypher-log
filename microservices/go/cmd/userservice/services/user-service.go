@@ -49,8 +49,7 @@ func (u UserServiceImpl) AddUserTransaction(
 ) (userdtos.UserReadDto, error) {
 	return dshandlers.Transactional(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) (userdtos.UserReadDto, error) {
-			err := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto)
-			if err != nil {
+			if err := u.userBr.ValidateUserCreate(ctx, identity, userSaveDto); err != nil {
 				return userdtos.UserReadDto{}, err
 			}
 
@@ -90,8 +89,7 @@ func (u UserServiceImpl) UpdateUserTransaction(
 				return userdtos.UserReadDto{}, err
 			}
 
-			err = u.userBr.ValidateUserUpdate(ctx, userSaveDto, user)
-			if err != nil {
+			if err = u.userBr.ValidateUserUpdate(ctx, userSaveDto, user); err != nil {
 				return userdtos.UserReadDto{}, err
 			}
 

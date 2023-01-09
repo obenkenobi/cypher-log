@@ -28,7 +28,7 @@ func ValidateValueIsPresent[V any](
 	return []apperrors.RuleError{}
 }
 
-func MergeAppErrors(ruleErrs []apperrors.RuleError) error {
+func MergeRuleErrors(ruleErrs []apperrors.RuleError) error {
 	if len(ruleErrs) == 0 {
 		return nil
 	}

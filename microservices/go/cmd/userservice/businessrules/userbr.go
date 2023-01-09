@@ -42,7 +42,7 @@ func (u UserBrImpl) ValidateUserCreate(
 		apperrors.ErrCodeResourceAlreadyCreated,
 	)
 	ruleErrorsSrc := append(userNameNotTakenValidationErrs, userNotCreatedValidationErrs...)
-	return validationutils.MergeAppErrors(ruleErrorsSrc)
+	return validationutils.MergeRuleErrors(ruleErrorsSrc)
 }
 
 func (u UserBrImpl) ValidateUserUpdate(ctx context.Context, dto userdtos.UserSaveDto, existing models.User) error {
@@ -54,7 +54,7 @@ func (u UserBrImpl) ValidateUserUpdate(ctx context.Context, dto userdtos.UserSav
 		}
 		ruleErrs = append(ruleErrs, valErrs...)
 	}
-	return validationutils.MergeAppErrors(ruleErrs)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (u UserBrImpl) validateUserNameNotTaken(

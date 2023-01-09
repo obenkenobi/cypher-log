@@ -8,7 +8,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"github.com/wagslane/go-rabbitmq"
@@ -36,8 +35,7 @@ func (r RmqListenerImpl) ListenUserChange() {
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
 	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.UserChangeEventDto]) msg.ReceiverAction {
-		resSrc := r.userChangeEventService.HandleUserChangeEventTransaction(r.ctx, d.Body())
-		res, err := single.RetrieveValue(r.ctx, resSrc)
+		res, err := r.userChangeEventService.HandleUserChangeEventTransaction(r.ctx, d.Body())
 		if err != nil {
 			return d.Resend()
 		} else if res.Discarded {

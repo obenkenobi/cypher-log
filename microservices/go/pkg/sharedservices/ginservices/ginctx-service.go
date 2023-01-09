@@ -26,15 +26,23 @@ type GinCtxService interface {
 	// response. Certain errors relating to user input will trigger a 4XX status
 	// code. Otherwise, a 5XX code will be thrown indicating the error means
 	// something went wrong with the server.
+	//
+	// Deprecated: You will now need to use the gin.Context directly or rely on the
+	// StartCtxPipeline() method to handle errors in the background.
 	RespondError(c *gin.Context, err error)
 
 	// RespondJsonOk responds with json value with a 200 status code or an
 	// error if the error != nil.
+	//
+	// Deprecated: Use the gin.Context directly to create a JSON response
 	RespondJsonOk(c *gin.Context, model any, err error)
 
-	// processBindError takes an error from binding a value from a request body processes it into a BadRequestError.
+	// processBindError takes an error from binding a value from a request body
+	// processes it into a BadRequestError.
 	processBindError(err error) apperrors.BadRequestError
 
+	// StartCtxPipeline initializes a controller.Pipeline that manages errors in the
+	// background using the gin context
 	StartCtxPipeline(c *gin.Context) controller.Pipeline
 }
 
