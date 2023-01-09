@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"github.com/barweiss/go-tuple"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/mappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/noteservice/models"
@@ -76,8 +75,8 @@ func (n NoteServiceImpl) AddNoteTransaction(
 			textCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteCreateDto.Text))
 			})
-			noteSaveSrc := single.FlatMap(single.Zip3(keyDtoSrc, titleCipherSrc, textCipherSrc),
-				func(t tuple.T3[kDTOs.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
+			noteSaveSrc := single.MapWithError(single.Zip3(keyDtoSrc, titleCipherSrc, textCipherSrc),
+				func(t tuple.T3[kDTOs.UserKeyDto, []byte, []byte]) (models.Note, error) {
 					keyDto, titleCipher, textCipher := t.V1, t.V2, t.V3
 					note := models.Note{
 						UserId:      userBo.Id,
@@ -119,8 +118,8 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 			textCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteUpdateDto.Text))
 			})
-			noteSaveSrc := single.FlatMap(single.Zip4(existingSrc, keyDtoSrc, titleCipherSrc, textCipherSrc),
-				func(t tuple.T4[models.Note, kDTOs.UserKeyDto, []byte, []byte]) single.Single[models.Note] {
+			noteSaveSrc := single.MapWithError(single.Zip4(existingSrc, keyDtoSrc, titleCipherSrc, textCipherSrc),
+				func(t tuple.T4[models.Note, kDTOs.UserKeyDto, []byte, []byte]) (models.Note, error) {
 					existing, keyDto, titleCipher, textCipher := t.V1, t.V2, t.V3, t.V4
 					existing.TitleCipher = titleCipher
 					existing.TextCipher = textCipher
@@ -146,8 +145,8 @@ func (n NoteServiceImpl) DeleteNoteTransaction(
 					err := n.noteBr.ValidateNoteDelete(userBo, existing)
 					return any(true), err
 				})
-			noteDeleteSrc := single.FlatMap(single.Zip2(existingSrc, validateDeleteSrc),
-				func(t tuple.T2[models.Note, any]) single.Single[models.Note] {
+			noteDeleteSrc := single.MapWithError(single.Zip2(existingSrc, validateDeleteSrc),
+				func(t tuple.T2[models.Note, any]) (models.Note, error) {
 					existing := t.V1
 					return n.noteRepository.Delete(ctx, existing)
 				})
@@ -211,34 +210,41 @@ func (n NoteServiceImpl) GetNotesPage(
 	zippedSrc := single.FromSupplierCached(func() (tuple.T3[kDTOs.UserKeyDto, []byte, int64], error) {
 		keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessionDto)
 		keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey)
-		countSrc := n.noteRepository.CountByUserId(ctx, userBo.Id)
+		countSrc := single.FromSupplierCached(func() (int64, error) {
+			return n.noteRepository.CountByUserId(ctx, userBo.Id)
+		})
 		return single.RetrieveValue(ctx, single.Zip3(keyDtoSrc, keySrc, countSrc))
 	})
 	return single.FlatMap(zippedSrc,
 		func(t tuple.T3[kDTOs.UserKeyDto, []byte, int64]) single.Single[pagination.Page[nDTOs.NotePreviewDto]] {
 			keyDto, keyBytes, count := t.V1, t.V2, t.V3
-			findManyObs := n.noteRepository.GetPaginatedByUserId(ctx, userBo.Id, pageRequest)
-			noteDetailsObs := stream.FlatMap(findManyObs, func(note models.Note) stream.Observable[nDTOs.NotePreviewDto] {
+			notes, err := n.noteRepository.GetPaginatedByUserId(ctx, userBo.Id, pageRequest)
+			if err != nil {
+				return single.Error[pagination.Page[nDTOs.NotePreviewDto]](err)
+			}
+			noteDTOs := make([]nDTOs.NotePreviewDto, 0, len(notes))
+			for _, note := range notes {
 				if note.KeyVersion != keyDto.KeyVersion {
 					ruleErr := n.errorService.RuleErrorFromCode(apperrors.ErrCodeDataRace)
-					return stream.Error[nDTOs.NotePreviewDto](apperrors.NewBadReqErrorFromRuleError(ruleErr))
+					return single.Error[pagination.Page[nDTOs.NotePreviewDto]](
+						apperrors.NewBadReqErrorFromRuleError(ruleErr))
 				}
 				txtBytes, err := cipherutils.DecryptAES(keyBytes, note.TextCipher)
 				if err != nil {
-					return stream.Error[nDTOs.NotePreviewDto](err)
+					return single.Error[pagination.Page[nDTOs.NotePreviewDto]](err)
 				}
 				titleBytes, err := cipherutils.DecryptAES(keyBytes, note.TitleCipher)
 				if err != nil {
-					return stream.Error[nDTOs.NotePreviewDto](err)
+					return single.Error[pagination.Page[nDTOs.NotePreviewDto]](err)
 				}
 				txt, title := string(txtBytes), string(titleBytes)
 				textPreview := utils.StringFirstNChars(txt, 60)
 				coreNoteDto := nDTOs.NewCoreNoteDto(title)
 				noteReadDto := nDTOs.NotePreviewDto{}
 				mappers.MapTextPreviewAndCoreNoteAndNoteToNotePreviewDto(textPreview, &coreNoteDto, &note, &noteReadDto)
-				return stream.Just(noteReadDto)
-			})
-			noteDTOsSrc := single.FromObservableAsList(noteDetailsObs)
+				noteDTOs = append(noteDTOs, noteReadDto)
+			}
+			noteDTOsSrc := single.Just(noteDTOs)
 			return single.Map(noteDTOsSrc, func(noteDTOs []nDTOs.NotePreviewDto) pagination.Page[nDTOs.NotePreviewDto] {
 				return pagination.NewPage(noteDTOs, count)
 			})
@@ -246,11 +252,15 @@ func (n NoteServiceImpl) GetNotesPage(
 }
 
 func (u NoteServiceImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
-	return u.noteRepository.DeleteByUserIdAndGetCount(ctx, userId)
+	return single.FromSupplierCached(func() (int64, error) {
+		return u.noteRepository.DeleteByUserIdAndGetCount(ctx, userId)
+	})
 }
 
 func (n NoteServiceImpl) getExistingNote(ctx context.Context, id string) single.Single[models.Note] {
-	findSrc := n.noteRepository.FindById(ctx, id)
+	findSrc := single.FromSupplierCached(func() (option.Maybe[models.Note], error) {
+		return n.noteRepository.FindById(ctx, id)
+	})
 	return single.FlatMap(findSrc, func(m option.Maybe[models.Note]) single.Single[models.Note] {
 		return option.Map(m, single.Just[models.Note]).
 			OrElseGet(func() single.Single[models.Note] {

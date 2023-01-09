@@ -60,7 +60,9 @@ func (u UserKeyServiceImpl) UserKeyExists(
 	ctx context.Context,
 	userBo userbos.UserBo,
 ) single.Single[commondtos.ExistsDto] {
-	userFindSrc := u.userKeyGeneratorRepository.FindOneByUserId(ctx, userBo.Id)
+	userFindSrc := single.FromSupplierCached(func() (option.Maybe[models.UserKeyGenerator], error) {
+		return u.userKeyGeneratorRepository.FindOneByUserId(ctx, userBo.Id)
+	})
 	return single.Map(userFindSrc, func(maybe option.Maybe[models.UserKeyGenerator]) commondtos.ExistsDto {
 		return commondtos.NewExistsDto(maybe.IsPresent())
 	})
@@ -95,8 +97,8 @@ func (u UserKeyServiceImpl) CreateUserKey(
 			KeyVersion:        0,
 		}
 	})
-	userKeyGenSaveSrc := single.FlatMap(newUserKeyGenSrc,
-		func(userKeyGen models.UserKeyGenerator) single.Single[models.UserKeyGenerator] {
+	userKeyGenSaveSrc := single.MapWithError(newUserKeyGenSrc,
+		func(userKeyGen models.UserKeyGenerator) (models.UserKeyGenerator, error) {
 			return u.userKeyGeneratorRepository.Create(ctx, userKeyGen)
 		},
 	)
@@ -245,7 +247,10 @@ func (u UserKeyServiceImpl) getUserKeyGenerator(
 	ctx context.Context,
 	userBo userbos.UserBo,
 ) single.Single[models.UserKeyGenerator] {
-	return single.FlatMap(u.userKeyGeneratorRepository.FindOneByUserId(ctx, userBo.Id),
+	userKeyFind := single.FromSupplierCached(func() (option.Maybe[models.UserKeyGenerator], error) {
+		return u.userKeyGeneratorRepository.FindOneByUserId(ctx, userBo.Id)
+	})
+	return single.FlatMap(userKeyFind,
 		func(maybe option.Maybe[models.UserKeyGenerator]) single.Single[models.UserKeyGenerator] {
 			return option.Map(maybe, single.Just[models.UserKeyGenerator]).
 				OrElseGet(func() single.Single[models.UserKeyGenerator] {
@@ -257,7 +262,9 @@ func (u UserKeyServiceImpl) getUserKeyGenerator(
 }
 
 func (u UserKeyServiceImpl) DeleteByUserIdAndGetCount(ctx context.Context, userId string) single.Single[int64] {
-	return u.userKeyGeneratorRepository.DeleteByUserIdAndGetCount(ctx, userId)
+	return single.FromSupplierCached(func() (int64, error) {
+		return u.userKeyGeneratorRepository.DeleteByUserIdAndGetCount(ctx, userId)
+	})
 }
 
 func NewUserKeyServiceImpl(

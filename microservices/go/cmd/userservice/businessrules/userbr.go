@@ -8,7 +8,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 )
@@ -33,7 +32,7 @@ func (u UserBrImpl) ValidateUserCreate(
 	if err != nil {
 		return err
 	}
-	userFindByAuthIdMaybe, err := single.RetrieveValue(ctx, u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId()))
+	userFindByAuthIdMaybe, err := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
 	if err != nil {
 		return err
 	}
@@ -62,7 +61,7 @@ func (u UserBrImpl) validateUserNameNotTaken(
 	ctx context.Context,
 	dto userdtos.UserSaveDto,
 ) ([]apperrors.RuleError, error) {
-	maybe, err := single.RetrieveValue(ctx, u.userRepository.FindByUsernameAndNotToBeDeleted(ctx, dto.UserName))
+	maybe, err := u.userRepository.FindByUsernameAndNotToBeDeleted(ctx, dto.UserName)
 	if err != nil {
 		return nil, err
 	}

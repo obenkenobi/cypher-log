@@ -47,18 +47,20 @@ func (u UserServiceImpl) DeleteUser(
 	userEventDto userdtos.UserChangeEventDto,
 ) single.Single[userbos.UserBo] {
 	logger.Log.Debugf("deleting user %v", userEventDto)
-	userFindSrc := u.userRepository.FindByUserId(ctx, userEventDto.Id)
-	userSavedSrc := single.FlatMap(
+	userFindSrc := single.FromSupplierCached(func() (option.Maybe[cModels.User], error) {
+		return u.userRepository.FindByUserId(ctx, userEventDto.Id)
+	})
+	userDelSrc := single.MapWithError(
 		userFindSrc,
-		func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
+		func(userMaybe option.Maybe[cModels.User]) (cModels.User, error) {
 			if user, isPresent := userMaybe.Get(); isPresent {
 				return u.userRepository.Delete(ctx, user)
 			} else {
-				return single.Just(cModels.User{})
+				return cModels.User{}, nil
 			}
 		},
 	)
-	return single.Map(userSavedSrc, func(u cModels.User) userbos.UserBo {
+	return single.Map(userDelSrc, func(u cModels.User) userbos.UserBo {
 		userBo := userbos.UserBo{}
 		sharedmappers.UserModelToUserBo(u, &userBo)
 		return userBo
@@ -66,7 +68,9 @@ func (u UserServiceImpl) DeleteUser(
 }
 
 func (u UserServiceImpl) RequireUser(ctx context.Context, identity security.Identity) single.Single[userbos.UserBo] {
-	userFindSrc := u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
+	userFindSrc := single.FromSupplierCached(func() (option.Maybe[cModels.User], error) {
+		return u.userRepository.FindByAuthId(ctx, identity.GetAuthId())
+	})
 	userSrc := single.FlatMap(userFindSrc, func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
 		if user, isPresent := userMaybe.Get(); isPresent {
 			return single.Just(user)
@@ -90,7 +94,9 @@ func (u UserServiceImpl) RequireUser(ctx context.Context, identity security.Iden
 }
 
 func (u UserServiceImpl) UserExistsWithId(ctx context.Context, userId string) single.Single[bool] {
-	userFindSrc := u.userRepository.FindByUserId(ctx, userId)
+	userFindSrc := single.FromSupplierCached(func() (option.Maybe[cModels.User], error) {
+		return u.userRepository.FindByUserId(ctx, userId)
+	})
 	return single.FlatMap(userFindSrc, func(userMaybe option.Maybe[cModels.User]) single.Single[bool] {
 		return option.Map(userMaybe, func(_ cModels.User) single.Single[bool] {
 			return single.Just(true)
@@ -108,10 +114,12 @@ func (u UserServiceImpl) saveUserDataAndGetModel(
 	authId string,
 	userPublicDto embeddeduser.BaseUserPublicDto,
 ) single.Single[cModels.User] {
-	userFindSrc := u.userRepository.FindByUserId(ctx, userPublicDto.Id)
-	return single.FlatMap(
+	userFindSrc := single.FromSupplierCached(func() (option.Maybe[cModels.User], error) {
+		return u.userRepository.FindByUserId(ctx, userPublicDto.Id)
+	})
+	return single.MapWithError(
 		userFindSrc,
-		func(userMaybe option.Maybe[cModels.User]) single.Single[cModels.User] {
+		func(userMaybe option.Maybe[cModels.User]) (cModels.User, error) {
 			user, isPresent := userMaybe.Get()
 			if !isPresent {
 				user = cModels.User{}

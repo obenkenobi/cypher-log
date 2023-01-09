@@ -2,7 +2,6 @@ package mgmtools
 
 import (
 	"context"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/pagination"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,13 +41,11 @@ func SetPaginatedFindOpts(findOpt *options.FindOptions, pageReq pagination.PageR
 
 // HandleFindManyRes handles the result of a find many method of *mgm.Collection
 // and transforms it into an observable.
-func HandleFindManyRes[T any](ctx context.Context, cursor *mongo.Cursor, err error) stream.Observable[T] {
+func HandleFindManyRes[T any](ctx context.Context, cursor *mongo.Cursor, err error) ([]T, error) {
 	var results []T
 	if err != nil {
-		return stream.Error[T](err)
+		return results, err
 	}
-	if err = cursor.All(ctx, &results); err != nil {
-		return stream.Error[T](err)
-	}
-	return stream.FromSlice(results)
+	err = cursor.All(ctx, &results)
+	return results, err
 }

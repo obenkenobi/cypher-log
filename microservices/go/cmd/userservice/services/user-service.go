@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"github.com/joamaki/goreactive/stream"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/businessrules"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/mappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/models"
@@ -15,7 +14,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
@@ -63,7 +61,7 @@ func (u UserServiceImpl) AddUserTransaction(
 				user.AuthId = identity.GetAuthId()
 				user.Distributed = false
 				user.ToBeDeleted = false
-				return single.RetrieveValue(ctx, u.userRepository.Create(ctx, user))
+				return u.userRepository.Create(ctx, user)
 			})
 			return single.Map(userCreateSrc, func(user models.User) userdtos.UserReadDto {
 				logger.Log.Debug("Saved user ", user)
@@ -80,7 +78,9 @@ func (u UserServiceImpl) UpdateUserTransaction(
 ) single.Single[userdtos.UserReadDto] {
 	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
-			userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+			userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
+				return u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+			})
 			userExistsSrc := single.MapWithError(userSearchSrc,
 				func(userMaybe option.Maybe[models.User]) (models.User, error) {
 					if user, isPresent := userMaybe.Get(); isPresent {
@@ -98,7 +98,7 @@ func (u UserServiceImpl) UpdateUserTransaction(
 					return existingUser, err
 				},
 			)
-			userSavedSrc := single.FlatMap(userValidatedSrc, func(user models.User) single.Single[models.User] {
+			userSavedSrc := single.MapWithError(userValidatedSrc, func(user models.User) (models.User, error) {
 				mappers.UserSaveDtoToUser(userSaveDto, &user)
 				user.Distributed = false
 				user.ToBeDeleted = false
@@ -119,7 +119,9 @@ func (u UserServiceImpl) BeginDeletingUserTransaction(
 ) single.Single[userdtos.UserReadDto] {
 	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserReadDto] {
-			userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+			userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
+				return u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+			})
 			userExistsSrc := single.MapWithError(
 				userSearchSrc,
 				func(userMaybe option.Maybe[models.User]) (models.User, error) {
@@ -132,7 +134,7 @@ func (u UserServiceImpl) BeginDeletingUserTransaction(
 					}
 				},
 			)
-			userToBeDeletedSrc := single.FlatMap(userExistsSrc, func(user models.User) single.Single[models.User] {
+			userToBeDeletedSrc := single.MapWithError(userExistsSrc, func(user models.User) (models.User, error) {
 				user.Distributed = false
 				user.ToBeDeleted = true
 				return u.userRepository.Update(ctx, user)
@@ -158,7 +160,9 @@ func (u UserServiceImpl) GetUserIdentity(
 }
 
 func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.Single[userdtos.UserReadDto] {
-	userSearchSrc := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, authId)
+	userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
+		return u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, authId)
+	})
 	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserReadDto {
 		user := userMaybe.OrElse(models.User{})
 		return userToUserReadDto(user)
@@ -166,7 +170,9 @@ func (u UserServiceImpl) GetByAuthId(ctx context.Context, authId string) single.
 }
 
 func (u UserServiceImpl) GetById(ctx context.Context, userId string) single.Single[userdtos.UserReadDto] {
-	userSearchSrc := u.userRepository.FindById(ctx, userId)
+	userSearchSrc := single.FromSupplierCached(func() (option.Maybe[models.User], error) {
+		return u.userRepository.FindById(ctx, userId)
+	})
 	return single.Map(userSearchSrc, func(userMaybe option.Maybe[models.User]) userdtos.UserReadDto {
 		user := userMaybe.Filter(models.User.WillNotDeleted).OrElse(models.User{})
 		return userToUserReadDto(user)
@@ -174,24 +180,19 @@ func (u UserServiceImpl) GetById(ctx context.Context, userId string) single.Sing
 }
 
 func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
-	userSampleSrc := u.userRepository.SampleUndistributedUsers(ctx, 100)
-	usersCh, errCh := stream.ToChannels(ctx, userSampleSrc)
-	var actionSingles []single.Single[any]
-	for user := range usersCh {
-		var src single.Single[any]
-		if user.ToBeDeleted {
-			src = single.Map(u.deleteUserTransaction(ctx, user), utils.CastToAny[userdtos.UserChangeEventDto])
-		} else {
-			src = single.Map(u.distributeUserChangeTransaction(ctx, user), utils.CastToAny[userdtos.UserChangeEventDto])
-		}
-		actionSingles = append(actionSingles, src.ScheduleEagerAsyncCached(ctx))
-	}
-	err := <-errCh
+	userSample, err := u.userRepository.SampleUndistributedUsers(ctx, 100)
 	if err != nil {
 		logger.Log.Error(err)
+		return
 	}
-	for _, actionSrc := range actionSingles {
-		if _, err := single.RetrieveValue(ctx, actionSrc); err != nil {
+	for _, user := range userSample {
+		var err error
+		if user.ToBeDeleted {
+			_, err = single.RetrieveValue(ctx, u.deleteUserTransaction(ctx, user))
+		} else {
+			_, err = single.RetrieveValue(ctx, u.distributeUserChangeTransaction(ctx, user))
+		}
+		if err != nil {
 			logger.Log.Error(err)
 		}
 	}
@@ -205,7 +206,9 @@ func (u UserServiceImpl) deleteUserTransaction(
 	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(s dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
 			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserDelete)
-			userDeletedLocalDBSrc := u.userRepository.Delete(ctx, user)
+			userDeletedLocalDBSrc := single.FromSupplierCached(func() (models.User, error) {
+				return u.userRepository.Delete(ctx, user)
+			})
 			userDeletedAuthServerSrc := single.FlatMap(
 				userDeletedLocalDBSrc,
 				func(user models.User) single.Single[models.User] {
@@ -230,17 +233,17 @@ func (u UserServiceImpl) distributeUserChangeTransaction(
 	return dshandlers.TransactionalSingle(ctx, u.crudDSHandler,
 		func(session dshandlers.Session, ctx context.Context) single.Single[userdtos.UserChangeEventDto] {
 			sendUserChangeSrc := u.sendUserChange(user, userdtos.UserSave)
-			return single.FlatMap(
+			return single.MapWithError(
 				sendUserChangeSrc,
-				func(uce userdtos.UserChangeEventDto) single.Single[userdtos.UserChangeEventDto] {
+				func(event userdtos.UserChangeEventDto) (userdtos.UserChangeEventDto, error) {
 					user := user
 					user.ToBeDeleted = false
 					user.Distributed = true
-					updateSrc := u.userRepository.Update(ctx, user)
-					return single.Map(updateSrc, func(a models.User) userdtos.UserChangeEventDto {
-						logger.Log.Debugf("Sent user save event for user %v", a)
-						return uce
-					})
+					updatedUser, err := u.userRepository.Update(ctx, user)
+					if err == nil {
+						logger.Log.Debugf("Sent user save event for user %v", updatedUser)
+					}
+					return event, err
 				},
 			)
 
