@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	"time"
 )
 
 type KeyValueTimedRepository[Value any] interface {
-	Get(ctx context.Context, key string) single.Single[option.Maybe[Value]]
-	Set(ctx context.Context, key string, value Value, expiration time.Duration) single.Single[Value]
+	Get(ctx context.Context, key string) (option.Maybe[Value], error)
+	Set(ctx context.Context, key string, value Value, expiration time.Duration) (Value, error)
 }
 
 // KeyValueTimedRepositoryRedis is a Redis implementation of KeyValueTimedRepository
@@ -21,11 +20,7 @@ type KeyValueTimedRepositoryRedis[Value any] struct {
 	redisDBHandler *dshandlers.RedisDBHandler
 }
 
-func (k KeyValueTimedRepositoryRedis[Value]) Get(ctx context.Context, key string) single.Single[option.Maybe[Value]] {
-	return single.FromSupplierCached[option.Maybe[Value]](func() (option.Maybe[Value], error) { return k.runGet(ctx, key) })
-}
-
-func (k KeyValueTimedRepositoryRedis[Value]) runGet(ctx context.Context, key string) (option.Maybe[Value], error) {
+func (k KeyValueTimedRepositoryRedis[Value]) Get(ctx context.Context, key string) (option.Maybe[Value], error) {
 	if utils.StringIsBlank(key) {
 		return option.None[Value](), errors.New("key cannot be empty")
 	}
@@ -42,15 +37,6 @@ func (k KeyValueTimedRepositoryRedis[Value]) runGet(ctx context.Context, key str
 }
 
 func (k KeyValueTimedRepositoryRedis[Value]) Set(
-	ctx context.Context,
-	key string,
-	value Value,
-	expiration time.Duration,
-) single.Single[Value] {
-	return single.FromSupplierCached[Value](func() (Value, error) { return k.runSet(ctx, key, value, expiration) })
-}
-
-func (k KeyValueTimedRepositoryRedis[Value]) runSet(
 	ctx context.Context,
 	key string,
 	value Value,

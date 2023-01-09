@@ -8,14 +8,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 )
 
 type UserBr interface {
-	ValidateUserCreate(ctx context.Context, identity security.Identity, dto userdtos.UserSaveDto) single.Single[any]
-	ValidateUserUpdate(ctx context.Context, dto userdtos.UserSaveDto, existing models.User) single.Single[any]
+	ValidateUserCreate(ctx context.Context, identity security.Identity, dto userdtos.UserSaveDto) error
+	ValidateUserUpdate(ctx context.Context, dto userdtos.UserSaveDto, existing models.User) error
 }
 
 type UserBrImpl struct {
@@ -28,39 +27,45 @@ func (u UserBrImpl) ValidateUserCreate(
 	ctx context.Context,
 	identity security.Identity,
 	dto userdtos.UserSaveDto,
-) single.Single[any] {
-	userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto)
-	userNotCreatedValidationSrc := validationutils.ValidateValueIsNotPresent(
+) error {
+	userNameNotTakenValidationErrs, err := u.validateUserNameNotTaken(ctx, dto)
+	if err != nil {
+		return err
+	}
+	userFindByAuthIdMaybe, err := u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId())
+	if err != nil {
+		return err
+	}
+	userNotCreatedValidationErrs := validationutils.ValidateValueIsNotPresent(
 		u.errorService,
-		u.userRepository.FindByAuthIdAndNotToBeDeleted(ctx, identity.GetAuthId()),
+		userFindByAuthIdMaybe,
 		apperrors.ErrCodeResourceAlreadyCreated,
 	)
-	ruleErrorsSrc := validationutils.ConcatSinglesOfRuleErrs(userNameNotTakenValidationSrc, userNotCreatedValidationSrc)
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrorsSrc)
+	ruleErrorsSrc := append(userNameNotTakenValidationErrs, userNotCreatedValidationErrs...)
+	return validationutils.MergeRuleErrors(ruleErrorsSrc)
 }
 
-func (u UserBrImpl) ValidateUserUpdate(
-	ctx context.Context,
-	dto userdtos.UserSaveDto,
-	existing models.User,
-) single.Single[any] {
-	ruleErrorsSrc := single.Just([]apperrors.RuleError{})
+func (u UserBrImpl) ValidateUserUpdate(ctx context.Context, dto userdtos.UserSaveDto, existing models.User) error {
+	var ruleErrs []apperrors.RuleError
 	if dto.UserName != existing.UserName {
-		userNameNotTakenValidationSrc := u.validateUserNameNotTaken(ctx, dto)
-		ruleErrorsSrc = validationutils.ConcatSinglesOfRuleErrs(ruleErrorsSrc, userNameNotTakenValidationSrc)
+		valErrs, err := u.validateUserNameNotTaken(ctx, dto)
+		if err != nil {
+			return err
+		}
+		ruleErrs = append(ruleErrs, valErrs...)
 	}
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrorsSrc)
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (u UserBrImpl) validateUserNameNotTaken(
 	ctx context.Context,
 	dto userdtos.UserSaveDto,
-) single.Single[[]apperrors.RuleError] {
-	return validationutils.ValidateValueIsNotPresent(
-		u.errorService,
-		u.userRepository.FindByUsernameAndNotToBeDeleted(ctx, dto.UserName),
-		apperrors.ErrCodeUsernameTaken,
-	)
+) ([]apperrors.RuleError, error) {
+	maybe, err := u.userRepository.FindByUsernameAndNotToBeDeleted(ctx, dto.UserName)
+	if err != nil {
+		return nil, err
+	}
+	return validationutils.ValidateValueIsNotPresent(u.errorService, maybe, apperrors.ErrCodeUsernameTaken), nil
 }
 
 func NewUserBrImpl(

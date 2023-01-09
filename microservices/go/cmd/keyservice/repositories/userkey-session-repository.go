@@ -5,7 +5,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/models"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/baserepos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/kvstoreutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 	"time"
@@ -23,7 +22,7 @@ type UserKeySessionRepositoryImpl struct {
 func (a UserKeySessionRepositoryImpl) Get(
 	ctx context.Context,
 	key string,
-) single.Single[option.Maybe[models.UserKeySession]] {
+) (option.Maybe[models.UserKeySession], error) {
 	return a.baseRepo.Get(ctx, kvstoreutils.CombineKeySections(a.prefix, key))
 }
 
@@ -32,7 +31,7 @@ func (a UserKeySessionRepositoryImpl) Set(
 	key string,
 	value models.UserKeySession,
 	expiration time.Duration,
-) single.Single[models.UserKeySession] {
+) (models.UserKeySession, error) {
 	return a.baseRepo.Set(ctx, kvstoreutils.CombineKeySections(a.prefix, key), value, expiration)
 }
 

@@ -6,23 +6,22 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors/validationutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/cipherutils"
 )
 
 type UserKeyBr interface {
-	ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) single.Single[any]
-	ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any]
-	ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any]
+	ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) error
+	ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) error
+	ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) error
 	ValidateProxyKeyCiphersFromSession(
 		ctx context.Context,
 		proxyKey []byte,
 		userId string,
 		keyVersion int64,
 		session models.UserKeySession,
-	) single.Single[any]
+	) error
 }
 
 type UserKeyBrImpl struct {
@@ -30,33 +29,31 @@ type UserKeyBrImpl struct {
 	userService  sharedservices.UserService
 }
 
-func (u UserKeyBrImpl) ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) single.Single[any] {
-	hashCheckSrc := single.FromSupplierCached(func() (bool, error) {
-		return cipherutils.VerifyHashWithSaltSHA256(session.TokenHash, tokenBytes)
-	})
-	tokenHashValidate := single.Map(hashCheckSrc, func(verified bool) []apperrors.RuleError {
-		var ruleErrs []apperrors.RuleError
-		if !verified {
-			ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
-		}
-		return ruleErrs
-	})
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(tokenHashValidate)
+func (u UserKeyBrImpl) ValidateSessionTokenHash(session models.UserKeySession, tokenBytes []byte) error {
+	var ruleErrs []apperrors.RuleError
+	verified, err := cipherutils.VerifyHashWithSaltSHA256(session.TokenHash, tokenBytes)
+	if err != nil {
+		return err
+	}
+	if !verified {
+		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
+	}
+	return validationutils.MergeRuleErrors(ruleErrs)
 
 }
 
-func (u UserKeyBrImpl) ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) single.Single[any] {
-	verifiedKeyHashSrc := single.FromSupplierCached(func() (bool, error) {
-		return cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
-	})
-	keyHashValidationSrc := single.Map(verifiedKeyHashSrc, func(verified bool) []apperrors.RuleError {
-		var ruleErrs []apperrors.RuleError
-		if !verified {
-			ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
-		}
-		return ruleErrs
-	})
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(keyHashValidationSrc)
+func (u UserKeyBrImpl) ValidateKeyFromSession(userKeyGen models.UserKeyGenerator, key []byte) error {
+	var ruleErrs []apperrors.RuleError
+
+	verified, err := cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
+	if err != nil {
+		return err
+	}
+	if !verified {
+		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
+	}
+
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
@@ -65,56 +62,45 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 	userId string,
 	keyVersion int64,
 	session models.UserKeySession,
-) single.Single[any] {
-	validateProxyKeyCiphersSrc := single.FromSupplierCached(func() ([]apperrors.RuleError, error) {
-		var ruleErrs []apperrors.RuleError
+) error {
+	var ruleErrs []apperrors.RuleError
 
-		savedUserIdBytes, err := cipherutils.DecryptAES(proxyKey, session.UserIdCipher)
-		if err != nil {
-			logger.Log.WithError(err).Debug()
-			return ruleErrs, err
-		}
-		userIdInvalid := string(savedUserIdBytes) != userId
+	// Validate Proxy Key Ciphers
+	savedUserIdBytes, err := cipherutils.DecryptAES(proxyKey, session.UserIdCipher)
+	if err != nil {
+		logger.Log.WithError(err).Debug()
+		return err
+	}
+	userIdInvalid := string(savedUserIdBytes) != userId
+	savedKeyVersionBytes, err := cipherutils.DecryptAES(proxyKey, session.KeyVersionCipher)
+	if err != nil {
+		logger.Log.WithError(err).Debug()
+		return err
+	}
+	keyInvalid := string(savedKeyVersionBytes) != utils.Int64ToStr(keyVersion)
 
-		savedKeyVersionBytes, err := cipherutils.DecryptAES(proxyKey, session.KeyVersionCipher)
-		if err != nil {
-			logger.Log.WithError(err).Debug()
-			return ruleErrs, err
-		}
-		keyInvalid := string(savedKeyVersionBytes) != utils.Int64ToStr(keyVersion)
+	if userIdInvalid || keyInvalid {
+		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
+	}
 
-		if userIdInvalid || keyInvalid {
-			ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
-		}
-		return ruleErrs, nil
-	})
-	validateUserExists := single.MapWithError(u.userService.UserExistsWithId(ctx, userId),
-		func(exists bool) ([]apperrors.RuleError, error) {
-			var ruleErrs []apperrors.RuleError
-			if !exists {
-				ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
-			}
-			return ruleErrs, nil
-		})
-	ruleErrs := validationutils.ConcatSinglesOfRuleErrs(validateProxyKeyCiphersSrc, validateUserExists)
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(ruleErrs)
+	// Validate User Exists
+	userExists, err := u.userService.UserExistsWithId(ctx, userId)
+	if !userExists {
+		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeInvalidSession))
+	}
+
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
-func (u UserKeyBrImpl) ValidateKeyFromPassword(
-	userKeyGen models.UserKeyGenerator,
-	key []byte,
-) single.Single[any] {
-	verifiedKeyHashSrc := single.FromSupplierCached(func() (bool, error) {
-		return cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
-	})
-	keyHashValidationSrc := single.Map(verifiedKeyHashSrc, func(verified bool) []apperrors.RuleError {
-		var ruleErrs []apperrors.RuleError
-		if !verified {
-			ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeIncorrectPasscode))
-		}
-		return ruleErrs
-	})
-	return validationutils.PassRuleErrorsIfEmptyElsePassBadReqError(keyHashValidationSrc)
+func (u UserKeyBrImpl) ValidateKeyFromPassword(userKeyGen models.UserKeyGenerator, key []byte) error {
+	var ruleErrs []apperrors.RuleError
+	verified, err := cipherutils.VerifyKeyHashBcrypt(userKeyGen.KeyHash, key)
+	if err != nil {
+		return err
+	} else if !verified {
+		ruleErrs = append(ruleErrs, u.errorService.RuleErrorFromCode(apperrors.ErrCodeIncorrectPasscode))
+	}
+	return validationutils.MergeRuleErrors(ruleErrs)
 }
 
 func NewUserKeyBrImpl(errorService sharedservices.ErrorService, userService sharedservices.UserService) *UserKeyBrImpl {

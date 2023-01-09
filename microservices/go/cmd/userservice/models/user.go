@@ -35,6 +35,6 @@ func (u User) GetUpdatedAt() time.Time {
 	return u.UpdatedAt
 }
 
-func (u User) WillNotDeleted() bool {
+func (u User) WillNotBeDeleted() bool {
 	return !u.ToBeDeleted
 }

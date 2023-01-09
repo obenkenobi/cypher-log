@@ -5,11 +5,11 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/userservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/routing"
+	"net/http"
 )
 
 type UserController interface {
@@ -28,50 +28,81 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1.POST("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(bodySrc,
-				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
-					return u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto)
-				})
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			var reqBody userdtos.UserSaveDto
+			var resBody userdtos.UserReadDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody)
+				return
+			}).Next(func() error {
+				c.JSON(http.StatusOK, resBody)
+				return nil
+			})
 		})
 
 	userGroupV1.PUT("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(bodySrc,
-				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
-					return u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto)
-				})
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			var reqBody userdtos.UserSaveDto
+			var resBody userdtos.UserReadDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+				return
+			}).Next(func() (err error) {
+				resBody, err = u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody)
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return nil
+			})
 		})
 
 	userGroupV1.DELETE("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			businessLogicSrc := u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			var resBody userdtos.UserReadDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				resBody, err = u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 
 	userGroupV1.GET("/me",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			businessLogicSrc := u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			var resBody userdtos.UserIdentityDto
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				resBody, err = u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
 		})
 
 	userGroupV1.GET("/byAuthId/:id",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
+			var resBody userdtos.UserReadDto
 			authId := c.Param("id")
-			businessLogicSrc := u.userService.GetByAuthId(c, authId)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+
+			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+				resBody, err = u.userService.GetByAuthId(c, authId)
+				return
+			}).Next(func() (err error) {
+				c.JSON(http.StatusOK, resBody)
+				return
+			})
+
 		})
 }
 

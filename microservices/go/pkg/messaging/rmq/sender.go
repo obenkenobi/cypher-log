@@ -3,7 +3,6 @@ package rmq
 import (
 	"encoding/json"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/wagslane/go-rabbitmq"
 )
 
@@ -27,31 +26,28 @@ func NewSender[T any](
 	}
 }
 
-func (r *Sender[T]) Send(body T) single.Single[T] {
-	return single.FromSupplierCached(func() (T, error) {
-		var msgBytes []byte
-		var contentType string
-		{
-			var bodyMatcher interface{} = body
-			switch v := bodyMatcher.(type) {
-			case string:
-				msgBytes = []byte(v)
-				contentType = ContentTypePlainText
-			default:
-				var err error
-				if msgBytes, err = json.Marshal(body); err != nil {
-					return body, err
-				}
-				contentType = ContentTypeJson
+func (r *Sender[T]) Send(body T) (T, error) {
+	var msgBytes []byte
+	var contentType string
+	{
+		var bodyMatcher interface{} = body
+		switch v := bodyMatcher.(type) {
+		case string:
+			msgBytes = []byte(v)
+			contentType = ContentTypePlainText
+		default:
+			var err error
+			if msgBytes, err = json.Marshal(body); err != nil {
+				return body, err
 			}
+			contentType = ContentTypeJson
 		}
-		publishOpts := append(r.publishOpts,
-			rabbitmq.WithPublishOptionsContentType(contentType),
-			rabbitmq.WithPublishOptionsPersistentDelivery,
-			rabbitmq.WithPublishOptionsMandatory)
-		r.publisher.NotifyReturn()
-		err := r.publisher.Publish(msgBytes, r.routingKeys, publishOpts...)
-		return body, err
-	})
-
+	}
+	publishOpts := append(r.publishOpts,
+		rabbitmq.WithPublishOptionsContentType(contentType),
+		rabbitmq.WithPublishOptionsPersistentDelivery,
+		rabbitmq.WithPublishOptionsMandatory)
+	r.publisher.NotifyReturn()
+	err := r.publisher.Publish(msgBytes, r.routingKeys, publishOpts...)
+	return body, err
 }

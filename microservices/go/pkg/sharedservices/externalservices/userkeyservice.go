@@ -7,7 +7,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
 	"google.golang.org/grpc"
 )
@@ -16,7 +15,7 @@ type ExtUserKeyService interface {
 	GetKeyFromSession(
 		ctx context.Context,
 		userKeySessionDto commondtos.UKeySessionDto,
-	) single.Single[keydtos.UserKeyDto]
+	) (keydtos.UserKeyDto, error)
 }
 
 type ExtUserKeyServiceImpl struct {
@@ -27,21 +26,29 @@ type ExtUserKeyServiceImpl struct {
 func (e ExtUserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
 	userKeySessionDto commondtos.UKeySessionDto,
-) single.Single[keydtos.UserKeyDto] {
-	connectionSrc := e.coreGrpcConnProvider.CreateConnectionSingle(ctx, e.grpcClientConf.KeyServiceAddress())
-	replySrc := single.MapWithError(connectionSrc, func(conn *grpc.ClientConn) (*userkeypb.UserKey, error) {
-		defer conn.Close()
-		client := userkeypb.NewUserKeyServiceClient(conn)
-		userKeySession := &userkeypb.UserKeySession{}
-		grpcmappers.UserKeySessionDtoToUserKeySession(&userKeySessionDto, userKeySession)
-		reply, err := client.GetKeyFromSession(ctx, userKeySession)
-		return reply, gtools.NewErrorResponseHandler(err).GetProcessedError()
-	})
-	return single.Map(replySrc, func(res *userkeypb.UserKey) keydtos.UserKeyDto {
-		dto := keydtos.UserKeyDto{}
-		grpcmappers.UserKeyToUserKeyDto(res, &dto)
-		return dto
-	})
+) (keyDto keydtos.UserKeyDto, err error) {
+	conn, err := e.coreGrpcConnProvider.CreateConnectionSingle(ctx, e.grpcClientConf.KeyServiceAddress())
+	if err != nil {
+		return keyDto, err
+	}
+	defer func(conn *grpc.ClientConn) {
+		err = conn.Close()
+	}(conn)
+
+	client := userkeypb.NewUserKeyServiceClient(conn)
+
+	userKeySession := &userkeypb.UserKeySession{}
+	grpcmappers.UserKeySessionDtoToUserKeySession(&userKeySessionDto, userKeySession)
+
+	reply, err := client.GetKeyFromSession(ctx, userKeySession)
+	if err != nil {
+		err = gtools.NewErrorResponseHandler(err).GetProcessedError()
+		return keyDto, err
+	}
+
+	dto := keydtos.UserKeyDto{}
+	grpcmappers.UserKeyToUserKeyDto(reply, &dto)
+	return dto, nil
 }
 
 func NewExtUserKeyServiceImpl(

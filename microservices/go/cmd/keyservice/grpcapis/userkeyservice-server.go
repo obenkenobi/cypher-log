@@ -6,8 +6,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
 )
 
@@ -22,14 +20,13 @@ func (u UserKeyServiceServerImpl) GetKeyFromSession(
 ) (*userkeypb.UserKey, error) {
 	userKeySessionDto := commondtos.UKeySessionDto{}
 	grpcmappers.UserKeySessionToUserKeySessionDto(userKeySession, &userKeySessionDto)
-	keySrc := u.userKeyService.GetKeyFromSession(ctx, userKeySessionDto)
-	replySrc := single.Map(keySrc, func(keyDto keydtos.UserKeyDto) *userkeypb.UserKey {
-		userKey := &userkeypb.UserKey{}
-		grpcmappers.UserKeyDtoToUserKey(&keyDto, userKey)
-		return userKey
-	})
-	res, err := single.RetrieveValue(ctx, replySrc)
-	return res, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
+	keyDto, err := u.userKeyService.GetKeyFromSession(ctx, userKeySessionDto)
+	if err != nil {
+		return nil, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
+	}
+	userKey := &userkeypb.UserKey{}
+	grpcmappers.UserKeyDtoToUserKey(&keyDto, userKey)
+	return userKey, nil
 }
 
 func NewUserKeyServiceServerImpl(userKeyService services.UserKeyService) *UserKeyServiceServerImpl {

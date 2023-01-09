@@ -1,7 +1,6 @@
 package dshandlers
 
 import (
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/wrappers/option"
 )
 
@@ -11,16 +10,7 @@ type DataSourceHandler interface {
 	IsNotFoundError(err error) bool
 }
 
-func OptionalSingleQuerySrc[TQueryResult any](
-	dbHandler DataSourceHandler,
-	supplier func() (TQueryResult, error),
-) single.Single[option.Maybe[TQueryResult]] {
-	return single.FromSupplierCached(func() (option.Maybe[TQueryResult], error) {
-		return runOptionalSingleQuery(dbHandler, supplier)
-	})
-}
-
-func runOptionalSingleQuery[TQueryResult any](
+func HandleSingleFind[TQueryResult any](
 	dbHandler DataSourceHandler,
 	supplier func() (TQueryResult, error),
 ) (option.Maybe[TQueryResult], error) {
