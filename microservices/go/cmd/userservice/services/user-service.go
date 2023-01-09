@@ -258,7 +258,9 @@ func (u UserServiceImpl) sendUserChange(
 	distUserDto := userdtos.UserChangeEventDto{}
 	mappers.UserToUserChangeEventDto(user, &distUserDto)
 	distUserDto.Action = action
-	return u.userMsgSendService.UserSaveSender().Send(distUserDto)
+	return single.FromSupplierCached(func() (userdtos.UserChangeEventDto, error) {
+		return u.userMsgSendService.UserSaveSender().Send(distUserDto)
+	})
 }
 
 func userToUserReadDto(user models.User) userdtos.UserReadDto {
