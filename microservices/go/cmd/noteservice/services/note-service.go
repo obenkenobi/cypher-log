@@ -67,7 +67,9 @@ func (n NoteServiceImpl) AddNoteTransaction(
 	return dshandlers.TransactionalSingle(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
 			sessDto, noteCreateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
-			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
+			keyDtoSrc := single.FromSupplierCached(func() (kDTOs.UserKeyDto, error) {
+				return n.userKeyService.GetKeyFromSession(ctx, sessDto)
+			})
 			keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey).ScheduleLazyAndCache(ctx)
 			titleCipherSrc := single.MapWithError(keySrc, func(key []byte) ([]byte, error) {
 				return cipherutils.EncryptAES(key, []byte(noteCreateDto.Title))
@@ -102,7 +104,9 @@ func (n NoteServiceImpl) UpdateNoteTransaction(
 		func(_ dshandlers.Session, ctx context.Context) single.Single[cDTOs.SuccessDto] {
 			sessDto, noteUpdateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 			existingSrc := n.getExistingNote(ctx, noteUpdateDto.Id).ScheduleLazyAndCache(ctx)
-			keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
+			keyDtoSrc := single.FromSupplierCached(func() (kDTOs.UserKeyDto, error) {
+				return n.userKeyService.GetKeyFromSession(ctx, sessDto)
+			})
 			keySrc := single.MapWithError(single.Zip2(existingSrc, keyDtoSrc),
 				func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) ([]byte, error) {
 					existing, keyDto := t.V1, t.V2
@@ -163,7 +167,9 @@ func (n NoteServiceImpl) GetNoteById(
 ) single.Single[nDTOs.NoteReadDto] {
 	sessDto, noteIdDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
 	existingSrc := n.getExistingNote(ctx, noteIdDto.Id).ScheduleLazyAndCache(ctx)
-	keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessDto).ScheduleLazyAndCache(ctx)
+	keyDtoSrc := single.FromSupplierCached(func() (kDTOs.UserKeyDto, error) {
+		return n.userKeyService.GetKeyFromSession(ctx, sessDto)
+	})
 	validationSrc := single.MapWithError(single.Zip2(existingSrc, keyDtoSrc),
 		func(t tuple.T2[models.Note, kDTOs.UserKeyDto]) (any, error) {
 			existing, keyDto := t.V1, t.V2
@@ -208,7 +214,9 @@ func (n NoteServiceImpl) GetNotesPage(
 		return single.Error[pagination.Page[nDTOs.NotePreviewDto]](err)
 	}
 	zippedSrc := single.FromSupplierCached(func() (tuple.T3[kDTOs.UserKeyDto, []byte, int64], error) {
-		keyDtoSrc := n.userKeyService.GetKeyFromSession(ctx, sessionDto)
+		keyDtoSrc := single.FromSupplierCached(func() (kDTOs.UserKeyDto, error) {
+			return n.userKeyService.GetKeyFromSession(ctx, sessionDto)
+		})
 		keySrc := single.MapWithError(keyDtoSrc, kDTOs.UserKeyDto.GetKey)
 		countSrc := single.FromSupplierCached(func() (int64, error) {
 			return n.noteRepository.CountByUserId(ctx, userBo.Id)

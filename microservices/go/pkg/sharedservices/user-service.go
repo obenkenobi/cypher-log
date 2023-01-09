@@ -76,7 +76,9 @@ func (u UserServiceImpl) RequireUser(ctx context.Context, identity security.Iden
 			return single.Just(user)
 		} else {
 			// If user is not stored locally in the database
-			extUserFindSrc := u.extUserService.GetByAuthId(ctx, identity.GetAuthId())
+			extUserFindSrc := single.FromSupplierCached(func() (userdtos.UserReadDto, error) {
+				return u.extUserService.GetByAuthId(ctx, identity.GetAuthId())
+			})
 			return single.FlatMap(extUserFindSrc, func(extUserDto userdtos.UserReadDto) single.Single[cModels.User] {
 				if !extUserDto.Exists {
 					userReqFailRuleErr := u.errorService.RuleErrorFromCode(apperrors.ErrCodeUserRequireFail)
@@ -101,7 +103,9 @@ func (u UserServiceImpl) UserExistsWithId(ctx context.Context, userId string) si
 		return option.Map(userMaybe, func(_ cModels.User) single.Single[bool] {
 			return single.Just(true)
 		}).OrElseGet(func() single.Single[bool] {
-			extUserFindSrc := u.extUserService.GetById(ctx, userId)
+			extUserFindSrc := single.FromSupplierCached(func() (userdtos.UserReadDto, error) {
+				return u.extUserService.GetById(ctx, userId)
+			})
 			return single.FlatMap(extUserFindSrc, func(extUserDto userdtos.UserReadDto) single.Single[bool] {
 				return single.Just(extUserDto.Exists)
 			})
