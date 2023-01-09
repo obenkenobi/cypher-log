@@ -2,6 +2,7 @@ package externalservices
 
 import (
 	"context"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/concurrent"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
@@ -18,22 +19,25 @@ type CoreGrpcConnProviderImpl struct {
 	tlsConf                 conf.TLSConf
 }
 
-func (u CoreGrpcConnProviderImpl) CreateConnectionSingle(ctx context.Context, address string) single.Single[*grpc.ClientConn] {
-	var dialOptSources []single.Single[grpc.DialOption]
+func (u CoreGrpcConnProviderImpl) CreateConnectionSingle(_ context.Context, address string) single.Single[*grpc.ClientConn] {
+	var dialOptions []grpc.DialOption
 	if environment.ActivateGRPCAuth() {
-		oathTokenSrc := single.FromSupplierCached(u.systemAccessTokenClient.GetGRPCAccessToken)
+		oathTokenFuture := concurrent.Async(u.systemAccessTokenClient.GetGRPCAccessToken)
 		if u.tlsConf.WillLoadCACert() {
-			tlsOptSrc := single.FromSupplierCached(func() (grpc.DialOption, error) {
-				return gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
-			})
-			dialOptSources = append(dialOptSources, tlsOptSrc)
+			tlsOpt, err := gtools.LoadTLSCredentialsOption(u.tlsConf.CACertPath(), environment.IsDevelopment())
+			if err != nil {
+				return single.Error[*grpc.ClientConn](err)
+			}
+			dialOptions = append(dialOptions, tlsOpt)
 		}
-		oathOptSrc := single.Map(oathTokenSrc, gtools.OathAccessOption)
-		dialOptSources = append(dialOptSources, oathOptSrc)
+		token, err := oathTokenFuture.Await()
+		if err != nil {
+			return single.Error[*grpc.ClientConn](err)
+		}
+		dialOptions = append(dialOptions, gtools.OathAccessOption(token))
 	}
-	optsSrc := gtools.CreateSingleWithDialOptions(dialOptSources)
-	return single.MapWithError(optsSrc, func(opts []grpc.DialOption) (*grpc.ClientConn, error) {
-		return gtools.CreateConnectionWithOptions(address, opts...)
+	return single.FromSupplierCached(func() (*grpc.ClientConn, error) {
+		return grpc.Dial(address, dialOptions...)
 	})
 }
 
