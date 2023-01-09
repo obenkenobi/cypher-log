@@ -29,6 +29,27 @@ type CrudDSHandler interface {
 	ExecTransaction(ctx context.Context, runner func(Session, context.Context) error) error
 }
 
+// Transactional executes a transaction
+func Transactional[T any](
+	ctx context.Context,
+	d CrudDSHandler,
+	supplier func(Session, context.Context) (T, error),
+) (T, error) {
+	var res T
+	var err error = nil
+	transactionErr := d.ExecTransaction(ctx, func(session Session, ctx context.Context) error {
+		res, err = supplier(session, ctx)
+		if err != nil {
+			return session.AbortTransaction(ctx)
+		}
+		return session.CommitTransaction(ctx)
+	})
+	if err == nil {
+		err = transactionErr
+	}
+	return res, err
+}
+
 // TransactionalSingle creates a Single that executes a transaction when
 // evaluated from a Single created from the supplier. The supplier and the
 // evaluation of the single runs within the scope of the transaction.
