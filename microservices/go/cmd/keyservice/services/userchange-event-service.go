@@ -44,7 +44,6 @@ func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
 			}
 		},
 	)
-
 }
 
 func NewUserChangeEventServiceImpl(

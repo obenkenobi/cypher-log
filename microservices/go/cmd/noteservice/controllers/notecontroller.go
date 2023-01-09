@@ -8,7 +8,6 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/businessobjects/userbos"
 	cDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	nDTOs "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/notedtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
@@ -46,7 +45,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 					n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, n.noteService.AddNoteTransaction(c, userBo, reqBody))
+				resBody, err = n.noteService.AddNoteTransaction(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -68,7 +67,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 					n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, n.noteService.UpdateNoteTransaction(c, userBo, reqBody))
+				resBody, err = n.noteService.UpdateNoteTransaction(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -89,7 +88,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[nDTOs.NoteIdDto](n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, n.noteService.DeleteNoteTransaction(c, userBo, reqBody))
+				resBody, err = n.noteService.DeleteNoteTransaction(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -111,7 +110,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 					n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, n.noteService.GetNoteById(c, userBo, reqBody))
+				resBody, err = n.noteService.GetNoteById(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -133,7 +132,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 					n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = single.RetrieveValue(c, n.noteService.GetNotesPage(c, userBo, reqBody))
+				resBody, err = n.noteService.GetNotesPage(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)

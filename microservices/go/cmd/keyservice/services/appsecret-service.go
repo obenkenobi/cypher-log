@@ -74,7 +74,7 @@ func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) (bos
 	if _, err := a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration()); err != nil {
 		return bos.AppSecretBo{}, err
 	}
-	if _, err = a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration()); err != nil {
+	if _, err := a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration()); err != nil {
 		return bos.AppSecretBo{}, err
 	}
 	return bos.NewAppSecretBo(ref.Kid, appSecret.SecretKey), nil

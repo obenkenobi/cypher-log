@@ -207,8 +207,7 @@ func (u UserServiceImpl) deleteUserTransaction(
 				return event, err
 			}
 
-			_, err = u.authServerMgmtService.DeleteUser(deletedUser.AuthId)
-			if err != nil {
+			if _, err := u.authServerMgmtService.DeleteUser(deletedUser.AuthId); err != nil {
 				return event, err
 			}
 

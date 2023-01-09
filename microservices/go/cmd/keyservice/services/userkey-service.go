@@ -78,8 +78,7 @@ func (u UserKeyServiceImpl) CreateUserKey(
 		KeyVersion:        0,
 	}
 
-	_, err = u.userKeyGeneratorRepository.Create(ctx, newUserKeyGen)
-	if err != nil {
+	if _, err := u.userKeyGeneratorRepository.Create(ctx, newUserKeyGen); err != nil {
 		return commondtos.SuccessDto{}, err
 	}
 	return commondtos.NewSuccessTrue(), nil
@@ -155,8 +154,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 	startTime := time.Now().UnixMilli()
 	sessionDuration := u.keyConf.GetTokenSessionDuration()
 
-	_, err = u.userKeySessionRepository.Set(ctx, proxyKid, keySessionModel, sessionDuration)
-	if err != nil {
+	if _, err := u.userKeySessionRepository.Set(ctx, proxyKid, keySessionModel, sessionDuration); err != nil {
 		return commondtos.UKeySessionDto{}, err
 	}
 
