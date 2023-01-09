@@ -28,25 +28,27 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 	userGroupV1.POST("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(bodySrc,
-				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
-					return u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto)
-				})
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			userSaveDto, err := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+			if err != nil {
+				u.ginCtxService.HandleErrorResponse(c, err)
+				return
+			}
+			resBody, err := single.RetrieveValue(c,
+				u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto))
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userGroupV1.PUT("",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
-			bodySrc := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(bodySrc,
-				func(userSaveDto userdtos.UserSaveDto) single.Single[userdtos.UserReadDto] {
-					return u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto)
-				})
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			userSaveDto, err := ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
+			if err != nil {
+				u.ginCtxService.HandleErrorResponse(c, err)
+				return
+			}
+			resBody, err := single.RetrieveValue(c,
+				u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), userSaveDto))
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userGroupV1.DELETE("",
@@ -54,7 +56,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			businessLogicSrc := u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userGroupV1.GET("/me",
@@ -62,7 +64,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			businessLogicSrc := u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userGroupV1.GET("/byAuthId/:id",
@@ -71,7 +73,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			authId := c.Param("id")
 			businessLogicSrc := u.userService.GetByAuthId(c, authId)
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 }
 

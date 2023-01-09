@@ -6,7 +6,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/reactive/single"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/queryreq"
 	"net/http"
@@ -28,12 +27,12 @@ type GinCtxService interface {
 	// something went wrong with the server.
 	HandleErrorResponse(c *gin.Context, err error)
 
+	// RespondJsonOk responds with json value with a 200 status code or an
+	// error if the error != nil.
+	RespondJsonOk(c *gin.Context, model any, err error)
+
 	// processBindError takes an error from binding a value from a request body processes it into a BadRequestError.
 	processBindError(err error) apperrors.BadRequestError
-
-	// RespondJsonOkOrError responds with json value with a 200 status code or an
-	// error if the error != nil.
-	RespondJsonOkOrError(c *gin.Context, model any, err error)
 }
 
 type GinCtxServiceImpl struct {
@@ -48,6 +47,23 @@ func (q GinCtxServiceImpl) ReqQueryReader(c *gin.Context) queryreq.ReqQueryReade
 	return queryreq.NewGinCtxReqQueryReaderImpl(c, q.errorMessageService)
 }
 
+func (g GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
+	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
+		c.JSON(http.StatusBadRequest, badReqErr)
+	} else {
+		logger.Log.Error(err)
+		c.Status(http.StatusInternalServerError)
+	}
+}
+
+func (g GinCtxServiceImpl) RespondJsonOk(c *gin.Context, model any, err error) {
+	if err != nil {
+		g.HandleErrorResponse(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, model)
+}
+
 func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError {
 	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
 		appValErrors := slice.Map(fieldErrors, func(fieldError validator.FieldError) apperrors.ValidationError {
@@ -60,23 +76,6 @@ func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
 }
 
-func (g GinCtxServiceImpl) HandleErrorResponse(c *gin.Context, err error) {
-	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
-		c.JSON(http.StatusBadRequest, badReqErr)
-	} else {
-		logger.Log.Error(err)
-		c.Status(http.StatusInternalServerError)
-	}
-}
-
-func (g GinCtxServiceImpl) RespondJsonOkOrError(c *gin.Context, model any, err error) {
-	if err != nil {
-		g.HandleErrorResponse(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, model)
-}
-
 // NewGinCtxServiceImpl creates a new GinCtxService instance
 func NewGinCtxServiceImpl(errorService sharedservices.ErrorService) *GinCtxServiceImpl {
 	return &GinCtxServiceImpl{errorMessageService: errorService}
@@ -85,18 +84,18 @@ func NewGinCtxServiceImpl(errorService sharedservices.ErrorService) *GinCtxServi
 // ReadValueFromBody reads the request body from a gin context and binds it to a
 // value provided in the type parameter. Using a pointer type is not permitted
 // and will trigger a panic.
-func ReadValueFromBody[V any](ginCtxService GinCtxService, c *gin.Context) single.Single[V] {
+func ReadValueFromBody[V any](ginCtxService GinCtxService, c *gin.Context) (V, error) {
 	var value V
 	if err := c.ShouldBind(&value); err != nil {
-		return single.Error[V](ginCtxService.processBindError(err))
+		return value, ginCtxService.processBindError(err)
 	}
-	return single.Just(value)
+	return value, nil
 }
 
 // BindBodyToPointer reads the request type and writes it to a value referenced by the pointer provided.
-func BindBodyToPointer[V any](ginCtxService GinCtxService, c *gin.Context, value *V) single.Single[*V] {
+func BindBodyToPointer[V any](ginCtxService GinCtxService, c *gin.Context, value *V) (*V, error) {
 	if err := c.ShouldBind(value); err != nil {
-		return single.Error[*V](ginCtxService.processBindError(err))
+		return value, ginCtxService.processBindError(err)
 	}
-	return single.Just(value)
+	return value, nil
 }

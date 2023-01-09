@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"github.com/barweiss/go-tuple"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
@@ -40,50 +39,55 @@ func (u UserKeyControllerImpl) AddRoutes(r *gin.Engine) {
 				},
 			)
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userKeyGroupV1.POST("/passcode",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			bodySrc := ginservices.ReadValueFromBody[keydtos.PasscodeCreateDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(single.Zip2(reqUserSrc, bodySrc),
-				func(t tuple.T2[userbos.UserBo, keydtos.PasscodeCreateDto]) single.Single[commondtos.SuccessDto] {
-					userBos, passcodeDto := t.V1, t.V2
-					return u.userKeyService.CreateUserKey(c, userBos, passcodeDto)
+			body, err := ginservices.ReadValueFromBody[keydtos.PasscodeCreateDto](u.ginCtxService, c)
+			if err != nil {
+				u.ginCtxService.HandleErrorResponse(c, err)
+				return
+			}
+			businessLogicSrc := single.FlatMap(reqUserSrc,
+				func(userBos userbos.UserBo) single.Single[commondtos.SuccessDto] {
+					return u.userKeyService.CreateUserKey(c, userBos, body)
 				},
 			)
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userKeyGroupV1.POST("/newSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsUser: true}),
 		func(c *gin.Context) {
 			reqUserSrc := u.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
-			bodySrc := ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(single.Zip2(reqUserSrc, bodySrc),
-				func(t tuple.T2[userbos.UserBo, keydtos.PasscodeDto]) single.Single[commondtos.UKeySessionDto] {
-					userBos, passcodeDto := t.V1, t.V2
-					return u.userKeyService.NewKeySession(c, userBos, passcodeDto)
+			body, err := ginservices.ReadValueFromBody[keydtos.PasscodeDto](u.ginCtxService, c)
+			if err != nil {
+				u.ginCtxService.HandleErrorResponse(c, err)
+				return
+			}
+			businessLogicSrc := single.FlatMap(reqUserSrc,
+				func(userBos userbos.UserBo) single.Single[commondtos.UKeySessionDto] {
+					return u.userKeyService.NewKeySession(c, userBos, body)
 				},
 			)
 			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 
 	userKeyGroupV1.POST("/getKeyFromSession",
 		u.authMiddleware.Authorization(middlewares.AuthorizerSettings{VerifyIsSystemClient: true}),
 		func(c *gin.Context) {
-			bodySrc := ginservices.ReadValueFromBody[commondtos.UKeySessionDto](u.ginCtxService, c)
-			businessLogicSrc := single.FlatMap(bodySrc,
-				func(sessionDto commondtos.UKeySessionDto) single.Single[keydtos.UserKeyDto] {
-					return u.userKeyService.GetKeyFromSession(c, sessionDto)
-				},
-			)
-			resBody, err := single.RetrieveValue(c, businessLogicSrc)
-			u.ginCtxService.RespondJsonOkOrError(c, resBody, err)
+			body, err := ginservices.ReadValueFromBody[commondtos.UKeySessionDto](u.ginCtxService, c)
+			if err != nil {
+				u.ginCtxService.HandleErrorResponse(c, err)
+				return
+			}
+			resBody, err := single.RetrieveValue(c, u.userKeyService.GetKeyFromSession(c, body))
+			u.ginCtxService.RespondJsonOk(c, resBody, err)
 		})
 }
 
