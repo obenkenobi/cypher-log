@@ -171,7 +171,9 @@ func (u UserKeyServiceImpl) NewKeySession(
 					}
 					startTime := time.Now().UnixMilli()
 					sessionDuration := u.keyConf.GetTokenSessionDuration()
-					savedKeySession := u.userKeySessionRepository.Set(ctx, proxyKid, keySessionModel, sessionDuration)
+					savedKeySession := single.FromSupplierCached(func() (models.UserKeySession, error) {
+						return u.userKeySessionRepository.Set(ctx, proxyKid, keySessionModel, sessionDuration)
+					})
 					return single.Map(savedKeySession, func(_ models.UserKeySession) commondtos.UKeySessionDto {
 						return commondtos.UKeySessionDto{
 							Token:         token,
@@ -192,7 +194,10 @@ func (u UserKeyServiceImpl) GetKeyFromSession(
 	ctx context.Context,
 	sessionDto commondtos.UKeySessionDto,
 ) single.Single[keydtos.UserKeyDto] {
-	storedSessionSrc := single.FlatMap(u.userKeySessionRepository.Get(ctx, sessionDto.ProxyKid),
+	findStoresSessSrc := single.FromSupplierCached(func() (option.Maybe[models.UserKeySession], error) {
+		return u.userKeySessionRepository.Get(ctx, sessionDto.ProxyKid)
+	})
+	storedSessionSrc := single.FlatMap(findStoresSessSrc,
 		func(maybe option.Maybe[models.UserKeySession]) single.Single[models.UserKeySession] {
 			return option.Map(maybe, single.Just[models.UserKeySession]).
 				OrElseGet(func() single.Single[models.UserKeySession] {

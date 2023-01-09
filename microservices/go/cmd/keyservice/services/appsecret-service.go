@@ -34,7 +34,9 @@ type AppSecretServiceImpl struct {
 }
 
 func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) single.Single[bos.AppSecretBo] {
-	refFindSrc := a.primaryAppSecretRefRepository.Get(ctx)
+	refFindSrc := single.FromSupplierCached(func() (option.Maybe[models.PrimaryAppSecretRef], error) {
+		return a.primaryAppSecretRefRepository.Get(ctx)
+	})
 	return single.FlatMap(refFindSrc,
 		func(maybe option.Maybe[models.PrimaryAppSecretRef]) single.Single[bos.AppSecretBo] {
 			if ref, ok := maybe.Get(); ok {
@@ -46,7 +48,9 @@ func (a AppSecretServiceImpl) GetPrimaryAppSecret(ctx context.Context) single.Si
 }
 
 func (a AppSecretServiceImpl) GetAppSecret(ctx context.Context, kid string) single.Single[bos.AppSecretBo] {
-	appSecretFindSrc := a.appSecretRepository.Get(ctx, kid)
+	appSecretFindSrc := single.FromSupplierCached(func() (option.Maybe[models.AppSecret], error) {
+		return a.appSecretRepository.Get(ctx, kid)
+	})
 	return single.MapWithError(appSecretFindSrc, func(maybe option.Maybe[models.AppSecret]) (bos.AppSecretBo, error) {
 		appSecretBoMaybe := option.Map(maybe, func(appSecret models.AppSecret) bos.AppSecretBo {
 			return bos.NewAppSecretBo(kid, appSecret.SecretKey)
@@ -69,13 +73,12 @@ func (a AppSecretServiceImpl) GeneratePrimaryAppSecret(ctx context.Context) sing
 	return single.FlatMap(kidKeySrc, func(t tuple.T2[string, []byte]) single.Single[bos.AppSecretBo] {
 		ref := models.PrimaryAppSecretRef{Kid: t.V1}
 		appSecret := models.AppSecret{SecretKey: t.V2}
-		secretSaveSrc := a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration())
-		refSavedSrc := single.FlatMap(
-			secretSaveSrc,
-			func(_ models.AppSecret) single.Single[models.PrimaryAppSecretRef] {
-				return a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration())
-			},
-		)
+		secretSaveSrc := single.FromSupplierCached(func() (models.AppSecret, error) {
+			return a.appSecretRepository.Set(ctx, ref.Kid, appSecret, a.keyConf.GetSecretDuration())
+		})
+		refSavedSrc := single.MapWithError(secretSaveSrc, func(_ models.AppSecret) (models.PrimaryAppSecretRef, error) {
+			return a.primaryAppSecretRefRepository.Set(ctx, ref, a.keyConf.GetPrimaryAppSecretDuration())
+		})
 		return single.Map(refSavedSrc, func(_ models.PrimaryAppSecretRef) bos.AppSecretBo {
 			return bos.NewAppSecretBo(ref.Kid, appSecret.SecretKey)
 		})
