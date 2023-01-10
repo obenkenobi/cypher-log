@@ -5,6 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userpb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
 	"google.golang.org/grpc"
@@ -26,7 +27,9 @@ func (u ExtUserServiceImpl) GetById(ctx context.Context, id string) (userDto use
 		return userDto, err
 	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
+		if conErr := conn.Close(); conErr != nil {
+			logger.Log.WithError(conErr).Error()
+		}
 	}(conn)
 
 	userService := userpb.NewUserServiceClient(conn)
@@ -47,7 +50,9 @@ func (u ExtUserServiceImpl) GetByAuthId(ctx context.Context, authId string) (use
 		return userDto, err
 	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
+		if conErr := conn.Close(); conErr != nil {
+			logger.Log.WithError(conErr).Error()
+		}
 	}(conn)
 
 	userService := userpb.NewUserServiceClient(conn)

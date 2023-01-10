@@ -5,6 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/gtools"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/keydtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedmappers/grpcmappers"
@@ -32,7 +33,9 @@ func (e ExtUserKeyServiceImpl) GetKeyFromSession(
 		return keyDto, err
 	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
+		if conErr := conn.Close(); conErr != nil {
+			logger.Log.WithError(conErr).Error()
+		}
 	}(conn)
 
 	client := userkeypb.NewUserKeyServiceClient(conn)
