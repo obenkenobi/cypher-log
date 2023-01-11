@@ -102,8 +102,8 @@ func (u UserServiceImpl) updateUser(
 
 	user, isPresent := userSearch.Get()
 	if !isPresent {
-		err := apperrors.NewBadReqErrorFromRuleError(
-			u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
+		ruleErr := u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound)
+		err := apperrors.NewBadReqErrorFromRuleError(ruleErr)
 		return userdtos.UserReadDto{}, err
 	}
 
@@ -145,8 +145,8 @@ func (u UserServiceImpl) beginDeletingUser(
 
 	user, isPresent := userSearch.Get()
 	if !isPresent {
-		err := apperrors.NewBadReqErrorFromRuleError(
-			u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound))
+		ruleErr := u.errorService.RuleErrorFromCode(apperrors.ErrCodeReqResourcesNotFound)
+		err := apperrors.NewBadReqErrorFromRuleError(ruleErr)
 		return userdtos.UserReadDto{}, err
 	}
 
