@@ -8,7 +8,7 @@ import (
 )
 
 type UserChangeEventService interface {
-	HandleUserChangeEventTransaction(
+	HandleUserChangeEventTxn(
 		ctx context.Context,
 		userEventDto userdtos.UserChangeEventDto,
 	) (userdtos.UserChangeEventResponseDto, error)
@@ -20,30 +20,35 @@ type UserChangeEventServiceImpl struct {
 	noteService   NoteService
 }
 
-func (u UserChangeEventServiceImpl) HandleUserChangeEventTransaction(
+func (u UserChangeEventServiceImpl) HandleUserChangeEventTxn(
 	ctx context.Context,
 	userEventDto userdtos.UserChangeEventDto,
 ) (userdtos.UserChangeEventResponseDto, error) {
-	return dshandlers.Transactional(
-		ctx,
-		u.crudDSHandler,
+	return dshandlers.Txn(ctx, u.crudDSHandler,
 		func(session dshandlers.Session, ctx context.Context) (userdtos.UserChangeEventResponseDto, error) {
-			switch userEventDto.Action {
-			case userdtos.UserSave:
-				_, err := u.userService.SaveUser(ctx, userEventDto)
-				return userdtos.UserChangeEventResponseDto{Discarded: false}, err
-			case userdtos.UserDelete:
-				_, err := u.userService.DeleteUser(ctx, userEventDto)
-				if err != nil {
-					return userdtos.UserChangeEventResponseDto{Discarded: false}, err
-				}
-				_, err = u.noteService.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
-				return userdtos.UserChangeEventResponseDto{Discarded: false}, err
-			default:
-				return userdtos.UserChangeEventResponseDto{Discarded: true}, nil
-			}
+			return u.HandleUserChangeEvent(ctx, userEventDto)
 		},
 	)
+}
+
+func (u UserChangeEventServiceImpl) HandleUserChangeEvent(
+	ctx context.Context,
+	userEventDto userdtos.UserChangeEventDto,
+) (userdtos.UserChangeEventResponseDto, error) {
+	switch userEventDto.Action {
+	case userdtos.UserSave:
+		_, err := u.userService.SaveUser(ctx, userEventDto)
+		return userdtos.UserChangeEventResponseDto{Discarded: false}, err
+	case userdtos.UserDelete:
+		_, err := u.userService.DeleteUser(ctx, userEventDto)
+		if err != nil {
+			return userdtos.UserChangeEventResponseDto{Discarded: false}, err
+		}
+		_, err = u.noteService.DeleteByUserIdAndGetCount(ctx, userEventDto.Id)
+		return userdtos.UserChangeEventResponseDto{Discarded: false}, err
+	default:
+		return userdtos.UserChangeEventResponseDto{Discarded: true}, nil
+	}
 }
 
 func NewUserChangeEventServiceImpl(

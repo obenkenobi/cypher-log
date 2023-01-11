@@ -35,7 +35,7 @@ func (r RmqListenerImpl) ListenUserChange() {
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
 	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.UserChangeEventDto]) msg.ReceiverAction {
-		res, err := r.userChangeEventService.HandleUserChangeEventTransaction(r.ctx, d.Body())
+		res, err := r.userChangeEventService.HandleUserChangeEventTxn(r.ctx, d.Body())
 		if err != nil {
 			return d.Resend()
 		} else if res.Discarded {

@@ -20,17 +20,17 @@ import (
 )
 
 type NoteService interface {
-	AddNoteTransaction(
+	AddNoteTxn(
 		ctx context.Context,
 		userBo userbos.UserBo,
 		dto cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto],
 	) (cDTOs.SuccessDto, error)
-	UpdateNoteTransaction(
+	UpdateNoteTxn(
 		ctx context.Context,
 		userBo userbos.UserBo,
 		dto cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto],
 	) (cDTOs.SuccessDto, error)
-	DeleteNoteTransaction(
+	DeleteNoteTxn(
 		ctx context.Context,
 		userBo userbos.UserBo,
 		noteIdDto nDTOs.NoteIdDto,
@@ -56,104 +56,127 @@ type NoteServiceImpl struct {
 	noteBr         businessrules.NoteBr
 }
 
-func (n NoteServiceImpl) AddNoteTransaction(
+func (n NoteServiceImpl) AddNoteTxn(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto],
 ) (cDTOs.SuccessDto, error) {
-	return dshandlers.Transactional(ctx, n.crudDSHandler,
+	return dshandlers.Txn(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) (cDTOs.SuccessDto, error) {
-			sessDto, noteCreateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
-			keyDto, err := n.userKeyService.GetKeyFromSession(ctx, sessDto)
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			key, err := kDTOs.UserKeyDto.GetKey(keyDto)
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			titleCipher, err := cipherutils.EncryptAES(key, []byte(noteCreateDto.Title))
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			textCipher, err := cipherutils.EncryptAES(key, []byte(noteCreateDto.Text))
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			note := models.Note{
-				UserId:      userBo.Id,
-				TextCipher:  textCipher,
-				TitleCipher: titleCipher,
-				KeyVersion:  keyDto.KeyVersion,
-			}
-			if _, err := n.noteRepository.Create(ctx, note); err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			return cDTOs.NewSuccessTrue(), nil
+			return n.AddNoteTxn(ctx, userBo, sessReqDto)
 		})
-
 }
 
-func (n NoteServiceImpl) UpdateNoteTransaction(
+func (n NoteServiceImpl) addNote(
+	ctx context.Context,
+	userBo userbos.UserBo,
+	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto],
+) (cDTOs.SuccessDto, error) {
+	sessDto, noteCreateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
+	keyDto, err := n.userKeyService.GetKeyFromSession(ctx, sessDto)
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	key, err := kDTOs.UserKeyDto.GetKey(keyDto)
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	titleCipher, err := cipherutils.EncryptAES(key, []byte(noteCreateDto.Title))
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	textCipher, err := cipherutils.EncryptAES(key, []byte(noteCreateDto.Text))
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	note := models.Note{
+		UserId:      userBo.Id,
+		TextCipher:  textCipher,
+		TitleCipher: titleCipher,
+		KeyVersion:  keyDto.KeyVersion,
+	}
+	if _, err := n.noteRepository.Create(ctx, note); err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	return cDTOs.NewSuccessTrue(), nil
+}
+
+func (n NoteServiceImpl) UpdateNoteTxn(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto],
 ) (cDTOs.SuccessDto, error) {
-	return dshandlers.Transactional(ctx, n.crudDSHandler,
+	return dshandlers.Txn(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) (cDTOs.SuccessDto, error) {
-			sessDto, noteUpdateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
-			existingNote, err := n.getExistingNote(ctx, noteUpdateDto.Id)
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			keyDto, err := n.userKeyService.GetKeyFromSession(ctx, sessDto)
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			if err := n.noteBr.ValidateNoteUpdate(userBo, keyDto, existingNote); err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			key, err := keyDto.GetKey()
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			titleCipher, err := cipherutils.EncryptAES(key, []byte(noteUpdateDto.Title))
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			textCipher, err := cipherutils.EncryptAES(key, []byte(noteUpdateDto.Text))
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			existingNote.TitleCipher = titleCipher
-			existingNote.TextCipher = textCipher
-			existingNote.KeyVersion = keyDto.KeyVersion
-			if _, err := n.noteRepository.Update(ctx, existingNote); err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			return cDTOs.NewSuccessTrue(), nil
+			return n.updateNote(ctx, userBo, sessReqDto)
 		})
 }
 
-func (n NoteServiceImpl) DeleteNoteTransaction(
+func (n NoteServiceImpl) updateNote(
+	ctx context.Context,
+	userBo userbos.UserBo,
+	sessReqDto cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto],
+) (cDTOs.SuccessDto, error) {
+	sessDto, noteUpdateDto := sessReqDto.SetUserIdAndUnwrap(userBo.Id)
+	existingNote, err := n.getExistingNote(ctx, noteUpdateDto.Id)
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	keyDto, err := n.userKeyService.GetKeyFromSession(ctx, sessDto)
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	if err := n.noteBr.ValidateNoteUpdate(userBo, keyDto, existingNote); err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	key, err := keyDto.GetKey()
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	titleCipher, err := cipherutils.EncryptAES(key, []byte(noteUpdateDto.Title))
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	textCipher, err := cipherutils.EncryptAES(key, []byte(noteUpdateDto.Text))
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	existingNote.TitleCipher = titleCipher
+	existingNote.TextCipher = textCipher
+	existingNote.KeyVersion = keyDto.KeyVersion
+	if _, err := n.noteRepository.Update(ctx, existingNote); err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	return cDTOs.NewSuccessTrue(), nil
+}
+
+func (n NoteServiceImpl) DeleteNoteTxn(
 	ctx context.Context,
 	userBo userbos.UserBo,
 	noteIdDto nDTOs.NoteIdDto,
 ) (cDTOs.SuccessDto, error) {
-	return dshandlers.Transactional(ctx, n.crudDSHandler,
+	return dshandlers.Txn(ctx, n.crudDSHandler,
 		func(_ dshandlers.Session, ctx context.Context) (cDTOs.SuccessDto, error) {
-			existingNote, err := n.getExistingNote(ctx, noteIdDto.Id)
-			if err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			if err := n.noteBr.ValidateNoteDelete(userBo, existingNote); err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			if _, err := n.noteRepository.Delete(ctx, existingNote); err != nil {
-				return cDTOs.SuccessDto{}, err
-			}
-			return cDTOs.NewSuccessTrue(), nil
+			return n.deleteNote(ctx, userBo, noteIdDto)
 		})
+}
+
+func (n NoteServiceImpl) deleteNote(
+	ctx context.Context,
+	userBo userbos.UserBo,
+	noteIdDto nDTOs.NoteIdDto,
+) (cDTOs.SuccessDto, error) {
+	existingNote, err := n.getExistingNote(ctx, noteIdDto.Id)
+	if err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	if err := n.noteBr.ValidateNoteDelete(userBo, existingNote); err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	if _, err := n.noteRepository.Delete(ctx, existingNote); err != nil {
+		return cDTOs.SuccessDto{}, err
+	}
+	return cDTOs.NewSuccessTrue(), nil
 }
 
 func (n NoteServiceImpl) GetNoteById(

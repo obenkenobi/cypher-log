@@ -23,19 +23,15 @@ type CrudDSHandler interface {
 	GetChildDBCtxWithCancel(ctx context.Context) (context.Context, context.CancelFunc)
 	// ToChildCtx creates a new context to be sent to other database queries
 	ToChildCtx(ctx context.Context) context.Context
-	// ExecTransaction executes a transaction synchronously from the runner function.
-	ExecTransaction(ctx context.Context, runner func(Session, context.Context) error) error
+	// ExecTxn executes a transaction synchronously from the runner function.
+	ExecTxn(ctx context.Context, runner func(Session, context.Context) error) error
 }
 
-// Transactional executes a transaction
-func Transactional[T any](
-	ctx context.Context,
-	d CrudDSHandler,
-	supplier func(Session, context.Context) (T, error),
-) (T, error) {
+// Txn executes a transaction
+func Txn[T any](ctx context.Context, d CrudDSHandler, supplier func(Session, context.Context) (T, error)) (T, error) {
 	var res T
 	var err error = nil
-	transactionErr := d.ExecTransaction(ctx, func(session Session, ctx context.Context) error {
+	transactionErr := d.ExecTxn(ctx, func(session Session, ctx context.Context) error {
 		res, err = supplier(session, ctx)
 		if err != nil {
 			return session.AbortTransaction(ctx)
@@ -66,7 +62,7 @@ func (d MongoDBHandler) ToChildCtx(ctx context.Context) context.Context {
 	return dbCtx
 }
 
-func (d MongoDBHandler) ExecTransaction(ctx context.Context, transactionFunc func(Session, context.Context) error) error {
+func (d MongoDBHandler) ExecTxn(ctx context.Context, transactionFunc func(Session, context.Context) error) error {
 	return mgm.TransactionWithCtx(
 		ctx,
 		func(session mongo.Session, sc mongo.SessionContext) error {

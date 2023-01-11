@@ -35,7 +35,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = u.userService.AddUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody)
+				resBody, err = u.userService.AddUserTxn(c, security.GetIdentityFromGinContext(c), reqBody)
 				return
 			}).Next(func() error {
 				c.JSON(http.StatusOK, resBody)
@@ -53,7 +53,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = u.userService.UpdateUserTransaction(c, security.GetIdentityFromGinContext(c), reqBody)
+				resBody, err = u.userService.UpdateUserTxn(c, security.GetIdentityFromGinContext(c), reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -67,7 +67,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody userdtos.UserReadDto
 
 			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
-				resBody, err = u.userService.BeginDeletingUserTransaction(c, security.GetIdentityFromGinContext(c))
+				resBody, err = u.userService.BeginDeletingUserTxn(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)

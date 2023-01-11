@@ -45,7 +45,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 					n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = n.noteService.AddNoteTransaction(c, userBo, reqBody)
+				resBody, err = n.noteService.AddNoteTxn(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -67,7 +67,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 					n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = n.noteService.UpdateNoteTransaction(c, userBo, reqBody)
+				resBody, err = n.noteService.UpdateNoteTxn(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
@@ -88,7 +88,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 				reqBody, err = ginservices.ReadValueFromBody[nDTOs.NoteIdDto](n.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
-				resBody, err = n.noteService.DeleteNoteTransaction(c, userBo, reqBody)
+				resBody, err = n.noteService.DeleteNoteTxn(c, userBo, reqBody)
 				return
 			}).Next(func() (err error) {
 				c.JSON(http.StatusOK, resBody)
