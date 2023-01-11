@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 # File Paths
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 CMD_DIR := $(ROOT_DIR)/cmd
@@ -21,89 +23,77 @@ GOOS_LINUX := linux
 GOOS_WINDOWS := windows
 GOOS_DARWIN := darwin
 
-# Go binary extensions
-EXTENSION_BIN_LINUX := linux
-EXTENSION_BIN_DARWIN := darwin
-EXTENSION_BIN_WINDOWS := exe
+# Go binaries
+EXECUTABLE := $(service).out
 
 # Go binaries (full paths)
-BIN_LINUX_AMD64 := $(BIN_DIR)/$(service).$(GOARCH_AMD64).$(EXTENSION_BIN_LINUX)
-BIN_LINUX_ARM64 := $(BIN_DIR)/$(service).$(GOARCH_ARM64).$(EXTENSION_BIN_LINUX)
-BIN_DARWIN_AMD64 := $(BIN_DIR)/$(service).$(GOARCH_AMD64).$(EXTENSION_BIN_DARWIN)
-BIN_DARWIN_ARM64 := $(BIN_DIR)/$(service).$(GOARCH_ARM64).$(EXTENSION_BIN_DARWIN)
-BIN_WINDOWS_AMD64 := $(BIN_DIR)/$(service).$(GOARCH_AMD64).$(EXTENSION_BIN_WINDOWS)
-BIN_WINDOWS_ARM64 := $(BIN_DIR)/$(service).$(GOARCH_ARM64).$(EXTENSION_BIN_WINDOWS)
+EXECUTABLE_PATH := $(BIN_DIR)/$(EXECUTABLE)
 
 define go_build_platform
-	env GOOS=$(1) GOARCH=$(2) go build -o $(3) $(SELECTED_SERVICE_DIR)
+	env GOOS=$(1) GOARCH=$(2) go build -o $(3) $(4)
 endef
 
+.PHONY: help
+help:
+	@echo "Arguments:"
+	@echo ""
+	@echo "service			a microservice in the cmd directory"
+	@echo "testlocation  	path to the directory or file you want to run a go test on"
+	@echo ""
+	@echo "targets:"
+	@echo ""
+	@echo "(in the format <target> : <dependencies> |<required args>| <description>"
+	@echo ""
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
+
 .PHONY: list-microservices
-list-microservices:
+list-microservices: ##|| Lists available microservices
 	ls $(CMD_DIR)
 
 .PHONY: wire
-wire:
-	cd $(SELECTED_SERVICE_DIR); \
+wire: ##|service| Code generation for dependency injection
+	@cd $(SELECTED_SERVICE_DIR)
 	go run github.com/google/wire/cmd/wire gen $(SELECTED_SERVICE_ROOT_PKG)/app
 
-.PHONY: run
-run: wire
-	go run $(SELECTED_SERVICE_DIR)
+.PHONY: wire-all
+wire-all: $(CMD_DIR)/* ##|| Code generation for all microservices, dependency injection
+	@for microservice in $(shell ls ${CMD_DIR}); do \
+  		cd $(CMD_DIR)/$${microservice}; \
+		go run github.com/google/wire/cmd/wire gen github.com/obenkenobi/cypher-log/microservices/go/cmd/$${microservice}/app ; \
+    done
+
+.PHONY: build
+build: wire ##|service| builds your executable in the bin directory in the format $(service).out
+	$(call go_build_platform,,,$(EXECUTABLE_PATH),$(SELECTED_SERVICE_DIR))
 
 .PHONY: build-linux-amd64
-build-linux-amd64: wire
-	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_AMD64),$(BIN_LINUX_AMD64))
+build-linux-amd64: wire ##|service| builds your executable in the bin directory in the format $(service).out for the linux/amd64 platform
+	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_AMD64),$(EXECUTABLE_PATH),$(SELECTED_SERVICE_DIR))
 
 .PHONY: build-linux-arm64
-build-linux-arm64: wire
-	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_ARM64),$(BIN_LINUX_ARM64))
+build-linux-arm64: wire ##|service| builds your executable in the bin directory in the format $(service).out for the linux/arm64 platform
+	$(call go_build_platform,$(GOOS_LINUX),$(GOARCH_ARM64),$(EXECUTABLE_PATH),$(SELECTED_SERVICE_DIR))
 
-.PHONY: build-darwin-amd64
-build-darwin-amd64: wire
-	$(call go_build_platform,$(GOOS_DARWIN),$(GOARCH_AMD64),$(BIN_DARWIN_AMD64))
+.PHONY: build-all
+build-all: wire-all $(CMD_DIR)/* ##|| for all microservices builds your executables in the bin directory in the format $(service).out
+	@for microservice in $(shell ls ${CMD_DIR}); do \
+  		go build -o $(BIN_DIR)/$${microservice}.out $(CMD_DIR)/$${microservice} ; \
+    done
 
-.PHONY: build-darwin-arm64
-build-darwin-arm64: wire
-	$(call go_build_platform,$(GOOS_DARWIN),$(GOARCH_ARM64),$(BIN_DARWIN_ARM64))
+.PHONY: run
+run: build ##|service| runs your go executable
+	exec $(EXECUTABLE_PATH)
 
-.PHONY: build-windows-amd64
-build-windows-amd64: wire
-	$(call go_build_platform,$(GOOS_WINDOWS),$(GOARCH_AMD64),$(BIN_WINDOWS_AMD64))
+.PHONY: docker-linux-amd64 ##|service| builds a docker image for the linux/amd64 platform
+docker-linux-amd64: build-linux-amd64
+	docker build -t $(service)_$(GOOS_LINUX)_$(GOARCH_AMD64):latest --build-arg EXECUTABLE=$(EXECUTABLE) $(ROOT_DIR)/
 
-.PHONY: build-windows-arm64
-build-windows-arm64: wire
-	$(call go_build_platform,$(GOOS_WINDOWS),$(GOARCH_ARM64),$(BIN_WINDOWS_ARM64))
-
-.PHONY: build-all-platforms
-build-all-platforms: wire build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 build-windows-amd64 build-windows-arm64
-
-.PHONY: run-bin-linux-amd64
-run-bin-linux-amd64: build-linux-amd64
-	exec $(BIN_LINUX_AMD64)
-
-.PHONY: run-bin-linux-arm64
-run-bin-linux-arm64: build-linux-arm64
-	exec $(BIN_LINUX_ARM64)
-
-.PHONY: run-bin-darwin-amd64
-run-bin-darwin-amd64: build-darwin-amd64
-	exec $(BIN_DARWIN_AMD64)
-
-.PHONY: run-bin-darwin-arm64
-run-bin-darwin-arm64: build-darwin-arm64
-	exec $(BIN_DARWIN_ARM64)
-
-.PHONY: run-bin-windows-amd64
-run-bin-windows-amd64: build-windows-amd64
-	exec $(BIN_WINDOWS_AMD64)
-
-.PHONY: run-bin-windows-arm64
-run-bin-windows-arm64: build-windows-arm64
-	exec $(BIN_WINDOWS_ARM64)
+.PHONY: docker-linux-arm64
+docker-linux-arm64: build-linux-arm64 ##|service| builds a docker image for the linux/arm64 platform
+	docker build build -t $(service)_$(GOOS_LINUX)_$(GOARCH_ARM64):latest --build-arg EXECUTABLE=$(EXECUTABLE) $(ROOT_DIR)/
 
 .PHONY: test
-test: wire
+test: wire-all ##|testlocation| runs go tests
 ifeq ($(testlocation),)
 	go test $(ROOT_DIR)/...
 else ifeq ($(suffix $(TEST_PATH)), .go)
