@@ -35,15 +35,14 @@ endef
 
 .PHONY: help
 help:
-	@echo "Arguments:"
-	@echo ""
+	@echo "-------------------------------------------------------------------------------------------"
+	@echo "Arguments"
+	@echo "-------------------------------------------------------------------------------------------"
 	@echo "service			a microservice in the cmd directory"
 	@echo "testlocation  	path to the directory or file you want to run a go test on"
-	@echo ""
-	@echo "targets:"
-	@echo ""
-	@echo "(in the format <target> : <dependencies> |<required args>| <description>"
-	@echo ""
+	@echo "-------------------------------------------------------------------------------------------"
+	@echo "targets (in the format \"<target> : <dependencies> |<required args>| <description>\")"
+	@echo "------------------------------------------------------------------------------------------"
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 .PHONY: list-microservices
@@ -84,8 +83,8 @@ build-all: wire-all $(CMD_DIR)/* ##|| for all microservices builds your executab
 run: build ##|service| runs your go executable
 	exec $(EXECUTABLE_PATH)
 
-.PHONY: docker-linux-amd64 ##|service| builds a docker image for the linux/amd64 platform
-docker-linux-amd64: build-linux-amd64
+.PHONY: docker-linux-amd64
+docker-linux-amd64: build-linux-amd64 ##|service| builds a docker image for the linux/amd64 platform
 	docker build -t $(service)_$(GOOS_LINUX)_$(GOARCH_AMD64):latest --build-arg EXECUTABLE=$(EXECUTABLE) $(ROOT_DIR)/
 
 .PHONY: docker-linux-arm64

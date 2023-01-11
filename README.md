@@ -167,6 +167,9 @@ so we need to generate some code as a precompile step before we even compile and
 
 ###### 1. Building and running with a Makefile
 The `Makefile` you see in the `go` directory refers to the build automation commands available.
+
+Run `make help` to see what targets are available.
+
 Before you can even compile or run your Go code, you need to do a precompile step, generate code using 
 [Google Wire](https://github.com/google/wire) for dependency injection. 
 
@@ -177,13 +180,7 @@ Now if you wish to run your app then without compiling, just run a command in th
 
 For example: `make run service=userservice`
 
-You can also compile and then run your code program. Assuming you are on Windows and using an amd architecture,
-run in this template `make build build-windows-amd64 service=${a subdirectory of cmd}`
-
-Similar commands exist in the makefile for different architectures and operating systems.
-The same applies to run your compiled binaries.\
-
-For Windows on an amd architecture, run in this template `make run-bin-windows-amd64 service=${a subdirectory of cmd}`
+You can also just compile your app (for your platform). `make build service=${a subdirectory of cmd}`
 
 To clean your build file, run `make clean`.
 
