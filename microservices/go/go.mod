@@ -5,6 +5,9 @@ go 1.18
 require (
 	github.com/akrennmair/slice v0.0.0-20220105203817-49445747ab81
 	github.com/auth0/go-jwt-middleware/v2 v2.0.1
+	github.com/barweiss/go-tuple v1.0.2
+	github.com/coreos/go-oidc/v3 v3.5.0
+	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-co-op/gocron v1.17.0
 	github.com/go-playground/validator/v10 v10.11.0
@@ -13,7 +16,6 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/gwatts/gin-adapter v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.7.1
-	github.com/joamaki/goreactive/stream v0.0.3
 	github.com/joho/godotenv v1.4.0
 	github.com/kamva/mgm/v3 v3.4.1
 	github.com/sirupsen/logrus v1.9.0
@@ -22,7 +24,9 @@ require (
 	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f
 	github.com/wagslane/go-rabbitmq v0.10.0
 	go.mongodb.org/mongo-driver v1.9.0
+	go.uber.org/atomic v1.10.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	golang.org/x/exp v0.0.0-20220314205449-43aec2f8a4e7
 	golang.org/x/oauth2 v0.4.0
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.0
@@ -32,12 +36,9 @@ require (
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
 	github.com/PuerkitoBio/rehttp v1.0.0 // indirect
-	github.com/barweiss/go-tuple v1.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/coreos/go-oidc/v3 v3.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/gin-contrib/sessions v0.0.5 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
@@ -72,16 +73,12 @@ require (
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
-	go.uber.org/atomic v1.10.0 // indirect
-	golang.org/x/exp v0.0.0-20220314205449-43aec2f8a4e7 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
-	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
 	golang.org/x/tools v0.1.12 // indirect
-	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220616135557-88e70c0c3a90 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
