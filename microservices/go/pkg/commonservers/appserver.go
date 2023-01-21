@@ -47,14 +47,36 @@ func NewCoreAppServerImpl(
 	tlsConf conf.TLSConf,
 	controllers ...controller.Controller,
 ) *CoreAppServerImpl {
+	return NewCoreAppServerWithHooksImpl(
+		serverConf,
+		tlsConf,
+		func(c *gin.Engine) {},
+		controllers,
+		func(engine *gin.Engine) {},
+	)
+}
+
+// NewCoreAppServerWithHooksImpl creates an app server that can be run by the
+// server configuration and a list of controllers. The beforeControllers and
+// afterControllers hooks add additional gin engine configuration before and
+// after controllers are added respectively.
+func NewCoreAppServerWithHooksImpl(
+	serverConf conf.ServerConf,
+	tlsConf conf.TLSConf,
+	beforeControllers func(c *gin.Engine),
+	controllers []controller.Controller,
+	afterControllers func(engine *gin.Engine),
+) *CoreAppServerImpl {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
 	middlewares.AddGlobalMiddleWares(r)
+	beforeControllers(r)
 	for _, c := range controllers {
 		c.AddRoutes(r)
 	}
+	afterControllers(r)
 	server := &CoreAppServerImpl{serverConf: serverConf, tlsConf: tlsConf, router: r}
 	return server
 }
