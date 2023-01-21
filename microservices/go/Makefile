@@ -52,7 +52,11 @@ list-microservices: ##|| Lists available microservices
 .PHONY: wire
 wire: ##|service| Code generation for dependency injection
 	@cd $(SELECTED_SERVICE_DIR)
+ifneq ("$(wildcard $(SELECTED_SERVICE_DIR)/app/wire.go)","")
 	go run github.com/google/wire/cmd/wire gen $(SELECTED_SERVICE_ROOT_PKG)/app
+else
+	@echo "$(SELECTED_SERVICE_DIR)/app/wire.go not found"
+endif
 
 .PHONY: wire-all
 wire-all: $(CMD_DIR)/* ##|| Code generation for all microservices, dependency injection
