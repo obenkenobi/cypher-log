@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	environment.ReadEnvFiles(".env", "noteservice.env") // Load env files
+	environment.ReadEnvFiles(".env", "uiservice.env") // Load env files
 	logger.ConfigureLoggerFromEnv()
 	app.Start()
 }

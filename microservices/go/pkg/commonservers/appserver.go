@@ -50,9 +50,9 @@ func NewCoreAppServerImpl(
 	return NewCoreAppServerWithHooksImpl(
 		serverConf,
 		tlsConf,
-		func(c *gin.Engine) {},
+		func(r *gin.Engine) {},
 		controllers,
-		func(engine *gin.Engine) {},
+		func(r *gin.Engine) {},
 	)
 }
 
@@ -63,9 +63,9 @@ func NewCoreAppServerImpl(
 func NewCoreAppServerWithHooksImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
-	beforeControllers func(c *gin.Engine),
+	beforeControllers func(r *gin.Engine),
 	controllers []controller.Controller,
-	afterControllers func(engine *gin.Engine),
+	afterControllers func(r *gin.Engine),
 ) *CoreAppServerImpl {
 	if environment.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)

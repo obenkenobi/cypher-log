@@ -30,5 +30,6 @@ go.work
 userservice.env
 keyservice.env
 noteservice.env
+uiservice.env
 
 wire_gen.go
