@@ -31,7 +31,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody userdtos.UserSaveDto
 			var resBody userdtos.UserReadDto
 
-			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			u.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
@@ -49,7 +49,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody userdtos.UserSaveDto
 			var resBody userdtos.UserReadDto
 
-			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			u.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				reqBody, err = ginservices.ReadValueFromBody[userdtos.UserSaveDto](u.ginCtxService, c)
 				return
 			}).Next(func() (err error) {
@@ -66,7 +66,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			var resBody userdtos.UserReadDto
 
-			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			u.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				resBody, err = u.userService.BeginDeletingUserTxn(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
@@ -80,7 +80,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 		func(c *gin.Context) {
 			var resBody userdtos.UserIdentityDto
 
-			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			u.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				resBody, err = u.userService.GetUserIdentity(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
@@ -95,7 +95,7 @@ func (u UserControllerImpl) AddRoutes(r *gin.Engine) {
 			var resBody userdtos.UserReadDto
 			authId := c.Param("id")
 
-			u.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			u.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				resBody, err = u.userService.GetByAuthId(c, authId)
 				return
 			}).Next(func() (err error) {

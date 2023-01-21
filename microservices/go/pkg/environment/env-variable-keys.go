@@ -37,6 +37,9 @@ const EnvVarKeyAuth0GrpcAudience = "AUTH0_GRPC_AUDIENCE"
 const EnvVarKeyAuth0Domain = "AUTH0_DOMAIN"
 const EnvVarKeyAuth0ClientCredentialsId = "AUTH0_CLIENT_CREDENTIALS_ID"
 const EnvVarKeyAuth0ClientCredentialsSecret = "AUTH0_CLIENT_CREDENTIALS_SECRET"
+const EnvVarKeyAuth0WebappClientId = "AUTH0_WEBAPP_CLIENT_ID"
+const EnvVarKeyAuth0WebappClientSecret = "AUTH0_WEBAPP_CLIENT_SECRET"
+const EnvVarKeyAuth0WebappCallbackUrl = "AUTH0_WEBAPP_CALLBACK_URL"
 
 // MongoDB
 

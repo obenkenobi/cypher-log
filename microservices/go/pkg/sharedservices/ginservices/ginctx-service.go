@@ -41,9 +41,9 @@ type GinCtxService interface {
 	// processes it into a BadRequestError.
 	processBindError(err error) apperrors.BadRequestError
 
-	// StartCtxPipeline initializes a controller.Pipeline that manages errors in the
-	// background using the gin context
-	StartCtxPipeline(c *gin.Context) controller.Pipeline
+	// RestControllerPipeline initializes a controller.Pipeline that manages errors in the
+	// background using the gin context for REST controllers.
+	RestControllerPipeline(c *gin.Context) controller.Pipeline
 }
 
 type GinCtxServiceImpl struct {
@@ -87,7 +87,7 @@ func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
 }
 
-func (g GinCtxServiceImpl) StartCtxPipeline(c *gin.Context) controller.Pipeline {
+func (g GinCtxServiceImpl) RestControllerPipeline(c *gin.Context) controller.Pipeline {
 	return controller.NewPipelineImpl(func(err error) {
 		g.RespondError(c, err)
 	})

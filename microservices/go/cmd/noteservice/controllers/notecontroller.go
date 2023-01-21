@@ -37,7 +37,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody cDTOs.UKeySessionReqDto[nDTOs.NoteCreateDto]
 			var resBody cDTOs.SuccessDto
 
-			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			n.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
@@ -59,7 +59,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody cDTOs.UKeySessionReqDto[nDTOs.NoteUpdateDto]
 			var resBody cDTOs.SuccessDto
 
-			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			n.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
@@ -81,7 +81,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody nDTOs.NoteIdDto
 			var resBody cDTOs.SuccessDto
 
-			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			n.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
@@ -102,7 +102,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody cDTOs.UKeySessionReqDto[nDTOs.NoteIdDto]
 			var resBody nDTOs.NoteReadDto
 
-			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			n.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {
@@ -124,7 +124,7 @@ func (n NoteControllerImpl) AddRoutes(r *gin.Engine) {
 			var reqBody cDTOs.UKeySessionReqDto[pagination.PageRequest]
 			var resBody pagination.Page[nDTOs.NotePreviewDto]
 
-			n.ginCtxService.StartCtxPipeline(c).Next(func() (err error) {
+			n.ginCtxService.RestControllerPipeline(c).Next(func() (err error) {
 				userBo, err = n.userService.RequireUser(c, security.GetIdentityFromGinContext(c))
 				return
 			}).Next(func() (err error) {

@@ -2,7 +2,7 @@ package authconf
 
 import (
 	"fmt"
-	environment2 "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"net/url"
 )
@@ -14,6 +14,9 @@ type Auth0SecurityConf interface {
 	GetDomain() string
 	GetClientCredentialsId() string
 	GetClientCredentialsSecret() string
+	GetWebappClientId() string
+	GetWebappClientSecret() string
+	GetWebappCallbackUrl() string
 }
 
 type Auth0RouteSecurityConfImpl struct {
@@ -23,6 +26,9 @@ type Auth0RouteSecurityConfImpl struct {
 	domain                  string
 	clientCredentialsId     string
 	clientCredentialsSecret string
+	webappClientId          string
+	webappClientSecret      string
+	webappCallbackUrl       string
 }
 
 func (a Auth0RouteSecurityConfImpl) GetGrpcAudience() string {
@@ -31,6 +37,10 @@ func (a Auth0RouteSecurityConfImpl) GetGrpcAudience() string {
 
 func (a Auth0RouteSecurityConfImpl) GetIssuerUrl() *url.URL {
 	return a.issuerUrl
+}
+
+func (a Auth0RouteSecurityConfImpl) GetApiAudience() string {
+	return a.apiAudience
 }
 
 func (a Auth0RouteSecurityConfImpl) GetDomain() string {
@@ -45,22 +55,33 @@ func (a Auth0RouteSecurityConfImpl) GetClientCredentialsSecret() string {
 	return a.clientCredentialsSecret
 }
 
-func (a Auth0RouteSecurityConfImpl) GetApiAudience() string {
-	return a.apiAudience
+func (a Auth0RouteSecurityConfImpl) GetWebappClientId() string {
+	return a.webappClientId
+}
+
+func (a Auth0RouteSecurityConfImpl) GetWebappClientSecret() string {
+	return a.webappClientSecret
+}
+
+func (a Auth0RouteSecurityConfImpl) GetWebappCallbackUrl() string {
+	return a.webappCallbackUrl
 }
 
 func NewAuth0SecurityConfImpl() *Auth0RouteSecurityConfImpl {
-	issuerUrlStr := fmt.Sprintf("https://%v/", environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Domain))
+	issuerUrlStr := fmt.Sprintf("https://%v/", environment.GetEnvVariable(environment.EnvVarKeyAuth0Domain))
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {
 		logger.Log.Fatalf("Failed to parse issuer url %v", issuerUrlStr)
 	}
 	return &Auth0RouteSecurityConfImpl{
 		issuerUrl:               issuerUrl,
-		apiAudience:             environment2.GetEnvVariable(environment2.EnvVarKeyAuth0ApiAudience),
-		grpcAudience:            environment2.GetEnvVariable(environment2.EnvVarKeyAuth0GrpcAudience),
-		domain:                  environment2.GetEnvVariable(environment2.EnvVarKeyAuth0Domain),
-		clientCredentialsId:     environment2.GetEnvVariable(environment2.EnvVarKeyAuth0ClientCredentialsId),
-		clientCredentialsSecret: environment2.GetEnvVariable(environment2.EnvVarKeyAuth0ClientCredentialsSecret),
+		apiAudience:             environment.GetEnvVariable(environment.EnvVarKeyAuth0ApiAudience),
+		grpcAudience:            environment.GetEnvVariable(environment.EnvVarKeyAuth0GrpcAudience),
+		domain:                  environment.GetEnvVariable(environment.EnvVarKeyAuth0Domain),
+		clientCredentialsId:     environment.GetEnvVariable(environment.EnvVarKeyAuth0ClientCredentialsId),
+		clientCredentialsSecret: environment.GetEnvVariable(environment.EnvVarKeyAuth0ClientCredentialsSecret),
+		webappClientId:          environment.GetEnvVariable(environment.EnvVarKeyAuth0WebappClientId),
+		webappClientSecret:      environment.GetEnvVariable(environment.EnvVarKeyAuth0WebappClientSecret),
+		webappCallbackUrl:       environment.GetEnvVariable(environment.EnvVarKeyAuth0WebappCallbackUrl),
 	}
 }
