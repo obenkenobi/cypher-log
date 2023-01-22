@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/randutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
+	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
 )
@@ -38,7 +39,8 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		ctx.Redirect(http.StatusTemporaryRedirect, a.authenticatorService.GetOath2Config().AuthCodeURL(state))
+		ctx.Redirect(http.StatusTemporaryRedirect, a.authenticatorService.GetOath2Config().AuthCodeURL(state,
+			oauth2.SetAuthURLParam("audience", a.auth0SecurityConf.GetApiAudience())))
 	})
 
 	authGroup.GET("/callback", func(ctx *gin.Context) {
@@ -102,13 +104,6 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		logoutUrl.RawQuery = parameters.Encode()
 
 		c.Redirect(http.StatusTemporaryRedirect, logoutUrl.String())
-	})
-
-	// Todo: remove when proxying is setup
-	authGroup.GET("/me", func(c *gin.Context) {
-		session := sessions.Default(c)
-		profile := session.Get(security.ProfileSessionKey)
-		c.JSON(http.StatusOK, profile)
 	})
 }
 
