@@ -9,16 +9,20 @@
   ],
   "scripts": {
     "develop": "gatsby develop",
+    "develop-tls": "gatsby develop --https --key-file ../../../../../dev/certs/server-key.pem --cert-file ../../../../../dev/certs/server-cert.pem --ca-file ../../../../../dev/certs/ca-cert.pem",
     "start": "gatsby develop",
-    "build": "gatsby build",
+    "build": "gatsby build --prefix-paths",
     "serve": "gatsby serve",
     "clean": "gatsby clean",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "gatsby": "^5.4.2",
+    "http-proxy-middleware": "^2.0.6",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-cookie": "^4.1.1",
+    "react-dom": "^18.2.0",
+    "universal-cookie": "^4.0.4"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",

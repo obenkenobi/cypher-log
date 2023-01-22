@@ -1,13 +1,12 @@
 package servers
 
 import (
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/middlewares"
-	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"net/http"
 )
@@ -34,24 +33,35 @@ func NewAppServerImpl(
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
 
-		r.Static("/public", "cmd/uiservice/resources/web/static")
-		r.LoadHTMLGlob("cmd/uiservice/resources/web/template/*")
-
 		r.Use(sessionMiddleware.SessionHandler())
 		r.Use(bearerAuthMiddleware.PassBearerTokenFromSession())
 
-		r.GET("/", func(ctx *gin.Context) {
-			ctx.HTML(http.StatusOK, "home.html", nil)
+		r.GET("/", func(c *gin.Context) {
+			c.Redirect(http.StatusPermanentRedirect, "/ui")
 		})
-		r.GET("/user", func(c *gin.Context) {
-			session := sessions.Default(c)
-			profile := session.Get(security.ProfileSessionKey)
+		if environment.IsDevelopment() {
+			r.LoadHTMLGlob("cmd/uiservice/resources/web/template/*")
 
-			c.HTML(http.StatusOK, "user.html", profile)
-		})
+		} else {
+			r.Static("ui/", "cmd/uiservice/ClientApp/public")
+		}
+
+		if environment.IsDevelopment() {
+			r.GET("/ui", func(ctx *gin.Context) {
+				ctx.HTML(http.StatusOK, "home.html", nil)
+			})
+			r.GET("/ui/user", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "user.html", struct{}{})
+			})
+		}
 	}
+
 	controllersList := []controller.Controller{authController}
-	afterControllers := func(r *gin.Engine) { /*Add gin engine configuration*/ }
+
+	afterControllers := func(r *gin.Engine) {
+		/*Add gin engine configuration*/
+	}
+
 	coreAppServer := commonservers.NewCoreAppServerWithHooksImpl(
 		serverConf,
 		tlsConf,
@@ -63,9 +73,4 @@ func NewAppServerImpl(
 }
 
 func IsAuthenticated(ctx *gin.Context) {
-	if sessions.Default(ctx).Get("profile") == nil {
-		ctx.Redirect(http.StatusSeeOther, "/")
-	} else {
-		ctx.Next()
-	}
 }

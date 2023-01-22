@@ -75,7 +75,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		}
 
 		// Redirect to logged in page.
-		ctx.Redirect(http.StatusTemporaryRedirect, "/user")
+		ctx.Redirect(http.StatusTemporaryRedirect, "/ui/user")
 	})
 
 	authGroup.GET("/logout", func(c *gin.Context) {
@@ -102,6 +102,13 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		logoutUrl.RawQuery = parameters.Encode()
 
 		c.Redirect(http.StatusTemporaryRedirect, logoutUrl.String())
+	})
+
+	// Todo: remove when proxying is setup
+	authGroup.GET("/me", func(c *gin.Context) {
+		session := sessions.Default(c)
+		profile := session.Get(security.ProfileSessionKey)
+		c.JSON(http.StatusOK, profile)
 	})
 }
 

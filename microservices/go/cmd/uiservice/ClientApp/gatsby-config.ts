@@ -1,15 +1,33 @@
 import type { GatsbyConfig } from "gatsby";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const config: GatsbyConfig = {
   siteMetadata: {
     title: `Cypher Log`,
     siteUrl: `https://www.cypherlog.com`
   },
-  // More easily incorporate content into your pages through automatic TypeScript type generation and better GraphQL IntelliSense.
-  // If you use VSCode you can also use the GraphQL plugin
-  // Learn more at: https://gatsby.dev/graphql-typegen
   graphqlTypegen: true,
-  plugins: ["gatsby-plugin-postcss"]
+  plugins: ["gatsby-plugin-postcss"],
+
+  pathPrefix: `/ui`,
+
+  // Proxy to ui server
+  developMiddleware: (app: any) => {
+    app.use("/auth", createProxyMiddleware({
+      target: "https://localhost:8080",
+      secure: false, // Do not reject self-signed certificates.
+      pathRewrite: {
+        "/auth": "/auth",
+      },
+    }));
+    app.use("/api", createProxyMiddleware({
+      target: "https://localhost:8080",
+      secure: false, // Do not reject self-signed certificates.
+      pathRewrite: {
+        "/api": "/api",
+      },
+    }));
+  },
 };
 
 export default config;
