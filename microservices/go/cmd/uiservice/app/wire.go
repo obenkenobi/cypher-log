@@ -5,6 +5,7 @@ package app
 
 import (
 	"github.com/google/wire"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
@@ -21,6 +22,8 @@ func InitializeApp() *App {
 		wire.Bind(new(authconf.Auth0SecurityConf), new(*authconf.Auth0RouteSecurityConfImpl)),
 		services.NewAuthenticatorServiceImpl,
 		wire.Bind(new(services.AuthenticatorService), new(*services.AuthenticatorServiceImpl)),
+		controllers.NewAuthControllerImpl,
+		wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)),
 		servers.NewAppServerImpl,
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
 		NewApp)
