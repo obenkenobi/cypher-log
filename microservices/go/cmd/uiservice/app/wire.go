@@ -15,6 +15,8 @@ import (
 
 func InitializeApp() *App {
 	wire.Build(
+		conf.NewExternalAppServerConfImpl,
+		wire.Bind(new(conf.ExternalAppServerConf), new(*conf.ExternalAppServerConfImpl)),
 		conf.NewSessionConfImpl,
 		wire.Bind(new(conf.SessionConf), new(*conf.SessionConfImpl)),
 		conf.NewStaticFilesConfImpl,
@@ -35,6 +37,8 @@ func InitializeApp() *App {
 		wire.Bind(new(middlewares.UiProviderMiddleware), new(*middlewares.UiProviderMiddlewareImpl)),
 		controllers.NewAuthControllerImpl,
 		wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)),
+		controllers.NewGatewayControllerImpl,
+		wire.Bind(new(controllers.GatewayController), new(*controllers.GatewayControllerImpl)),
 		servers.NewAppServerImpl,
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
 		NewApp)

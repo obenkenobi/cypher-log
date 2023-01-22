@@ -25,6 +25,12 @@ const EnvVarLoadCACert = "LOAD_CA_CERT"
 const EnvVarKeyGrpcUserServiceAddress = "GRPC_USER_SERVICE_ADDRESS"
 const EnvVarKeyGrpcKeyServiceAddress = "GRPC_KEY_SERVICE_ADDRESS"
 
+// App Server Addresses (standard http, i.e. not GRPC)
+
+const EnvVarKeyAppserverUserServiceAddress = "APPSERVER_USER_SERVICE_ADDRESS"
+const EnvVarKeyAppserverKeyServiceAddress = "APPSERVER_KEY_SERVICE_ADDRESS"
+const EnvVarKeyAppserverNoteServiceAddress = "APPSERVER_NOTE_SERVICE_ADDRESS"
+
 // Server
 
 const EnvVarKeyAppServerPort = "APP_SERVER_PORT"

@@ -18,15 +18,15 @@ type AppServerImpl struct {
 }
 
 //Todo: add csrf protection
-//Todo: add proxies to apis
 
 func NewAppServerImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
-	authController controllers.AuthController,
 	sessionMiddleware middlewares.SessionMiddleware,
 	bearerAuthMiddleware middlewares.BearerAuthMiddleware,
 	uiProviderMiddleware middlewares.UiProviderMiddleware,
+	authController controllers.AuthController,
+	gatewayController controllers.GatewayController,
 ) *AppServerImpl {
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
@@ -34,7 +34,7 @@ func NewAppServerImpl(
 		r.Use(bearerAuthMiddleware.PassBearerTokenFromSession())
 		uiProviderMiddleware.ProvideUI(r)
 	}
-	controllersList := []controller.Controller{authController}
+	controllersList := []controller.Controller{authController, gatewayController}
 	afterControllers := func(r *gin.Engine) { /*Add gin engine configuration*/ }
 
 	coreAppServer := commonservers.NewCoreAppServerWithHooksImpl(
@@ -45,7 +45,4 @@ func NewAppServerImpl(
 		afterControllers,
 	)
 	return &AppServerImpl{CoreAppServer: coreAppServer}
-}
-
-func IsAuthenticated(ctx *gin.Context) {
 }
