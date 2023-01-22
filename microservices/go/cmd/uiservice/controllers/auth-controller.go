@@ -75,7 +75,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		}
 
 		// Redirect to logged in page.
-		ctx.Redirect(http.StatusTemporaryRedirect, "/ui/user")
+		ctx.Redirect(http.StatusTemporaryRedirect, "/ui")
 	})
 
 	authGroup.GET("/logout", func(c *gin.Context) {

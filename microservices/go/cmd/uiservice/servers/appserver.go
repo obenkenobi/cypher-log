@@ -47,11 +47,8 @@ func NewAppServerImpl(
 		}
 
 		if environment.IsDevelopment() {
-			r.GET("/ui", func(ctx *gin.Context) {
-				ctx.HTML(http.StatusOK, "home.html", nil)
-			})
-			r.GET("/ui/user", func(c *gin.Context) {
-				c.HTML(http.StatusOK, "user.html", struct{}{})
+			r.GET("/ui", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "home.html", struct{}{})
 			})
 		}
 	}
