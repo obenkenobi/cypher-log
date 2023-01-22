@@ -6,9 +6,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
-	"net/http"
 )
 
 type AppServer interface {
@@ -29,35 +27,16 @@ func NewAppServerImpl(
 	authController controllers.AuthController,
 	sessionMiddleware middlewares.SessionMiddleware,
 	bearerAuthMiddleware middlewares.BearerAuthMiddleware,
+	uiProviderMiddleware middlewares.UiProviderMiddleware,
 ) *AppServerImpl {
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
-
 		r.Use(sessionMiddleware.SessionHandler())
 		r.Use(bearerAuthMiddleware.PassBearerTokenFromSession())
-
-		r.GET("/", func(c *gin.Context) {
-			c.Redirect(http.StatusPermanentRedirect, "/ui")
-		})
-		if environment.IsDevelopment() {
-			r.LoadHTMLGlob("cmd/uiservice/resources/web/template/*")
-
-		} else {
-			r.Static("ui/", "cmd/uiservice/ClientApp/public")
-		}
-
-		if environment.IsDevelopment() {
-			r.GET("/ui", func(c *gin.Context) {
-				c.HTML(http.StatusOK, "home.html", struct{}{})
-			})
-		}
+		uiProviderMiddleware.ProvideUI(r)
 	}
-
 	controllersList := []controller.Controller{authController}
-
-	afterControllers := func(r *gin.Engine) {
-		/*Add gin engine configuration*/
-	}
+	afterControllers := func(r *gin.Engine) { /*Add gin engine configuration*/ }
 
 	coreAppServer := commonservers.NewCoreAppServerWithHooksImpl(
 		serverConf,

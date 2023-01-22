@@ -27,6 +27,8 @@ func InitializeApp() *App {
 		wire.Bind(new(middlewares.SessionMiddleware), new(*middlewares.SessionMiddlewareImpl)),
 		middlewares.NewBearerAuthMiddlewareImpl,
 		wire.Bind(new(middlewares.BearerAuthMiddleware), new(*middlewares.BearerAuthMiddlewareImpl)),
+		middlewares.NewUiProviderMiddlewareImpl,
+		wire.Bind(new(middlewares.UiProviderMiddleware), new(*middlewares.UiProviderMiddlewareImpl)),
 		controllers.NewAuthControllerImpl,
 		wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)),
 		servers.NewAppServerImpl,
