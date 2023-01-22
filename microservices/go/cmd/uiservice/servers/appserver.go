@@ -1,13 +1,10 @@
 package servers
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/gob"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/controllers"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
@@ -31,24 +28,22 @@ func NewAppServerImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
 	authController controllers.AuthController,
+	sessionMiddleware middlewares.SessionMiddleware,
+	bearerAuthMiddleware middlewares.BearerAuthMiddleware,
 ) *AppServerImpl {
-
-	gob.Register(map[string]interface{}{})
-	store := cookie.NewStore([]byte("secret"))
-
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
 
-		r.Use(sessions.Sessions("auth-session", store))
-
 		r.Static("/public", "cmd/uiservice/resources/web/static")
-
 		r.LoadHTMLGlob("cmd/uiservice/resources/web/template/*")
+
+		r.Use(sessionMiddleware.SessionHandler())
+		r.Use(bearerAuthMiddleware.PassBearerTokenFromSession())
 
 		r.GET("/", func(ctx *gin.Context) {
 			ctx.HTML(http.StatusOK, "home.html", nil)
 		})
-		r.GET("/user", IsAuthenticated, func(c *gin.Context) {
+		r.GET("/user", func(c *gin.Context) {
 			session := sessions.Default(c)
 			profile := session.Get(security.ProfileSessionKey)
 
@@ -56,9 +51,7 @@ func NewAppServerImpl(
 		})
 	}
 	controllersList := []controller.Controller{authController}
-	afterControllers := func(r *gin.Engine) {
-		// Add gin engine configuration
-	}
+	afterControllers := func(r *gin.Engine) { /*Add gin engine configuration*/ }
 	coreAppServer := commonservers.NewCoreAppServerWithHooksImpl(
 		serverConf,
 		tlsConf,
@@ -75,16 +68,4 @@ func IsAuthenticated(ctx *gin.Context) {
 	} else {
 		ctx.Next()
 	}
-}
-
-func generateRandomState() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-
-	state := base64.StdEncoding.EncodeToString(b)
-
-	return state, nil
 }
