@@ -22,7 +22,7 @@ func (g GrpcClientConfImpl) KeyServiceAddress() string {
 
 func NewGrpcClientConfImpl() *GrpcClientConfImpl {
 	return &GrpcClientConfImpl{
-		userServiceAddr: environment.GetEnvVariable(environment.EnvVarKeyGrpcUserServiceAddress),
-		keyServiceAddr:  environment.GetEnvVariable(environment.EnvVarKeyGrpcKeyServiceAddress),
+		userServiceAddr: environment.GetEnvVar(environment.EnvVarKeyGrpcUserServiceAddress),
+		keyServiceAddr:  environment.GetEnvVar(environment.EnvVarKeyGrpcKeyServiceAddress),
 	}
 }

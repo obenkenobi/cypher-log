@@ -5,6 +5,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 )
 
 type SessionMiddleware interface {
@@ -12,15 +13,17 @@ type SessionMiddleware interface {
 }
 
 type SessionMiddlewareImpl struct {
+	sessionConf conf.SessionConf
 }
 
 func (s SessionMiddlewareImpl) SessionHandler() gin.HandlerFunc {
-	//Todo: get a secret via env variable
+	// Todo: configure redis as the sessions store
 	gob.Register(map[string]interface{}{})
-	store := cookie.NewStore([]byte("secret"))
+	secret := s.sessionConf.GetSessionStoreSecret()
+	store := cookie.NewStore([]byte(secret))
 	return sessions.Sessions("auth-session", store)
 }
 
-func NewSessionMiddlewareImpl() *SessionMiddlewareImpl {
-	return &SessionMiddlewareImpl{}
+func NewSessionMiddlewareImpl(sessionConf conf.SessionConf) *SessionMiddlewareImpl {
+	return &SessionMiddlewareImpl{sessionConf: sessionConf}
 }

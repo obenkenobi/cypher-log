@@ -17,9 +17,8 @@ type AppServerImpl struct {
 	commonservers.CoreAppServer
 }
 
-//Todo: create environment configs, controllers and middlewares to properly configure the application.
 //Todo: add csrf protection
-//Todo: add proxies and middlewares to parse the auth token
+//Todo: add proxies to apis
 
 func NewAppServerImpl(
 	serverConf conf.ServerConf,

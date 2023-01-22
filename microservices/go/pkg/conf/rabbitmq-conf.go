@@ -13,5 +13,5 @@ type RabbitMQConfImpl struct {
 func (r RabbitMQConfImpl) GetURI() string { return r.uri }
 
 func NewRabbitMQConfImpl() *RabbitMQConfImpl {
-	return &RabbitMQConfImpl{uri: environment.GetEnvVariable(environment.EnvVarRabbitMQUri)}
+	return &RabbitMQConfImpl{uri: environment.GetEnvVar(environment.EnvVarRabbitMQUri)}
 }

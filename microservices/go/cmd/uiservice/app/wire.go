@@ -15,6 +15,10 @@ import (
 
 func InitializeApp() *App {
 	wire.Build(
+		conf.NewSessionConfImpl,
+		wire.Bind(new(conf.SessionConf), new(*conf.SessionConfImpl)),
+		conf.NewStaticFilesConfImpl,
+		wire.Bind(new(conf.StaticFilesConf), new(*conf.StaticFilesConfImpl)),
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),
 		conf.NewTlsConfImpl,

@@ -11,11 +11,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func GetEnvVariable(key string) string {
+func GetEnvVar(key string) string {
 	return os.Getenv(key)
 }
 
-func GetEnvVariableOrDefault(key string, defaultValue string) string {
+func GetEnvVarOrDefault(key string, defaultValue string) string {
 	val, ok := os.LookupEnv(key)
 	if !ok {
 		return defaultValue
@@ -24,12 +24,12 @@ func GetEnvVariableOrDefault(key string, defaultValue string) string {
 }
 
 func GetEnvVariableAsListSplitByComma(key string) []string {
-	rawVal := GetEnvVariable(key)
+	rawVal := GetEnvVar(key)
 	return strings.Split(rawVal, ",")
 }
 
 func GetEnvVarAsBoolOrDefault(key string, defaultValue bool) bool {
-	rawVal := GetEnvVariable(key)
+	rawVal := GetEnvVar(key)
 	switch strings.ToLower(rawVal) {
 	case "true":
 		return true
@@ -42,7 +42,7 @@ func GetEnvVarAsBoolOrDefault(key string, defaultValue bool) bool {
 
 func GetEnvVarAsIntOrDefault(key string, defaultValue int) int {
 	value := defaultValue
-	if str := GetEnvVariable(key); utils.StringIsNotBlank(str) {
+	if str := GetEnvVar(key); utils.StringIsNotBlank(str) {
 		if parsedInt, err := strconv.Atoi(str); err == nil {
 			value = parsedInt
 		}
@@ -52,7 +52,7 @@ func GetEnvVarAsIntOrDefault(key string, defaultValue int) int {
 
 func GetEnvVarAsTimeDurationOrDefault(key string, defaultValue time.Duration) time.Duration {
 	value := defaultValue
-	if str := GetEnvVariable(key); utils.StringIsNotBlank(str) {
+	if str := GetEnvVar(key); utils.StringIsNotBlank(str) {
 		if durationInt, err := strconv.ParseInt(str, 10, 64); err == nil {
 			value = time.Duration(durationInt)
 		}

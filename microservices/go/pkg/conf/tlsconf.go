@@ -26,9 +26,9 @@ func (t TlsConfImpl) WillLoadCACert() bool { return t.loadCACert }
 
 func NewTlsConfImpl() *TlsConfImpl {
 	return &TlsConfImpl{
-		serverCertPath: env.GetEnvVariable(env.EnvVarKeyServerCertPath),
-		serverKeyPath:  env.GetEnvVariable(env.EnvVarKeyServerKeyPath),
-		caCertPath:     env.GetEnvVariable(env.EnvVarKeyCACertPath),
+		serverCertPath: env.GetEnvVar(env.EnvVarKeyServerCertPath),
+		serverKeyPath:  env.GetEnvVar(env.EnvVarKeyServerKeyPath),
+		caCertPath:     env.GetEnvVar(env.EnvVarKeyCACertPath),
 		loadCACert:     env.GetEnvVarAsBoolOrDefault(env.EnvVarLoadCACert, false),
 	}
 }

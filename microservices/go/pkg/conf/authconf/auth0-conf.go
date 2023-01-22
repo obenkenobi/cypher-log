@@ -68,20 +68,20 @@ func (a Auth0RouteSecurityConfImpl) GetWebappCallbackUrl() string {
 }
 
 func NewAuth0SecurityConfImpl() *Auth0RouteSecurityConfImpl {
-	issuerUrlStr := fmt.Sprintf("https://%v/", environment.GetEnvVariable(environment.EnvVarKeyAuth0Domain))
+	issuerUrlStr := fmt.Sprintf("https://%v/", environment.GetEnvVar(environment.EnvVarKeyAuth0Domain))
 	issuerUrl, err := url.Parse(issuerUrlStr)
 	if err != nil {
 		logger.Log.Fatalf("Failed to parse issuer url %v", issuerUrlStr)
 	}
 	return &Auth0RouteSecurityConfImpl{
 		issuerUrl:               issuerUrl,
-		apiAudience:             environment.GetEnvVariable(environment.EnvVarKeyAuth0ApiAudience),
-		grpcAudience:            environment.GetEnvVariable(environment.EnvVarKeyAuth0GrpcAudience),
-		domain:                  environment.GetEnvVariable(environment.EnvVarKeyAuth0Domain),
-		clientCredentialsId:     environment.GetEnvVariable(environment.EnvVarKeyAuth0ClientCredentialsId),
-		clientCredentialsSecret: environment.GetEnvVariable(environment.EnvVarKeyAuth0ClientCredentialsSecret),
-		webappClientId:          environment.GetEnvVariable(environment.EnvVarKeyAuth0WebappClientId),
-		webappClientSecret:      environment.GetEnvVariable(environment.EnvVarKeyAuth0WebappClientSecret),
-		webappCallbackUrl:       environment.GetEnvVariable(environment.EnvVarKeyAuth0WebappCallbackUrl),
+		apiAudience:             environment.GetEnvVar(environment.EnvVarKeyAuth0ApiAudience),
+		grpcAudience:            environment.GetEnvVar(environment.EnvVarKeyAuth0GrpcAudience),
+		domain:                  environment.GetEnvVar(environment.EnvVarKeyAuth0Domain),
+		clientCredentialsId:     environment.GetEnvVar(environment.EnvVarKeyAuth0ClientCredentialsId),
+		clientCredentialsSecret: environment.GetEnvVar(environment.EnvVarKeyAuth0ClientCredentialsSecret),
+		webappClientId:          environment.GetEnvVar(environment.EnvVarKeyAuth0WebappClientId),
+		webappClientSecret:      environment.GetEnvVar(environment.EnvVarKeyAuth0WebappClientSecret),
+		webappCallbackUrl:       environment.GetEnvVar(environment.EnvVarKeyAuth0WebappCallbackUrl),
 	}
 }

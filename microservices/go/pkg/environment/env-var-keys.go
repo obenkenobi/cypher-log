@@ -51,8 +51,16 @@ const EnvVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 const EnvVarRabbitMQUri = "RABBITMQ_URI"
 
-// redis
+// Redis
 
 const EnvVarKeyRedisAddr = "REDIS_ADDRESS"
 const EnvVarKeyRedisPassword = "REDIS_PASSWORD"
 const EnvVarKeyRedisDB = "REDIS_DB"
+
+// Static files
+
+const EnvVarStaticFilesPath = "STATIC_FILES_PATH"
+
+// Secrets
+
+const EnvVarSessionStoreSecret = "SESSION_STORE_SECRET"

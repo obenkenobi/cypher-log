@@ -24,8 +24,8 @@ func (r RedisConfImpl) GetDB() int { return r.db }
 
 func NewRedisConfImpl() *RedisConfImpl {
 	return &RedisConfImpl{
-		addr:     environment2.GetEnvVariable(environment2.EnvVarKeyRedisAddr),
-		password: environment2.GetEnvVariable(environment2.EnvVarKeyRedisPassword),
+		addr:     environment2.GetEnvVar(environment2.EnvVarKeyRedisAddr),
+		password: environment2.GetEnvVar(environment2.EnvVarKeyRedisPassword),
 		db:       environment2.GetEnvVarAsIntOrDefault(environment2.EnvVarKeyRedisDB, 0),
 	}
 }

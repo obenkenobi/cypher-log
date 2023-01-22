@@ -32,8 +32,8 @@ func (m MongoConfImpl) GetConnectionTimeout() time.Duration {
 func NewMongoConfImpl() *MongoConfImpl {
 	connTimeout := environment.GetEnvVarAsTimeDurationOrDefault(environment.EnvVarMongoConnTimeoutMS, 12*time.Second)
 	return &MongoConfImpl{
-		mongoUri:          environment.GetEnvVariable(environment.EnvVarKeyMongoUri),
-		mongoDBName:       environment.GetEnvVariable(environment.EnvVarMongoDBName),
+		mongoUri:          environment.GetEnvVar(environment.EnvVarKeyMongoUri),
+		mongoDBName:       environment.GetEnvVar(environment.EnvVarMongoDBName),
 		connectionTimeout: connTimeout,
 	}
 }

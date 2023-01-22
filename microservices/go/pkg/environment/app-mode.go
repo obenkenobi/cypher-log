@@ -16,7 +16,7 @@ func GetAppEnvironment() string {
 	if utils.StringIsNotBlank(cachedEnv) {
 		return cachedEnv
 	}
-	loadedEnv := GetEnvVariableOrDefault(EnvVarKeyAppEnvironment, Development)
+	loadedEnv := GetEnvVarOrDefault(EnvVarKeyAppEnvironment, Development)
 	var appEnv string
 	switch loadedEnv {
 	case Development, Staging, Production:
