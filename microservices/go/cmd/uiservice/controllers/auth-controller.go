@@ -57,20 +57,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 			return
 		}
 
-		idToken, err := a.authenticatorService.VerifyIDToken(ctx.Request.Context(), token)
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, "Failed to verify ID Token.")
-			return
-		}
-
-		var profile map[string]interface{}
-		if err := idToken.Claims(&profile); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
 		session.Set(security.AccessTokenSessionKey, token.AccessToken)
-		session.Set(security.ProfileSessionKey, profile)
 		if err := session.Save(); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -102,6 +89,15 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		parameters.Add("returnTo", returnTo.String())
 		parameters.Add("client_id", a.auth0SecurityConf.GetWebappClientId())
 		logoutUrl.RawQuery = parameters.Encode()
+		// Todo: uncomment when session is http only
+		//
+		//session := sessions.Default(c)
+		//session.Delete(security.AccessTokenSessionKey)
+		//session.Delete(security.ProfileSessionKey)
+		//if err := session.Save(); err != nil {
+		//	c.String(http.StatusInternalServerError, err.Error())
+		//	return
+		//}
 
 		c.Redirect(http.StatusTemporaryRedirect, logoutUrl.String())
 	})

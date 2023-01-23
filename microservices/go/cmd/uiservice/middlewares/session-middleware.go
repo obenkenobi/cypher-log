@@ -20,6 +20,7 @@ type SessionMiddlewareImpl struct {
 }
 
 func (s SessionMiddlewareImpl) SessionHandler() gin.HandlerFunc {
+	// Todo: make session http only
 	gob.Register(map[string]interface{}{})
 	secret := s.sessionConf.GetSessionStoreSecret()
 	store := cookie.NewStore([]byte(secret))
