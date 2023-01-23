@@ -5,7 +5,7 @@ import {useCookies} from "react-cookie";
 
 const IndexPage: React.FC<PageProps> = () => {
   const [profile, setProfile] = React.useState<any>()
-  const [ cookies, , removeCookie] = useCookies(["XSRF-TOKEN", "auth-session"]);
+  const [ cookies, , removeCookie] = useCookies(["XSRF-TOKEN", "session"]);
 
 
   React.useEffect(() => {
@@ -41,7 +41,7 @@ const IndexPage: React.FC<PageProps> = () => {
           {JSON.stringify(profile)}
         </div>
         <form action="/auth/logout" method="GET" onSubmit={() => {
-          removeCookie("auth-session", {path: "/", domain: window.location.hostname});
+          removeCookie("session", {path: "/", domain: window.location.hostname});
         }}>
           <button type="submit">Log out</button>
         </form>
