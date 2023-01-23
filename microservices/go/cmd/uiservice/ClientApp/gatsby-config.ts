@@ -27,6 +27,13 @@ const config: GatsbyConfig = {
         "/api": "/api",
       },
     }));
+    app.use("/csrf", createProxyMiddleware({
+      target: "https://localhost:8080",
+      secure: false, // Do not reject self-signed certificates.
+      pathRewrite: {
+        "/csrf": "/csrf",
+      },
+    }));
   },
 };
 

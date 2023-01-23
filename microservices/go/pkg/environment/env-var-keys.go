@@ -70,3 +70,4 @@ const EnvVarStaticFilesPath = "STATIC_FILES_PATH"
 // Secrets
 
 const EnvVarSessionStoreSecret = "SESSION_STORE_SECRET"
+const EnvVarCsrfSecret = "CSRF_SECRET"

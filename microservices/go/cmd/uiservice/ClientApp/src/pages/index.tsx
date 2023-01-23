@@ -5,19 +5,30 @@ import {useCookies} from "react-cookie";
 
 const IndexPage: React.FC<PageProps> = () => {
   const [profile, setProfile] = React.useState<any>()
-  const [ , , removeCookie] = useCookies(["auth-session"]);
+  const [ cookies, , removeCookie] = useCookies(["XSRF-TOKEN", "auth-session"]);
 
 
   React.useEffect(() => {
     const getDataTask = (async () => {
-      const res = await fetch("/auth/me")
-      const body = await res.json()
-      console.log(body)
-      setProfile(body)
+      const res = await fetch("/api/userservice/v1/user/me")
+        const body = await res.json()
+        console.log(body)
+      if (res.status == 200) {
+        setProfile(body)
+      }
+
     })()
 
-    getDataTask
-      .catch(e => console.log(e))
+    getDataTask.catch(e => console.log(e))
+
+    const csrfTask = (async () => {
+      const res = await fetch("/csrf")
+      const body = await res.json()
+      console.log(body)
+      console.log(cookies["XSRF-TOKEN"])
+    })()
+
+    csrfTask.catch(e => console.log(e))
   }, [])
 
   let authJSX: JSX.Element;

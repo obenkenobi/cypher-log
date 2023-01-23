@@ -27,11 +27,15 @@ type GatewayController interface {
 type GatewayControllerImpl struct {
 	externalAppServerConf conf.ExternalAppServerConf
 	bearerAuthMiddleware  middlewares.BearerAuthMiddleware
+	userKeyMiddleware     middlewares.UserKeyMiddleware
 	tlsConf               conf.TLSConf
 }
 
 func (g GatewayControllerImpl) AddRoutes(r *gin.Engine) {
-	apiGroup := r.Group("/api", g.bearerAuthMiddleware.PassBearerTokenFromSession())
+	apiGroup := r.Group("/api",
+		g.bearerAuthMiddleware.PassBearerTokenFromSession(),
+		g.userKeyMiddleware.UserKeySession(),
+	)
 
 	apiGroup.Any("/userservice/*proxyPath",
 		g.proxyHandler("proxyPath", g.externalAppServerConf.GetUserServiceAddress()))
@@ -136,10 +140,12 @@ func (g GatewayControllerImpl) httpRoundTripper() (http.RoundTripper, error) {
 func NewGatewayControllerImpl(
 	externalAppServerConf conf.ExternalAppServerConf,
 	bearerAuthMiddleware middlewares.BearerAuthMiddleware,
+	userKeyMiddleware middlewares.UserKeyMiddleware,
 	tlsConf conf.TLSConf,
 ) *GatewayControllerImpl {
 	return &GatewayControllerImpl{
 		bearerAuthMiddleware:  bearerAuthMiddleware,
+		userKeyMiddleware:     userKeyMiddleware,
 		externalAppServerConf: externalAppServerConf,
 		tlsConf:               tlsConf,
 	}

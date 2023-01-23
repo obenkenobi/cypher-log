@@ -26,15 +26,16 @@ func NewAppServerImpl(
 	uiProviderMiddleware middlewares.UiProviderMiddleware,
 	userKeyMiddleware middlewares.UserKeyMiddleware,
 	authController controllers.AuthController,
+	csrfController controllers.CsrfController,
 	gatewayController controllers.GatewayController,
 ) *AppServerImpl {
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
 		uiProviderMiddleware.ProvideUI(r)
 		r.Use(sessionMiddleware.SessionHandler())
-		r.Use(userKeyMiddleware.UserKeySession())
+		r.Use(sessionMiddleware.CsrfHandler())
 	}
-	controllersList := []controller.Controller{authController, gatewayController}
+	controllersList := []controller.Controller{authController, csrfController, gatewayController}
 	afterControllers := func(r *gin.Engine) { /*Add gin engine configuration*/ }
 
 	coreAppServer := commonservers.NewCoreAppServerWithHooksImpl(

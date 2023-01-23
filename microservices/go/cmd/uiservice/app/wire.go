@@ -45,6 +45,8 @@ func InitializeApp() *App {
 		wire.Bind(new(middlewares.UserKeyMiddleware), new(*middlewares.UserKeyMiddlewareImpl)),
 		controllers.NewAuthControllerImpl,
 		wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)),
+		controllers.NewCsrfControllerImpl,
+		wire.Bind(new(controllers.CsrfController), new(*controllers.CsrfControllerImpl)),
 		controllers.NewGatewayControllerImpl,
 		wire.Bind(new(controllers.GatewayController), new(*controllers.GatewayControllerImpl)),
 		servers.NewAppServerImpl,
