@@ -11,6 +11,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 )
 
 func InitializeApp() *App {
@@ -27,6 +29,10 @@ func InitializeApp() *App {
 		wire.Bind(new(conf.TLSConf), new(*conf.TlsConfImpl)),
 		authconf.NewAuth0SecurityConfImpl,
 		wire.Bind(new(authconf.Auth0SecurityConf), new(*authconf.Auth0RouteSecurityConfImpl)),
+		sharedservices.NewErrorServiceImpl,
+		wire.Bind(new(sharedservices.ErrorService), new(*sharedservices.ErrorServiceImpl)),
+		ginservices.NewGinCtxServiceImpl,
+		wire.Bind(new(ginservices.GinCtxService), new(*ginservices.GinCtxServiceImpl)),
 		services.NewAuthenticatorServiceImpl,
 		wire.Bind(new(services.AuthenticatorService), new(*services.AuthenticatorServiceImpl)),
 		middlewares.NewSessionMiddlewareImpl,
@@ -35,6 +41,8 @@ func InitializeApp() *App {
 		wire.Bind(new(middlewares.BearerAuthMiddleware), new(*middlewares.BearerAuthMiddlewareImpl)),
 		middlewares.NewUiProviderMiddlewareImpl,
 		wire.Bind(new(middlewares.UiProviderMiddleware), new(*middlewares.UiProviderMiddlewareImpl)),
+		middlewares.NewUserKeyMiddlewareImpl,
+		wire.Bind(new(middlewares.UserKeyMiddleware), new(*middlewares.UserKeyMiddlewareImpl)),
 		controllers.NewAuthControllerImpl,
 		wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)),
 		controllers.NewGatewayControllerImpl,
