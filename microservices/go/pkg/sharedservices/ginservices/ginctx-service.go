@@ -16,9 +16,6 @@ import (
 // relating to http requests and responses using the Gin framework. As the name
 // suggest, it is designed to handle a Gin's Context struct.
 type GinCtxService interface {
-	// ParamStr returns the value of a URL param as a string
-	ParamStr(c *gin.Context, name string) string
-
 	// ReqQueryReader returns a reader to parse your request query params
 	ReqQueryReader(c *gin.Context) queryreq.ReqQueryReader
 
@@ -26,16 +23,7 @@ type GinCtxService interface {
 	// response. Certain errors relating to user input will trigger a 4XX status
 	// code. Otherwise, a 5XX code will be thrown indicating the error means
 	// something went wrong with the server.
-	//
-	// Deprecated: You will now need to use the gin.Context directly or rely on the
-	// StartCtxPipeline() method to handle errors in the background.
 	RespondError(c *gin.Context, err error)
-
-	// RespondJsonOk responds with json value with a 200 status code or an
-	// error if the error != nil.
-	//
-	// Deprecated: Use the gin.Context directly to create a JSON response
-	RespondJsonOk(c *gin.Context, model any, err error)
 
 	// processBindError takes an error from binding a value from a request body
 	// processes it into a BadRequestError.
@@ -50,12 +38,14 @@ type GinCtxServiceImpl struct {
 	errorMessageService sharedservices.ErrorService
 }
 
-func (g GinCtxServiceImpl) ParamStr(c *gin.Context, key string) string {
-	return c.Param(key)
+func (g GinCtxServiceImpl) ReqQueryReader(c *gin.Context) queryreq.ReqQueryReader {
+	return queryreq.NewGinCtxReqQueryReaderImpl(c, g.errorMessageService)
 }
 
-func (q GinCtxServiceImpl) ReqQueryReader(c *gin.Context) queryreq.ReqQueryReader {
-	return queryreq.NewGinCtxReqQueryReaderImpl(c, q.errorMessageService)
+func (g GinCtxServiceImpl) RestControllerPipeline(c *gin.Context) controller.Pipeline {
+	return controller.NewPipelineImpl(func(err error) {
+		g.RespondError(c, err)
+	})
 }
 
 func (g GinCtxServiceImpl) RespondError(c *gin.Context, err error) {
@@ -65,14 +55,6 @@ func (g GinCtxServiceImpl) RespondError(c *gin.Context, err error) {
 		logger.Log.Error(err)
 		c.Status(http.StatusInternalServerError)
 	}
-}
-
-func (g GinCtxServiceImpl) RespondJsonOk(c *gin.Context, model any, err error) {
-	if err != nil {
-		g.RespondError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, model)
 }
 
 func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError {
@@ -85,12 +67,6 @@ func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError
 	logger.Log.WithError(err).Info("Unable to bind json")
 	cannotBindJsonRuleErr := g.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson)
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
-}
-
-func (g GinCtxServiceImpl) RestControllerPipeline(c *gin.Context) controller.Pipeline {
-	return controller.NewPipelineImpl(func(err error) {
-		g.RespondError(c, err)
-	})
 }
 
 // NewGinCtxServiceImpl creates a new GinCtxService instance
@@ -109,8 +85,8 @@ func ReadValueFromBody[V any](ginCtxService GinCtxService, c *gin.Context) (V, e
 	return value, nil
 }
 
-// BindBodyToPointer reads the request type and writes it to a value referenced by the pointer provided.
-func BindBodyToPointer[V any](ginCtxService GinCtxService, c *gin.Context, value *V) (*V, error) {
+// BindBodyToReferenceObj reads the request type and writes it to a value that must be a reference type
+func BindBodyToReferenceObj[V any](ginCtxService GinCtxService, c *gin.Context, value V) (V, error) {
 	if err := c.ShouldBind(value); err != nil {
 		return value, ginCtxService.processBindError(err)
 	}

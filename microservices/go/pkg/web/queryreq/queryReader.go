@@ -14,6 +14,8 @@ import (
 type ReqQueryReader interface {
 	ReadString(key string, value *string) ReqQueryReader
 	ReadStringOrDefault(key string, value *string, defaultValue string) ReqQueryReader
+	ReadBoolean(key string, value *bool) ReqQueryReader
+	ReadBoolOrDefault(key string, value *bool, defaultValue bool) ReqQueryReader
 	ReadInt(key string, value *int) ReqQueryReader
 	ReadIntOrDefault(key string, value *int, defaultValue int) ReqQueryReader
 	ReadInt64(key string, value *int64) ReqQueryReader
@@ -60,6 +62,51 @@ func (q GinCtxReqQueryReaderImpl) ReadStringOrDefault(key string, value *string,
 	return queryReader
 }
 
+func (q GinCtxReqQueryReaderImpl) ReadBoolean(key string, value *bool) ReqQueryReader {
+	queryReader := q
+	if queryVal, ok := q.ginContext.GetQuery(key); ok {
+		queryValLower := strings.ToLower(queryVal)
+		switch queryValLower {
+		case "true":
+			*value = true
+		case "false":
+			*value = false
+		default:
+			queryReader.ruleErrors = append(
+				q.ruleErrors,
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryBoolParseFail, key),
+			)
+		}
+	} else {
+		queryReader.ruleErrors = append(
+			q.ruleErrors,
+			q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryRequired, key),
+		)
+	}
+	return queryReader
+}
+
+func (q GinCtxReqQueryReaderImpl) ReadBoolOrDefault(key string, value *bool, defaultValue bool) ReqQueryReader {
+	queryReader := q
+	if queryVal, ok := q.ginContext.GetQuery(key); ok {
+		queryValLower := strings.ToLower(queryVal)
+		switch queryValLower {
+		case "true":
+			*value = true
+		case "false":
+			*value = false
+		default:
+			queryReader.ruleErrors = append(
+				q.ruleErrors,
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryBoolParseFail, key),
+			)
+		}
+	} else {
+		*value = defaultValue
+	}
+	return queryReader
+}
+
 func (q GinCtxReqQueryReaderImpl) ReadInt(key string, value *int) ReqQueryReader {
 	queryReader := q
 	if queryVal, ok := q.ginContext.GetQuery(key); ok {
@@ -68,7 +115,7 @@ func (q GinCtxReqQueryReaderImpl) ReadInt(key string, value *int) ReqQueryReader
 		} else {
 			queryReader.ruleErrors = append(
 				q.ruleErrors,
-				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail, key),
 			)
 		}
 	} else {
@@ -88,7 +135,7 @@ func (q GinCtxReqQueryReaderImpl) ReadIntOrDefault(key string, value *int, defau
 		} else {
 			queryReader.ruleErrors = append(
 				q.ruleErrors,
-				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail, key),
 			)
 		}
 	} else {
@@ -105,7 +152,7 @@ func (q GinCtxReqQueryReaderImpl) ReadInt64(key string, value *int64) ReqQueryRe
 		} else {
 			queryReader.ruleErrors = append(
 				q.ruleErrors,
-				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail, key),
 			)
 		}
 	} else {
@@ -125,7 +172,7 @@ func (q GinCtxReqQueryReaderImpl) ReadInt64OrDefault(key string, value *int64, d
 		} else {
 			queryReader.ruleErrors = append(
 				q.ruleErrors,
-				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail),
+				q.errorService.RuleErrorFromCode(apperrors.ErrCodeReqQueryIntParseFail, key),
 			)
 		}
 	} else {

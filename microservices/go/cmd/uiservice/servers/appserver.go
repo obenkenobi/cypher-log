@@ -23,16 +23,16 @@ func NewAppServerImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
 	sessionMiddleware middlewares.SessionMiddleware,
-	bearerAuthMiddleware middlewares.BearerAuthMiddleware,
 	uiProviderMiddleware middlewares.UiProviderMiddleware,
+	userKeyMiddleware middlewares.UserKeyMiddleware,
 	authController controllers.AuthController,
 	gatewayController controllers.GatewayController,
 ) *AppServerImpl {
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
-		r.Use(sessionMiddleware.SessionHandler())
-		r.Use(bearerAuthMiddleware.PassBearerTokenFromSession())
 		uiProviderMiddleware.ProvideUI(r)
+		r.Use(sessionMiddleware.SessionHandler())
+		r.Use(userKeyMiddleware.UserKeySession())
 	}
 	controllersList := []controller.Controller{authController, gatewayController}
 	afterControllers := func(r *gin.Engine) { /*Add gin engine configuration*/ }

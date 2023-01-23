@@ -1,6 +1,7 @@
 package apperrors
 
 const ErrCodeReqQueryRequired = "ReqQueryRequired"
+const ErrCodeReqQueryBoolParseFail = "ReqQueryBoolParseFail"
 const ErrCodeReqQueryIntParseFail = "ReqQueryIntParseFail"
 const ErrCodeReqQuerySortParseFail = "ReqQuerySortParseFail"
 const ErrCodeReqResourcesNotFound = "ReqItemsNotFound"
