@@ -20,8 +20,11 @@ type SessionMiddlewareImpl struct {
 	sessionConf conf.SessionConf
 }
 
-func (s SessionMiddlewareImpl) SessionHandler() gin.HandlerFunc {
+func init() {
 	gob.Register(map[string]any{})
+}
+
+func (s SessionMiddlewareImpl) SessionHandler() gin.HandlerFunc {
 	secret := s.sessionConf.GetSessionStoreSecret()
 	store := cookie.NewStore([]byte(secret))
 	store.Options(sessions.Options{
