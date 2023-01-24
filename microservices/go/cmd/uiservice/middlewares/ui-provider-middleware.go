@@ -18,14 +18,13 @@ type UiProviderMiddlewareImpl struct {
 
 func (u UiProviderMiddlewareImpl) ProvideUI(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusPermanentRedirect, "/ui")
+		c.Redirect(http.StatusTemporaryRedirect, "/ui")
 	})
 
 	if environment.IsDevelopment() {
-		r.LoadHTMLGlob("cmd/uiservice/resources/web/template/*")
-
-		r.GET("/ui", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "home.html", struct{}{})
+		r.GET("/ui/*proxyPath", func(c *gin.Context) {
+			// Redirect to gatsby server in dev settings
+			c.Redirect(http.StatusTemporaryRedirect, "https://localhost:8000/"+c.Param("proxyPath"))
 		})
 	} else {
 		staticFilesPath := u.staticFilesConf.GetStaticFilesPath()
