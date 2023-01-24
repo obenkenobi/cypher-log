@@ -1,15 +1,15 @@
 import * as React from "react"
 
-import { HeadFC, PageProps } from "gatsby"
+import {HeadFC, Link, PageProps} from "gatsby"
 
 const CounterPage: React.FC<PageProps> = () => {
   const [count, setCount] = React.useState(0)
 
   return (
     <main>
-      <a href="/">
+      <Link to={"/"}>
         <button className="btn btn-green">Main Page</button>
-      </a>
+      </Link>
       <h1>Count</h1>
       <div>{count}</div>
       <div>

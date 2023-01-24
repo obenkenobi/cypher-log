@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { HeadFC, PageProps } from "gatsby"
+import {HeadFC, Link, PageProps} from "gatsby"
 import {useCookies} from "react-cookie";
 
 const IndexPage: React.FC<PageProps> = () => {
@@ -63,9 +63,9 @@ const IndexPage: React.FC<PageProps> = () => {
         <h3 className="my-1">Auth0 Example</h3>
         <p className="my-1">Zero friction identity infrastructure, built for developers</p>
         <div className="my-4">
-          <a href="/counter">
+          <Link to={"/counter"}>
             <button className="btn btn-green">Counter</button>
-          </a>
+          </Link>
         </div>
         <div className="my-4">
           {authJSX}
