@@ -89,15 +89,14 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		parameters.Add("returnTo", returnTo.String())
 		parameters.Add("client_id", a.auth0SecurityConf.GetWebappClientId())
 		logoutUrl.RawQuery = parameters.Encode()
-		// Todo: uncomment when session is http only
-		//
-		//session := sessions.Default(c)
-		//session.Delete(security.AccessTokenSessionKey)
-		//session.Delete(security.ProfileSessionKey)
-		//if err := session.Save(); err != nil {
-		//	c.String(http.StatusInternalServerError, err.Error())
-		//	return
-		//}
+
+		session := sessions.Default(c)
+		session.Delete(security.AccessTokenSessionKey)
+		session.Delete(security.ProfileSessionKey)
+		if err := session.Save(); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		c.Redirect(http.StatusTemporaryRedirect, logoutUrl.String())
 	})

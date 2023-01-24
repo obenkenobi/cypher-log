@@ -17,9 +17,7 @@ type BearerAuthMiddlewareImpl struct {
 func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := sessions.Default(c).Get(security.AccessTokenSessionKey)
-		if token != nil {
-			c.Request.Header["Authorization"] = []string{fmt.Sprintf("Bearer %v", token)}
-		}
+		c.Request.Header["Authorization"] = []string{fmt.Sprintf("Bearer %v", token)}
 		c.Next()
 	}
 }
