@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	csrf "github.com/utrack/gin-csrf"
+	"net/http"
 )
 
 type SessionMiddleware interface {
@@ -20,15 +21,15 @@ type SessionMiddlewareImpl struct {
 }
 
 func (s SessionMiddlewareImpl) SessionHandler() gin.HandlerFunc {
-	// Todo: make session http only
 	gob.Register(map[string]any{})
 	secret := s.sessionConf.GetSessionStoreSecret()
 	store := cookie.NewStore([]byte(secret))
-	//store.Options(sessions.Options{
-	//	HttpOnly: true,
-	//	Secure:   true,
-	//	SameSite: http.SameSiteLaxMode,
-	//})
+	store.Options(sessions.Options{
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
 	return sessions.Sessions("session", store)
 }
 
