@@ -37,20 +37,22 @@ const IndexPage: React.FC<PageProps> = () => {
     authJSX = (
       <>
         <div>
-          <h1>profile</h1>
-          {JSON.stringify(profile)}
+          <h1 className="my-1">profile</h1>
+          <pre className="my-1">{JSON.stringify(profile, null, "\t")}</pre>
         </div>
-        <form action="/auth/logout" method="GET" onSubmit={() => {
+        <form className="my-3" action="/auth/logout" method="GET" onSubmit={() => {
           removeCookie("session", {path: "/", domain: window.location.hostname});
         }}>
-          <button type="submit">Log out</button>
+          <button type="submit" className="btn btn-blue">Log out</button>
         </form>
       </>
     );
   } else {
     authJSX = (
       <>
-        <a href="/auth/login">SignIn</a>
+        <a href="/auth/login">
+          <button className="btn btn-green">SignIn</button>
+        </a>
       </>
     );
   }
@@ -58,9 +60,14 @@ const IndexPage: React.FC<PageProps> = () => {
   return (
     <main>
       <div>
-        <h3>Auth0 Example</h3>
-        <p>Zero friction identity infrastructure, built for developers</p>
-        <div>
+        <h3 className="my-1">Auth0 Example</h3>
+        <p className="my-1">Zero friction identity infrastructure, built for developers</p>
+        <div className="my-4">
+          <a href="/counter">
+            <button className="btn btn-green">Counter</button>
+          </a>
+        </div>
+        <div className="my-4">
           {authJSX}
         </div>
       </div>

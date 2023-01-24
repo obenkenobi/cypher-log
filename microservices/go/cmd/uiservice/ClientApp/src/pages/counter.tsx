@@ -7,6 +7,10 @@ const CounterPage: React.FC<PageProps> = () => {
 
   return (
     <main>
+      <a href="/">
+        <button className="btn btn-green">Main Page</button>
+      </a>
+      <h1>Count</h1>
       <div>{count}</div>
       <div>
         <button className="btn btn-blue my-2" onClick={() => setCount(count + 1)}>
