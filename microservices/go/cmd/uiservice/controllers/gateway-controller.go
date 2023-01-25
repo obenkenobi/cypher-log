@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
@@ -60,8 +61,12 @@ func (g GatewayControllerImpl) AddRoutes(r *gin.Engine) {
 					return err
 				}
 
-				// write session sto to session
-				security.WriteUKeySessionDtoToSession(c, sessionDto)
+				// write session dto to session
+				session := sessions.Default(c)
+				session.Set(security.UKeySessionKey, sessionDto)
+				if err := session.Save(); err != nil {
+					return err
+				}
 
 				// replace body with a success dto
 				newBytes, err := json.Marshal(commondtos.NewSuccessTrue())

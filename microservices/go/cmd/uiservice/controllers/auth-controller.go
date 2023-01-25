@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/randutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"golang.org/x/oauth2"
@@ -116,12 +117,16 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		logoutUrl.RawQuery = parameters.Encode()
 
 		session := sessions.Default(c)
+		tokenId := utils.AnyToString(session.Get(security.TokenIdSessionKey))
 		session.Clear()
 		if err := session.Save(); err != nil {
 			a.sendInternalServerError(c, err)
 			return
 		}
-
+		if err := a.accessTokenStoreService.DeleteToken(c, tokenId); err != nil {
+			a.sendInternalServerError(c, err)
+			return
+		}
 		c.Redirect(http.StatusTemporaryRedirect, logoutUrl.String())
 	})
 }

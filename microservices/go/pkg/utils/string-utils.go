@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -33,4 +34,14 @@ func Int64ToStr(i int64) string {
 
 func StrToInt64(s string) (int64, error) {
 	return strconv.ParseInt(s, 10, 64)
+}
+
+func AnyToString(val any) string {
+	if val == nil {
+		return ""
+	}
+	if str, ok := val.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", val)
 }

@@ -3,6 +3,7 @@ package middlewares
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
@@ -52,7 +53,8 @@ func (u UserKeyMiddlewareImpl) UserKeySession() gin.HandlerFunc {
 
 		// Get the session dto from your session.
 		// If it cannot be read, it means the session is empty and will be used anyway.
-		sessionDto, _ := security.ReadUKeySessionDtoFromSession(c)
+		session := sessions.Default(c)
+		sessionDto, _ := session.Get(security.UKeySessionKey).(commondtos.UKeySessionDto)
 
 		// Create a new body as a session request
 		newBody := commondtos.UKeySessionReqDto[map[string]any]{

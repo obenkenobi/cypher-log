@@ -7,6 +7,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 )
 
 type BearerAuthMiddleware interface {
@@ -19,26 +20,19 @@ type BearerAuthMiddlewareImpl struct {
 
 func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-
-		tokenId := b.getTokenIdFromSession(session)
+		tokenId := utils.AnyToString(sessions.Default(c).Get(security.TokenIdSessionKey))
 
 		token, err := b.accessTokenStoreService.GetToken(c, tokenId)
 		if err != nil {
 			logger.Log.WithError(err).Warn("Continuing the request but with an empty bearer token")
 		}
+		if utils.StringIsBlank(token) {
+			token = "_"
+		}
 
 		c.Request.Header["Authorization"] = []string{fmt.Sprintf("Bearer %v", token)}
 		c.Next()
 	}
-}
-
-func (b BearerAuthMiddlewareImpl) getTokenIdFromSession(session sessions.Session) string {
-	sessionValue := session.Get(security.TokenIdSessionKey)
-	if val, ok := sessionValue.(string); ok {
-		return val
-	}
-	return fmt.Sprintf("%v", sessionValue)
 }
 
 func NewBearerAuthMiddlewareImpl(

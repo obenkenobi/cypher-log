@@ -12,6 +12,7 @@ type AccessTokenStoreService interface {
 	StoreToken(ctx context.Context, tokenId string, accessToken string) error
 	// GetToken gets a token if it exists or returns an empty string if there is no token
 	GetToken(ctx context.Context, tokenId string) (string, error)
+	DeleteToken(ctx context.Context, tokenId string) error
 }
 
 type AccessTokenStoreServiceImpl struct {
@@ -38,6 +39,10 @@ func (a AccessTokenStoreServiceImpl) GetToken(ctx context.Context, tokenId strin
 		return "", nil
 	}
 	return holder.GetAccessToken(a.sessionConf.GetAccessTokenKey())
+}
+
+func (a AccessTokenStoreServiceImpl) DeleteToken(ctx context.Context, tokenId string) error {
+	return a.accessTokenHolderRepository.Del(ctx, tokenId)
 }
 
 func NewAccessTokenStoreServiceImpl(
