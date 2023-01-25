@@ -46,7 +46,7 @@ func NewSessionConfImpl() *SessionConfImpl {
 	var accessTokenKey []byte
 
 	if secret := env.GetEnvVar(env.EnvVarAccessTokenSecret); utils.StringIsNotBlank(secret) {
-		accessTokenKey, _, err = cipherutils.DeriveAESKeyFromText([]byte(secret), nil)
+		accessTokenKey, _, err = cipherutils.DeriveAESKeyFromText([]byte(secret), []byte(secret))
 	} else {
 		accessTokenKey, err = cipherutils.GenerateRandomKeyAES()
 	}
