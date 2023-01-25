@@ -13,6 +13,7 @@ import (
 	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type AuthController interface {
@@ -31,8 +32,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		// Generate a random state
 		state, err := randutils.GenerateRandom32BytesStr()
 		if err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
 
@@ -40,8 +40,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		session := sessions.Default(c)
 		session.Set(security.StateSessionKey, state)
 		if err := session.Save(); err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
 		c.Redirect(http.StatusTemporaryRedirect, a.authenticatorService.GetOath2Config().AuthCodeURL(state,
@@ -64,30 +63,27 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 
 		idToken, err := a.authenticatorService.VerifyIDToken(c.Request.Context(), token)
 		if err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
-		userId := idToken.Subject
-		session.Set(security.UserIdSessionKey, userId)
 
-		tokenId, err := uuid.NewRandom()
+		randomUUID, err := uuid.NewRandom()
 		if err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
+			return
 		}
-		session.Set(security.TokenIdSessionKey, tokenId)
 
-		err = a.accessTokenStoreService.StoreToken(c, userId, tokenId.String(), token.AccessToken)
+		tokenId := strings.Join([]string{idToken.Subject, randomUUID.String()}, "/")
+
+		session.Set(security.TokenIdSessionKey, tokenId)
+		err = a.accessTokenStoreService.StoreToken(c, tokenId, token.AccessToken)
 		if err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
 
 		if err := session.Save(); err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
 
@@ -98,8 +94,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 	authGroup.GET("/logout", func(c *gin.Context) {
 		logoutUrl, err := url.Parse("https://" + a.auth0SecurityConf.GetDomain() + "/v2/logout")
 		if err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
 
@@ -123,13 +118,17 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		session := sessions.Default(c)
 		session.Clear()
 		if err := session.Save(); err != nil {
-			logger.Log.WithError(err).Error()
-			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			a.sendInternalServerError(c, err)
 			return
 		}
 
 		c.Redirect(http.StatusTemporaryRedirect, logoutUrl.String())
 	})
+}
+
+func (a AuthControllerImpl) sendInternalServerError(c *gin.Context, err error) {
+	logger.Log.WithError(err).Error()
+	c.String(http.StatusInternalServerError, "Internal Server Error.")
 }
 
 func NewAuthControllerImpl(

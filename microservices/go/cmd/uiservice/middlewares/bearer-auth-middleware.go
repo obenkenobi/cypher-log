@@ -21,10 +21,9 @@ func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 
-		userId := fmt.Sprintf("%v", session.Get(security.UserIdSessionKey))
-		tokenId := fmt.Sprintf("%v", session.Get(security.TokenIdSessionKey))
+		tokenId := b.getTokenIdFromSession(session)
 
-		token, err := b.accessTokenStoreService.GetToken(c, userId, tokenId)
+		token, err := b.accessTokenStoreService.GetToken(c, tokenId)
 		if err != nil {
 			logger.Log.WithError(err).Warn("Continuing the request but with an empty bearer token")
 		}
@@ -32,6 +31,14 @@ func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
 		c.Request.Header["Authorization"] = []string{fmt.Sprintf("Bearer %v", token)}
 		c.Next()
 	}
+}
+
+func (b BearerAuthMiddlewareImpl) getTokenIdFromSession(session sessions.Session) string {
+	sessionValue := session.Get(security.TokenIdSessionKey)
+	if val, ok := sessionValue.(string); ok {
+		return val
+	}
+	return fmt.Sprintf("%v", sessionValue)
 }
 
 func NewBearerAuthMiddlewareImpl(
