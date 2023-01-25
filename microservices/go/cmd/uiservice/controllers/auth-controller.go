@@ -3,9 +3,11 @@ package controllers
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils/randutils"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 	"golang.org/x/oauth2"
@@ -25,53 +27,79 @@ type AuthControllerImpl struct {
 
 func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 	authGroup := r.Group("/auth")
-	authGroup.GET("/login", func(ctx *gin.Context) {
+	authGroup.GET("/login", func(c *gin.Context) {
 		// Generate a random state
-		state, err := randutils.GenerateRandom32Bytes()
+		state, err := randutils.GenerateRandom32BytesStr()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
 
 		// Save the state inside the session.
-		session := sessions.Default(ctx)
+		session := sessions.Default(c)
 		session.Set(security.StateSessionKey, state)
 		if err := session.Save(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
-		ctx.Redirect(http.StatusTemporaryRedirect, a.authenticatorService.GetOath2Config().AuthCodeURL(state,
+		c.Redirect(http.StatusTemporaryRedirect, a.authenticatorService.GetOath2Config().AuthCodeURL(state,
 			oauth2.SetAuthURLParam("audience", a.auth0SecurityConf.GetApiAudience())))
 	})
 
-	authGroup.GET("/callback", func(ctx *gin.Context) {
-		session := sessions.Default(ctx)
-		if ctx.Query(security.StateSessionKey) != session.Get(security.StateSessionKey) {
-			ctx.String(http.StatusBadRequest, "Invalid state parameter.")
+	authGroup.GET("/callback", func(c *gin.Context) {
+		session := sessions.Default(c)
+		if c.Query(security.StateSessionKey) != session.Get(security.StateSessionKey) {
+			c.String(http.StatusBadRequest, "Invalid state parameter.")
 			return
 		}
 
 		// Exchange an authorization code for a token.
-		token, err := a.authenticatorService.GetOath2Config().Exchange(ctx.Request.Context(), ctx.Query("code"))
+		token, err := a.authenticatorService.GetOath2Config().Exchange(c.Request.Context(), c.Query("code"))
 		if err != nil {
-			ctx.String(http.StatusUnauthorized, "Failed to exchange an authorization code for a token.")
+			c.String(http.StatusUnauthorized, "Failed to exchange an authorization code for a token")
 			return
 		}
 
-		session.Set(security.AccessTokenSessionKey, token.AccessToken)
+		idToken, err := a.authenticatorService.VerifyIDToken(c.Request.Context(), token)
+		if err != nil {
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			return
+		}
+		userId := idToken.Subject
+		session.Set(security.UserIdSessionKey, userId)
+
+		tokenId, err := uuid.NewRandom()
+		if err != nil {
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
+		}
+		session.Set(security.TokenIdSessionKey, tokenId)
+
+		err = a.accessTokenStoreService.StoreToken(c, userId, tokenId.String(), token.AccessToken)
+		if err != nil {
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
+			return
+		}
+
 		if err := session.Save(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
 
 		// Redirect to logged in page.
-		ctx.Redirect(http.StatusTemporaryRedirect, "/ui")
+		c.Redirect(http.StatusTemporaryRedirect, "/ui")
 	})
 
 	authGroup.GET("/logout", func(c *gin.Context) {
 		logoutUrl, err := url.Parse("https://" + a.auth0SecurityConf.GetDomain() + "/v2/logout")
 		if err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
 
@@ -82,7 +110,8 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 
 		returnTo, err := url.Parse(scheme + "://" + c.Request.Host)
 		if err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
 
@@ -92,10 +121,10 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 		logoutUrl.RawQuery = parameters.Encode()
 
 		session := sessions.Default(c)
-		session.Delete(security.AccessTokenSessionKey)
-		session.Delete(security.ProfileSessionKey)
+		session.Clear()
 		if err := session.Save(); err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			logger.Log.WithError(err).Error()
+			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
 

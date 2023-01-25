@@ -1,6 +1,6 @@
 package security
 
 const StateSessionKey = "state"
-const AccessTokenSessionKey = "access_token"
-const ProfileSessionKey = "profile"
+const UserIdSessionKey = "user_id"
+const TokenIdSessionKey = "token_id"
 const UKeySessionKey = "u-key-sess"

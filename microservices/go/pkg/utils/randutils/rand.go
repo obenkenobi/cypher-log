@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 )
 
-func GenerateRandom32Bytes() (string, error) {
-	return GenerateRandomBytes(32)
+func GenerateRandom32BytesStr() (string, error) {
+	return GenerateRandomBytesStr(32)
 }
 
-func GenerateRandomBytes(size uint32) (string, error) {
+func GenerateRandomBytesStr(size uint32) (string, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)
 	if err != nil {

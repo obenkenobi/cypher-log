@@ -33,12 +33,12 @@ func (s SessionConfImpl) GetAccessTokenKey() []byte {
 }
 
 func NewSessionConfImpl() *SessionConfImpl {
-	defaultSessionStoreSecret, err := randutils.GenerateRandom32Bytes()
+	defaultSessionStoreSecret, err := randutils.GenerateRandom32BytesStr()
 	if err != nil {
 		logger.Log.WithError(err).Fatal()
 	}
 
-	defaultCSRFStoreSecret, err := randutils.GenerateRandom32Bytes()
+	defaultCSRFStoreSecret, err := randutils.GenerateRandom32BytesStr()
 	if err != nil {
 		logger.Log.WithError(err).Fatal()
 	}
