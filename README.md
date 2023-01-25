@@ -1,6 +1,6 @@
 # Cypher Log
-A passcode based encrypted narchitecture 
-built on a microservice aarchitecture.
+A passcode based encrypted app
+built on a microservice architecture.
 
 ## Getting Started
 
