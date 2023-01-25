@@ -1,5 +1,6 @@
 # Cypher Log
-A passcode based encrypted note-taking app.
+A passcode based encrypted narchitecture.
+built on a microservice aarchitecture.
 
 ## Getting Started
 
