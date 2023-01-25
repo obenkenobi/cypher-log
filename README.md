@@ -1,5 +1,5 @@
 # Cypher Log
-A passcode based encrypted narchitecture.
+A passcode based encrypted narchitecture 
 built on a microservice aarchitecture.
 
 ## Getting Started
