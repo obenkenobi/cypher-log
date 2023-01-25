@@ -7,16 +7,20 @@ import (
 	"github.com/google/wire"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/controllers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/middlewares"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/servers"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf/authconf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/datasource/dshandlers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 )
 
 func InitializeApp() *App {
 	wire.Build(
+		conf.NewRedisConfImpl,
+		wire.Bind(new(conf.RedisConf), new(*conf.RedisConfImpl)),
 		conf.NewExternalAppServerConfImpl,
 		wire.Bind(new(conf.ExternalAppServerConf), new(*conf.ExternalAppServerConfImpl)),
 		conf.NewSessionConfImpl,
@@ -29,10 +33,13 @@ func InitializeApp() *App {
 		wire.Bind(new(conf.TLSConf), new(*conf.TlsConfImpl)),
 		authconf.NewAuth0SecurityConfImpl,
 		wire.Bind(new(authconf.Auth0SecurityConf), new(*authconf.Auth0RouteSecurityConfImpl)),
+		dshandlers.NewRedisDBHandler,
 		sharedservices.NewErrorServiceImpl,
 		wire.Bind(new(sharedservices.ErrorService), new(*sharedservices.ErrorServiceImpl)),
 		ginservices.NewGinCtxServiceImpl,
 		wire.Bind(new(ginservices.GinCtxService), new(*ginservices.GinCtxServiceImpl)),
+		repositories.NewAccessTokenHolderRepositoryImpl,
+		wire.Bind(new(repositories.AccessTokenHolderRepository), new(*repositories.AccessTokenHolderRepositoryImpl)),
 		services.NewAuthenticatorServiceImpl,
 		wire.Bind(new(services.AuthenticatorService), new(*services.AuthenticatorServiceImpl)),
 		middlewares.NewSessionMiddlewareImpl,

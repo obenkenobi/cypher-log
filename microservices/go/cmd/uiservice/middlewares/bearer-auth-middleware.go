@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/repositories"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/security"
 )
 
@@ -12,6 +13,7 @@ type BearerAuthMiddleware interface {
 }
 
 type BearerAuthMiddlewareImpl struct {
+	accessTokenHolderRepository repositories.AccessTokenHolderRepository
 }
 
 func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
@@ -22,6 +24,8 @@ func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
 	}
 }
 
-func NewBearerAuthMiddlewareImpl() *BearerAuthMiddlewareImpl {
-	return &BearerAuthMiddlewareImpl{}
+func NewBearerAuthMiddlewareImpl(
+	accessTokenHolderRepository repositories.AccessTokenHolderRepository,
+) *BearerAuthMiddlewareImpl {
+	return &BearerAuthMiddlewareImpl{accessTokenHolderRepository: accessTokenHolderRepository}
 }

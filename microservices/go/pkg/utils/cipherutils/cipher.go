@@ -66,6 +66,14 @@ func GenerateRandomKeyAES() ([]byte, error) {
 // key. If a salt already exists, just pass the existing one, and it will be used
 // to derive the new key.
 func DeriveAESKeyFromPassword(password, salt []byte) (derivedKey []byte, passwordSalt []byte, err error) {
+	return DeriveAESKeyFromText(password, salt)
+}
+
+// DeriveAESKeyFromText generates an encryption key with text. Salt can be passed
+// as nil if no salt is provided as a new salt will be returned alongside the new
+// key. If a salt already exists, just pass the existing one, and it will be used
+// to derive the new key.
+func DeriveAESKeyFromText(text, salt []byte) (derivedKey []byte, passwordSalt []byte, err error) {
 	if salt == nil {
 		salt, err = generateRandomBytes(32)
 		if err != nil {
@@ -73,7 +81,7 @@ func DeriveAESKeyFromPassword(password, salt []byte) (derivedKey []byte, passwor
 		}
 	}
 
-	key, err := scrypt.Key(password, salt, 32768, 8, 1, aesKeyLength)
+	key, err := scrypt.Key(text, salt, 32768, 8, 1, aesKeyLength)
 	if err != nil {
 		return nil, nil, err
 	}
