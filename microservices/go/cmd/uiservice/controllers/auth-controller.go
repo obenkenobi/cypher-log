@@ -18,8 +18,9 @@ type AuthController interface {
 }
 
 type AuthControllerImpl struct {
-	authenticatorService services.AuthenticatorService
-	auth0SecurityConf    authconf.Auth0SecurityConf
+	authenticatorService    services.AuthenticatorService
+	auth0SecurityConf       authconf.Auth0SecurityConf
+	accessTokenStoreService services.AccessTokenStoreService
 }
 
 func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
@@ -105,9 +106,11 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 func NewAuthControllerImpl(
 	authenticatorService services.AuthenticatorService,
 	auth0SecurityConf authconf.Auth0SecurityConf,
+	accessTokenStoreService services.AccessTokenStoreService,
 ) *AuthControllerImpl {
 	return &AuthControllerImpl{
-		authenticatorService: authenticatorService,
-		auth0SecurityConf:    auth0SecurityConf,
+		accessTokenStoreService: accessTokenStoreService,
+		authenticatorService:    authenticatorService,
+		auth0SecurityConf:       auth0SecurityConf,
 	}
 }

@@ -42,6 +42,8 @@ func InitializeApp() *App {
 		wire.Bind(new(repositories.AccessTokenHolderRepository), new(*repositories.AccessTokenHolderRepositoryImpl)),
 		services.NewAuthenticatorServiceImpl,
 		wire.Bind(new(services.AuthenticatorService), new(*services.AuthenticatorServiceImpl)),
+		services.NewAccessTokenStoreServiceImpl,
+		wire.Bind(new(services.AccessTokenStoreService), new(*services.AccessTokenStoreServiceImpl)),
 		middlewares.NewSessionMiddlewareImpl,
 		wire.Bind(new(middlewares.SessionMiddleware), new(*middlewares.SessionMiddlewareImpl)),
 		middlewares.NewBearerAuthMiddlewareImpl,
