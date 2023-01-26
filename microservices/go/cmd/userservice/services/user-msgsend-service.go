@@ -9,15 +9,16 @@ import (
 )
 
 type UserMsgSendService interface {
-	UserSaveSender() msg.Sender[userdtos.UserChangeEventDto]
+	SendUserSave(dto userdtos.UserChangeEventDto) error
 }
 
 type UserMessageServiceImpl struct {
 	userSaveSender msg.Sender[userdtos.UserChangeEventDto]
 }
 
-func (u UserMessageServiceImpl) UserSaveSender() msg.Sender[userdtos.UserChangeEventDto] {
-	return u.userSaveSender
+func (u UserMessageServiceImpl) SendUserSave(dto userdtos.UserChangeEventDto) error {
+	_, err := u.userSaveSender.Send(dto)
+	return err
 }
 
 func NewUserMessageServiceImpl(publisher rmqservices.RabbitMQPublisher) *UserMessageServiceImpl {
