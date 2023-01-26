@@ -110,9 +110,9 @@ func (g GatewayControllerImpl) proxyHandlerWithModifyResp(
 			}
 		}
 
-		roundTripper, err := g.httpRoundTripper()
+		roundTripper, err := g.httpRoundTripper(c)
 		if err != nil {
-			logger.Log.WithError(err).Error()
+			logger.Log.WithContext(c).WithError(err).Error()
 			c.Status(http.StatusBadRequest)
 			return
 		}
@@ -130,16 +130,16 @@ func (g GatewayControllerImpl) proxyHandlerWithModifyResp(
 	}
 }
 
-func (g GatewayControllerImpl) httpRoundTripper() (http.RoundTripper, error) {
+func (g GatewayControllerImpl) httpRoundTripper(c *gin.Context) (http.RoundTripper, error) {
 	if !environment.IsProduction() {
-		logger.Log.Info("Non production environments can skip TLS verification")
+		logger.Log.WithContext(c).Info("Non production environments can skip TLS verification")
 		return &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
 		}, nil
 	}
-	logger.Log.Info("Must require a secure TLS connection")
+	logger.Log.WithContext(c).Info("Must require a secure TLS connection")
 	return http.DefaultTransport, nil
 }
 func NewGatewayControllerImpl(

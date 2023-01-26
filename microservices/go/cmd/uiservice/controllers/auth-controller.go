@@ -106,7 +106,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 
 		returnTo, err := url.Parse(scheme + "://" + c.Request.Host)
 		if err != nil {
-			logger.Log.WithError(err).Error()
+			logger.Log.WithContext(c).WithError(err).Error()
 			c.String(http.StatusInternalServerError, "Internal Server Error.")
 			return
 		}
@@ -132,7 +132,7 @@ func (a AuthControllerImpl) AddRoutes(r *gin.Engine) {
 }
 
 func (a AuthControllerImpl) sendInternalServerError(c *gin.Context, err error) {
-	logger.Log.WithError(err).Error()
+	logger.Log.WithContext(c).WithError(err).Error()
 	c.String(http.StatusInternalServerError, "Internal Server Error.")
 }
 

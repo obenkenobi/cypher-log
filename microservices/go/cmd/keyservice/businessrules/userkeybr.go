@@ -68,13 +68,13 @@ func (u UserKeyBrImpl) ValidateProxyKeyCiphersFromSession(
 	// Validate Proxy Key Ciphers
 	savedUserIdBytes, err := cipherutils.DecryptAES(proxyKey, session.UserIdCipher)
 	if err != nil {
-		logger.Log.WithError(err).Debug()
+		logger.Log.WithContext(ctx).WithError(err).Debug()
 		return err
 	}
 	userIdInvalid := string(savedUserIdBytes) != userId
 	savedKeyVersionBytes, err := cipherutils.DecryptAES(proxyKey, session.KeyVersionCipher)
 	if err != nil {
-		logger.Log.WithError(err).Debug()
+		logger.Log.WithContext(ctx).WithError(err).Debug()
 		return err
 	}
 	keyInvalid := string(savedKeyVersionBytes) != utils.Int64ToStr(keyVersion)

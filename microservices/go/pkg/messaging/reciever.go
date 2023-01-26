@@ -1,5 +1,7 @@
 package messaging
 
+import "context"
+
 // Receiver response
 
 type ReceiverAction int
@@ -44,5 +46,5 @@ func NewDelivery[T any](body T) Delivery[T] {
 }
 
 type Receiver[T any] interface {
-	Listen(listener func(delivery Delivery[T]) ReceiverAction)
+	Listen(listener func(ctx context.Context, delivery Delivery[T]) ReceiverAction)
 }

@@ -22,7 +22,7 @@ func (u UserKeyServiceServerImpl) GetKeyFromSession(
 	grpcmappers.UserKeySessionToUserKeySessionDto(userKeySession, &userKeySessionDto)
 	keyDto, err := u.userKeyService.GetKeyFromSession(ctx, userKeySessionDto)
 	if err != nil {
-		return nil, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
+		return nil, gtools.ProcessErrorToGrpcStatusError(ctx, gtools.ReadAction, err)
 	}
 	userKey := &userkeypb.UserKey{}
 	grpcmappers.UserKeyDtoToUserKey(&keyDto, userKey)

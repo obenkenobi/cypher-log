@@ -74,7 +74,7 @@ func (u UserServiceImpl) addUser(
 		return userdtos.UserReadDto{}, err
 	}
 
-	logger.Log.Debug("Saved user ", user)
+	logger.Log.WithContext(ctx).Debug("Saved user ", user)
 	return userToUserReadDto(createdUser), nil
 }
 
@@ -120,7 +120,7 @@ func (u UserServiceImpl) updateUser(
 		return userdtos.UserReadDto{}, err
 	}
 
-	logger.Log.Debug("Saved user ", updatedUser)
+	logger.Log.WithContext(ctx).Debug("Saved user ", updatedUser)
 	return userToUserReadDto(updatedUser), nil
 }
 
@@ -158,7 +158,7 @@ func (u UserServiceImpl) beginDeletingUser(
 		return userdtos.UserReadDto{}, err
 	}
 
-	logger.Log.Debug("Starting to delete user ", updatedUser)
+	logger.Log.WithContext(ctx).Debug("Starting to delete user ", updatedUser)
 	return userToUserReadDto(updatedUser), nil
 }
 
@@ -196,7 +196,7 @@ func (u UserServiceImpl) GetById(ctx context.Context, userId string) (userdtos.U
 func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
 	userSample, err := u.userRepository.SampleUndistributedUsers(ctx, 100)
 	if err != nil {
-		logger.Log.Error(err)
+		logger.Log.WithContext(ctx).Error(err)
 		return
 	}
 	for _, user := range userSample {
@@ -207,7 +207,7 @@ func (u UserServiceImpl) UsersChangeTask(ctx context.Context) {
 			_, err = u.distributeUserChangeTxn(ctx, user)
 		}
 		if err != nil {
-			logger.Log.Error(err)
+			logger.Log.WithContext(ctx).Error(err)
 		}
 	}
 
@@ -238,7 +238,7 @@ func (u UserServiceImpl) deleteUser(ctx context.Context, user models.User) (user
 		return event, err
 	}
 
-	logger.Log.Debug("Deleted user ", deletedUser)
+	logger.Log.WithContext(ctx).Debug("Deleted user ", deletedUser)
 	return event, err
 }
 
@@ -266,7 +266,7 @@ func (u UserServiceImpl) distributeUserChange(
 	user.Distributed = true
 	updatedUser, err := u.userRepository.Update(ctx, user)
 	if err == nil {
-		logger.Log.Debugf("Sent user save event for user %v", updatedUser)
+		logger.Log.WithContext(ctx).Debugf("Sent user save event for user %v", updatedUser)
 	}
 	return event, err
 }

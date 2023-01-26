@@ -34,7 +34,7 @@ func (e ExtUserKeyServiceImpl) GetKeyFromSession(
 	}
 	defer func(conn *grpc.ClientConn) {
 		if conErr := conn.Close(); conErr != nil {
-			logger.Log.WithError(conErr).Error()
+			logger.Log.WithContext(ctx).WithError(conErr).Error()
 		}
 	}(conn)
 

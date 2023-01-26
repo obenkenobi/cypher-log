@@ -28,7 +28,7 @@ func (u ExtUserServiceImpl) GetById(ctx context.Context, id string) (userDto use
 	}
 	defer func(conn *grpc.ClientConn) {
 		if conErr := conn.Close(); conErr != nil {
-			logger.Log.WithError(conErr).Error()
+			logger.Log.WithContext(ctx).WithError(conErr).Error()
 		}
 	}(conn)
 
@@ -51,7 +51,7 @@ func (u ExtUserServiceImpl) GetByAuthId(ctx context.Context, authId string) (use
 	}
 	defer func(conn *grpc.ClientConn) {
 		if conErr := conn.Close(); conErr != nil {
-			logger.Log.WithError(conErr).Error()
+			logger.Log.WithContext(ctx).WithError(conErr).Error()
 		}
 	}(conn)
 

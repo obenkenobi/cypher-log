@@ -24,7 +24,7 @@ func (c CronRunnerImpl) Run() {
 
 	userChangeJob, err := s.Every(1).Second().Do(func() { c.userService.UsersChangeTask(c.ctx) })
 	if err != nil {
-		logger.Log.Fatal(err)
+		logger.Log.WithContext(c.ctx).Fatal(err)
 	}
 	userChangeJob.SingletonMode()
 

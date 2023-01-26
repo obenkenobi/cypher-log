@@ -1,6 +1,7 @@
 package rmq
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
@@ -9,7 +10,7 @@ import (
 	"github.com/wagslane/go-rabbitmq"
 )
 
-func readBody[T any](delivery rabbitmq.Delivery) (T, error) {
+func readBody[T any](ctx context.Context, delivery rabbitmq.Delivery) (T, error) {
 	isTypeString := false
 	{
 		var defaultBodyType T
@@ -23,7 +24,7 @@ func readBody[T any](delivery rabbitmq.Delivery) (T, error) {
 		var err error = nil
 		if !ok {
 			err = fmt.Errorf("failed to read consumed value as string")
-			logger.Log.Error(err)
+			logger.Log.WithContext(ctx).Error(err)
 		}
 		return body, err
 	}
@@ -41,18 +42,19 @@ type Receiver[T any] struct {
 	consumeOpts  []func(options *rabbitmq.ConsumeOptions)
 }
 
-func (r Receiver[T]) Listen(listener func(delivery messaging.Delivery[T]) messaging.ReceiverAction) {
+func (r Receiver[T]) Listen(listener func(ctx context.Context, delivery messaging.Delivery[T]) messaging.ReceiverAction) {
 	consumeOpts := append(r.exchange.GetConsumeOptions(), r.consumeOpts...)
 	if utils.StringIsNotBlank(r.consumerName) {
 		consumeOpts = append(consumeOpts, rabbitmq.WithConsumeOptionsConsumerName(r.consumerName))
 	}
 	err := r.consumer.StartConsuming(
 		func(d rabbitmq.Delivery) rabbitmq.Action {
-			body, err := readBody[T](d)
+			ctx := context.Background()
+			body, err := readBody[T](ctx, d)
 			if err != nil {
 				return rabbitmq.NackDiscard
 			}
-			action := listener(messaging.NewDelivery(body))
+			action := listener(ctx, messaging.NewDelivery(body))
 			switch action {
 			case messaging.Commit:
 				return rabbitmq.Ack

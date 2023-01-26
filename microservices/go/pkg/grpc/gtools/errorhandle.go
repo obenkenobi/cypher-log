@@ -1,6 +1,7 @@
 package gtools
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/akrennmair/slice"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/apperrors"
@@ -47,14 +48,14 @@ func processBadReqErr(procedureType GrpcAction, badReqErr apperrors.BadRequestEr
 
 // ProcessErrorToGrpcStatusError takes an error and procedure type and transforms the
 // error into a format used by GRPC methods.
-func ProcessErrorToGrpcStatusError(procedureType GrpcAction, err error) error {
+func ProcessErrorToGrpcStatusError(ctx context.Context, procedureType GrpcAction, err error) error {
 	if err == nil {
 		return err
 	}
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		return processBadReqErr(procedureType, badReqErr)
 	}
-	logger.Log.Error(err)
+	logger.Log.WithContext(ctx).Error(err)
 	return status.Error(codes.Internal, "internal error")
 }
 

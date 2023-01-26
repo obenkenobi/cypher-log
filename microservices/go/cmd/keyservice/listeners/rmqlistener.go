@@ -34,8 +34,8 @@ func (r RmqListenerImpl) ListenUserChange() {
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		rabbitmq.WithConsumeOptionsQuorum,
 	)
-	userCreateReceiver.Listen(func(d msg.Delivery[userdtos.UserChangeEventDto]) msg.ReceiverAction {
-		res, err := r.userChangeEventService.HandleUserChangeEventTxn(r.ctx, d.Body())
+	userCreateReceiver.Listen(func(ctx context.Context, d msg.Delivery[userdtos.UserChangeEventDto]) msg.ReceiverAction {
+		res, err := r.userChangeEventService.HandleUserChangeEventTxn(ctx, d.Body())
 		if err != nil {
 			return d.Resend()
 		} else if res.Discarded {
@@ -44,7 +44,7 @@ func (r RmqListenerImpl) ListenUserChange() {
 			return d.Commit()
 		}
 	})
-	logger.Log.Info("Listening for user changes")
+	logger.Log.WithContext(r.ctx).Info("Listening for user changes")
 }
 
 func (r RmqListenerImpl) Run() {

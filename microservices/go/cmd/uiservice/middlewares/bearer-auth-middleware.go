@@ -20,17 +20,19 @@ type BearerAuthMiddlewareImpl struct {
 
 func (b BearerAuthMiddlewareImpl) PassBearerTokenFromSession() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		logger.Log.WithContext(c).Info("Starting bearer token middleware")
 		tokenId := utils.AnyToString(sessions.Default(c).Get(security.TokenIdSessionKey))
 
 		token, err := b.accessTokenStoreService.GetToken(c, tokenId)
 		if err != nil {
-			logger.Log.WithError(err).Warn("Continuing the request but with an empty bearer token")
+			logger.Log.WithContext(c).WithError(err).Warn("Continuing the request but with an empty bearer token")
 		}
 		if utils.StringIsBlank(token) {
 			token = "_"
 		}
 
 		c.Request.Header["Authorization"] = []string{fmt.Sprintf("Bearer %v", token)}
+		logger.Log.WithContext(c).Info("Ending bearer token middleware")
 		c.Next()
 	}
 }

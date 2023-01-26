@@ -22,7 +22,7 @@ func (g coreGrpcServerImpl) Run() {
 	if err != nil {
 		logger.Log.Fatalf("failed to listen: %v", err)
 	}
-	logger.Log.Printf("server listening at %v", lis.Addr())
+	logger.Log.Infof("server listening at %v", lis.Addr())
 	if err := g.server.Serve(lis); err != nil {
 		logger.Log.Fatalf("failed to serve: %v", err)
 	}

@@ -27,7 +27,7 @@ type GinCtxService interface {
 
 	// processBindError takes an error from binding a value from a request body
 	// processes it into a BadRequestError.
-	processBindError(err error) apperrors.BadRequestError
+	processBindError(c *gin.Context, err error) apperrors.BadRequestError
 
 	// RestControllerPipeline initializes a controller.Pipeline that manages errors in the
 	// background using the gin context for REST controllers.
@@ -52,19 +52,19 @@ func (g GinCtxServiceImpl) RespondError(c *gin.Context, err error) {
 	if badReqErr, ok := err.(apperrors.BadRequestError); ok {
 		c.JSON(http.StatusBadRequest, badReqErr)
 	} else {
-		logger.Log.Error(err)
+		logger.Log.WithContext(c).Error(err)
 		c.Status(http.StatusInternalServerError)
 	}
 }
 
-func (g GinCtxServiceImpl) processBindError(err error) apperrors.BadRequestError {
+func (g GinCtxServiceImpl) processBindError(c *gin.Context, err error) apperrors.BadRequestError {
 	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
 		appValErrors := slice.Map(fieldErrors, func(fieldError validator.FieldError) apperrors.ValidationError {
 			return apperrors.ValidationError{Field: fieldError.Field(), Message: fieldError.ActualTag()}
 		})
 		return apperrors.NewBadReqErrorFromValidationErrors(appValErrors)
 	}
-	logger.Log.WithError(err).Info("Unable to bind json")
+	logger.Log.WithContext(c).WithError(err).Info("Unable to bind json")
 	cannotBindJsonRuleErr := g.errorMessageService.RuleErrorFromCode(apperrors.ErrCodeCannotBindJson)
 	return apperrors.NewBadReqErrorFromRuleError(cannotBindJsonRuleErr)
 }
@@ -80,7 +80,7 @@ func NewGinCtxServiceImpl(errorService sharedservices.ErrorService) *GinCtxServi
 func ReadValueFromBody[V any](ginCtxService GinCtxService, c *gin.Context) (V, error) {
 	var value V
 	if err := c.ShouldBind(&value); err != nil {
-		return value, ginCtxService.processBindError(err)
+		return value, ginCtxService.processBindError(c, err)
 	}
 	return value, nil
 }
@@ -88,7 +88,7 @@ func ReadValueFromBody[V any](ginCtxService GinCtxService, c *gin.Context) (V, e
 // BindBodyToReferenceObj reads the request type and writes it to a value that must be a reference type
 func BindBodyToReferenceObj[V any](ginCtxService GinCtxService, c *gin.Context, value V) (V, error) {
 	if err := c.ShouldBind(value); err != nil {
-		return value, ginCtxService.processBindError(err)
+		return value, ginCtxService.processBindError(c, err)
 	}
 	return value, nil
 }

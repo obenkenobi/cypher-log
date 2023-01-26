@@ -31,7 +31,7 @@ func (u UserServiceImpl) SaveUser(
 	ctx context.Context,
 	userEventDto userdtos.UserChangeEventDto,
 ) (userbos.UserBo, error) {
-	logger.Log.Debugf("saving user %v", userEventDto)
+	logger.Log.WithContext(ctx).Debugf("saving user %v", userEventDto)
 	user, err := u.saveUserDataAndGetModel(ctx, userEventDto.AuthId, userEventDto.BaseUserPublicDto)
 	if err != nil {
 		return userbos.UserBo{}, err
@@ -45,7 +45,7 @@ func (u UserServiceImpl) DeleteUser(
 	ctx context.Context,
 	userEventDto userdtos.UserChangeEventDto,
 ) (userbos.UserBo, error) {
-	logger.Log.Debugf("deleting user %v", userEventDto)
+	logger.Log.WithContext(ctx).Debugf("deleting user %v", userEventDto)
 	userMaybe, err := u.userRepository.FindByUserId(ctx, userEventDto.Id)
 	if err != nil {
 		return userbos.UserBo{}, err

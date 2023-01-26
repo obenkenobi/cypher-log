@@ -94,7 +94,7 @@ func (u UserKeyServiceImpl) NewKeySession(
 		return commondtos.UKeySessionDto{}, err
 	}
 
-	logger.Log.Debugf("Generating key from password")
+	logger.Log.WithContext(ctx).Debugf("Generating key from password")
 	key, _, err := cipherutils.DeriveAESKeyFromPassword([]byte(dto.Passcode), userKeyGen.KeyDerivationSalt)
 	if err != nil {
 		return commondtos.UKeySessionDto{}, err

@@ -16,7 +16,7 @@ type UserServiceServerImpl struct {
 func (u UserServiceServerImpl) GetUserById(ctx context.Context, request *userpb.IdRequest) (*userpb.UserReply, error) {
 	userDto, err := u.userService.GetById(ctx, request.GetId())
 	if err != nil {
-		return nil, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
+		return nil, gtools.ProcessErrorToGrpcStatusError(ctx, gtools.ReadAction, err)
 	}
 	userReply := &userpb.UserReply{}
 	grpcmappers.UserReadDtoToUserReply(&userDto, userReply)
@@ -29,7 +29,7 @@ func (u UserServiceServerImpl) GetUserByAuthId(
 ) (*userpb.UserReply, error) {
 	userDto, err := u.userService.GetByAuthId(ctx, request.GetAuthId())
 	if err != nil {
-		return nil, gtools.ProcessErrorToGrpcStatusError(gtools.ReadAction, err)
+		return nil, gtools.ProcessErrorToGrpcStatusError(ctx, gtools.ReadAction, err)
 	}
 	userReply := &userpb.UserReply{}
 	grpcmappers.UserReadDtoToUserReply(&userDto, userReply)
