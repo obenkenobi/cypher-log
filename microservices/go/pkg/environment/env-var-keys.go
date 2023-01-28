@@ -57,6 +57,11 @@ const EnvVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 const EnvVarRabbitMQUri = "RABBITMQ_URI"
 
+// Kafka
+const EnvVarKafkaServers = "KAFKA_SERVERS"
+const EnvVarKafkaUserName = "KAFKA_USERNAME"
+const EnvVarKafkaPassword = "KAFKA_PASSWORD"
+
 // Redis
 
 const EnvVarKeyRedisAddr = "REDIS_ADDRESS"
