@@ -18,14 +18,7 @@ const kafka = new Kafka({
   sasl
 });
 
-
-const task = async () => {
-  const admin = kafka.admin();
-
-  await admin.connect()
-  console.log("Connected to admin")
-
-  console.log("creating topics")
+const migrateTask1 = async (admin: Admin) => {
   await admin.createTopics({
     validateOnly: false,
     waitForLeaders: true,
@@ -36,6 +29,18 @@ const task = async () => {
       replicationFactor: 2
     }]
   })
+}
+
+
+const task = async () => {
+  const admin = kafka.admin();
+
+  await admin.connect()
+  console.log("Connected to admin")
+  await migrateTask1(admin)
+  console.log("Beginning migration")
+
+  console.log("Ending migration")
   console.log("topics created")
 
   await admin.disconnect()
