@@ -1,6 +1,7 @@
 import { Kafka, SASLOptions, Admin } from 'kafkajs'
 import * as dotenv from 'dotenv'
 
+// Todo: add args to specify what task to do when migrating
 
 if (process.env.IGNORE_ENV_FILE !== "true") {
   dotenv.config()
