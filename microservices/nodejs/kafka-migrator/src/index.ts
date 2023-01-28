@@ -1,4 +1,4 @@
-import { Kafka, SASLOptions } from 'kafkajs'
+import { Kafka, SASLOptions, Mechanism } from 'kafkajs'
 import * as dotenv from 'dotenv'
 
 
@@ -12,7 +12,7 @@ const ssl = !!sasl;
 
 console.log((process.env.KAFKA_BOOTSTRAP_SERVERS || "").split(","))
 const kafka = new Kafka({
-  clientId: 'npm-slack-notifier',
+  clientId: 'kafka-migrator',
   brokers: (process.env.KAFKA_BOOTSTRAP_SERVERS || "").split(","),
   ssl,
   sasl
