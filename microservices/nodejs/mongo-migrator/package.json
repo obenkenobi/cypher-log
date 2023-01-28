@@ -2,7 +2,7 @@
   "name": "mongo-migrator",
   "version": "1.0.0",
   "description": "migrator for user service",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "migrate:help": "ts-node src/index.ts help new",
     "migrate:init": "ts-node src/index.ts init",
