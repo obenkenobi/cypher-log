@@ -19,16 +19,20 @@ const kafka = new Kafka({
 });
 
 const migrateTask1 = async (admin: Admin) => {
+  console.log("Begin migrate task 1")
+  const user0Topic = "user-0"
   await admin.createTopics({
     validateOnly: false,
     waitForLeaders: true,
     timeout: 10000,
     topics: [{
-      topic: "user-0",
+      topic: user0Topic,
       numPartitions: 6,
       replicationFactor: 2
     }]
   })
+  console.log(`Created topic ${user0Topic}`)
+  console.log("End migrate task 1")
 }
 
 
