@@ -62,6 +62,8 @@ func (r Receiver[T]) Listen(listener func(ctx context.Context, delivery messagin
 				return rabbitmq.NackDiscard
 			case messaging.Resend:
 				return rabbitmq.NackRequeue
+			case messaging.Auto:
+				return rabbitmq.Ack
 			default:
 				return rabbitmq.Action(action)
 			}

@@ -7,7 +7,8 @@ import "context"
 type ReceiverAction int
 
 const (
-	Commit ReceiverAction = iota
+	Auto ReceiverAction = iota
+	Commit
 	Discard
 	Resend
 )
@@ -16,6 +17,7 @@ const (
 
 type Delivery[T any] interface {
 	Body() T
+	Auto() ReceiverAction
 	Commit() ReceiverAction
 	Discard() ReceiverAction
 	Resend() ReceiverAction
@@ -27,6 +29,10 @@ type receiverMessage[T any] struct {
 
 func (r receiverMessage[T]) Body() T {
 	return r.body
+}
+
+func (r receiverMessage[T]) Auto() ReceiverAction {
+	return Auto
 }
 
 func (r receiverMessage[T]) Commit() ReceiverAction {
