@@ -17,8 +17,7 @@ type UserMessageServiceImpl struct {
 }
 
 func (u UserMessageServiceImpl) SendUserSave(dto userdtos.UserChangeEventDto) error {
-	_, err := u.userSaveSender.Send(dto)
-	return err
+	return u.userSaveSender.Send(dto)
 }
 
 func NewUserMessageServiceImpl(publisher rmqservices.RabbitMQPublisher) *UserMessageServiceImpl {

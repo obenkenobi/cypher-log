@@ -26,7 +26,7 @@ func NewSender[T any](
 	}
 }
 
-func (r *Sender[T]) Send(body T) (T, error) {
+func (r *Sender[T]) Send(body T) error {
 	var msgBytes []byte
 	var contentType string
 	{
@@ -38,7 +38,7 @@ func (r *Sender[T]) Send(body T) (T, error) {
 		default:
 			var err error
 			if msgBytes, err = json.Marshal(body); err != nil {
-				return body, err
+				return err
 			}
 			contentType = ContentTypeJson
 		}
@@ -49,5 +49,5 @@ func (r *Sender[T]) Send(body T) (T, error) {
 		rabbitmq.WithPublishOptionsMandatory)
 	r.publisher.NotifyReturn()
 	err := r.publisher.Publish(msgBytes, r.routingKeys, publishOpts...)
-	return body, err
+	return err
 }
