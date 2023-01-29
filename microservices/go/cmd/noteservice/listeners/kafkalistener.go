@@ -57,7 +57,7 @@ func NewKafkaListenerImpl(
 
 	userChangeReceiver := kfka.NewKafkaReceiver[userdtos.UserChangeEventDto](
 		kafka.NewReader(kafka.ReaderConfig{
-			Brokers:  kafkaConf.GetServers(),
+			Brokers:  kafkaConf.GetBootstrapServers(),
 			GroupID:  "user-0-note-service-0",
 			Topic:    "user-0",
 			MinBytes: 10e3, // 10KB

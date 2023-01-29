@@ -54,7 +54,8 @@ const EnvVarMongoDBName = "MONGO_DB_NAME"
 const EnvVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
 
 // Kafka
-const EnvVarKafkaServers = "KAFKA_SERVERS"
+
+const EnvVarKafkaBootstrapServers = "KAFKA_BOOTSTRAP_SERVERS"
 const EnvVarKafkaUsername = "KAFKA_USERNAME"
 const EnvVarKafkaPassword = "KAFKA_PASSWORD"
 

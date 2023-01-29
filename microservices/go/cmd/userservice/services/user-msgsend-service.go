@@ -29,7 +29,7 @@ func (u *UserMessageServiceImpl) Close() error {
 func NewUserMessageServiceImpl(kafkaConf conf.KafkaConf) *UserMessageServiceImpl {
 	userSaveSender := kfka.NewKafkaSender(
 		&kafka.Writer{
-			Addr:     kafka.TCP(kafkaConf.GetServers()...),
+			Addr:     kafka.TCP(kafkaConf.GetBootstrapServers()...),
 			Topic:    "user-0",
 			Balancer: &kafka.Murmur2Balancer{},
 		},

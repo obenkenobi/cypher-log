@@ -3,7 +3,7 @@ package conf
 import env "github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 
 type KafkaConf interface {
-	GetServers() []string
+	GetBootstrapServers() []string
 	GetUsername() string
 	GetPassword() string
 }
@@ -14,7 +14,7 @@ type KafkaConfImpl struct {
 	Password string
 }
 
-func (k KafkaConfImpl) GetServers() []string {
+func (k KafkaConfImpl) GetBootstrapServers() []string {
 	return k.Servers
 }
 
@@ -28,7 +28,7 @@ func (k KafkaConfImpl) GetPassword() string {
 
 func NewKafkaConfImpl() *KafkaConfImpl {
 	return &KafkaConfImpl{
-		Servers:  env.GetEnvVariableAsListSplitByComma(env.EnvVarKafkaServers),
+		Servers:  env.GetEnvVariableAsListSplitByComma(env.EnvVarKafkaBootstrapServers),
 		Username: env.GetEnvVar(env.EnvVarKafkaUsername),
 		Password: env.GetEnvVar(env.EnvVarKafkaPassword),
 	}

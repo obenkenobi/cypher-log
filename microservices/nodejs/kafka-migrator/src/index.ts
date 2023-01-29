@@ -11,10 +11,10 @@ const { KAFKA_USERNAME: username, KAFKA_PASSWORD: password } = process.env;
 const sasl: SASLOptions | undefined = username && password ? { username, password, mechanism: 'plain' } : undefined;
 const ssl = !!sasl;
 
-console.log("Configuring to connect to brokers ", (process.env.KAFKA_SERVERS || ""))
+console.log("Configuring to connect to brokers ", (process.env.KAFKA_BOOTSTRAP_SERVERS || ""))
 const kafka = new Kafka({
   clientId: 'kafka-migrator',
-  brokers: (process.env.KAFKA_SERVERS || "").split(","),
+  brokers: (process.env.KAFKA_BOOTSTRAP_SERVERS || "").split(","),
   ssl,
   sasl
 });

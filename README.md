@@ -162,7 +162,7 @@ Here is a table of all the environment variables:
 | MONGO_DB_NAME                   | MongoDB database                                                                                                                            |                                |
 | MONGO_CONNECTION_TIMEOUT_MS     | The duration in milliseconds for a MongoDB connection to time out                                                                           |                                |
 | RABBITMQ_URI                    | The URI to connect to RabbitMQ                                                                                                              |                                |
-| KAFKA_SERVERS                   | A comma seperated list of your kafka bootstrap server addresses/URIs                                                                        |                                |
+| KAFKA_BOOTSTRAP_SERVERS         | A comma seperated list of your kafka bootstrap server addresses/URIs                                                                        |                                |
 | KAFKA_USERNAME                  | Your kafka username                                                                                                                         |                                |
 | KAFKA_PASSWORD                  | Your kafka password                                                                                                                         |                                |
 | REDIS_ADDRESS                   | Your Redis `host:port` address                                                                                                              |                                |
