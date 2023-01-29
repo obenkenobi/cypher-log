@@ -108,6 +108,8 @@ Here is a table of all the environment variables used in the mongo migrator:
 | MIGRATION_DIRECTORY | Is a migration directory under the `src` directory.                                           |               |
 | IGNORE_ENV_FILE     | If set to `true`, your .env file is ignored. This is meant to be set outside the `.env` file. |               |
 
+### Message Broker Migrations
+Todo: Add instructions
 ### Go Microservices
 Move into the directory `microservices/go`. You will notice that there is a single Go project. 
 Now this single Go project is actually a collection of microservices that share a lot of common code. This shared code 
@@ -219,3 +221,6 @@ With the run configuration ready, you can now run your app.
 
 To run unit tests on a directory or file, right-click the desired item, go to the run selection and pick the go test 
 approach. Then you have a run configuration ready to run unit tests
+
+### UI
+Todo: add UI instructions
