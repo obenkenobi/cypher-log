@@ -20,12 +20,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/grpcserveropts"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
 func InitializeApp() *App {
 	wire.Build(
+		conf.NewKafkaConfImpl,
+		wire.Bind(new(conf.KafkaConf), new(*conf.KafkaConfImpl)),
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),
 		authconf.NewAuth0SecurityConfImpl,
@@ -34,14 +35,10 @@ func InitializeApp() *App {
 		wire.Bind(new(conf.MongoConf), new(*conf.MongoConfImpl)),
 		conf.NewTlsConfImpl,
 		wire.Bind(new(conf.TLSConf), new(*conf.TlsConfImpl)),
-		conf.NewRabbitMQConfImpl,
-		wire.Bind(new(conf.RabbitMQConf), new(*conf.RabbitMQConfImpl)),
 		dshandlers.NewMongoDBHandler,
 		wire.Bind(new(dshandlers.CrudDSHandler), new(*dshandlers.MongoDBHandler)),
 		repositories.NewUserRepositoryImpl,
 		wire.Bind(new(repositories.UserRepository), new(*repositories.UserRepositoryImpl)),
-		rmqservices.NewRabbitPublisherImpl,
-		wire.Bind(new(rmqservices.RabbitMQPublisher), new(*rmqservices.RabbitMQPublisherImpl)),
 		sharedservices.NewErrorServiceImpl,
 		wire.Bind(new(sharedservices.ErrorService), new(*sharedservices.ErrorServiceImpl)),
 		businessrules.NewUserBrImpl,

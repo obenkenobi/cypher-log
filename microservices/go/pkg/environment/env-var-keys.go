@@ -8,7 +8,7 @@ const EnvVarKeyAppEnvironment = "ENVIRONMENT"
 
 const EnvVarKeyActivateAppServer = "ACTIVATE_APP_SERVER"
 const EnvVarKeyActivateGrpcServer = "ACTIVATE_GRPC_SERVER"
-const EnvVarActivateRabbitMQListener = "ACTIVATE_RABBITMQ_LISTENER"
+const EnvVarActivateKafkaListener = "ACTIVATE_KAFKA_LISTENER"
 const EnvVarActivateAppServerTLS = "ACTIVATE_APP_SERVER_TLS"
 const EnvVarActivateGRPCAuth = "ACTIVATE_GRPC_AUTH"
 const EnvVarActivateCronRunner = "ACTIVATE_CRON_RUNNER"
@@ -52,10 +52,6 @@ const EnvVarKeyAuth0WebappCallbackUrl = "AUTH0_WEBAPP_CALLBACK_URL"
 const EnvVarKeyMongoUri = "MONGO_URI"
 const EnvVarMongoDBName = "MONGO_DB_NAME"
 const EnvVarMongoConnTimeoutMS = "MONGO_CONNECTION_TIMEOUT_MS"
-
-// RabbitMQ
-
-const EnvVarRabbitMQUri = "RABBITMQ_URI"
 
 // Kafka
 const EnvVarKafkaServers = "KAFKA_SERVERS"

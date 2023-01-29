@@ -2,28 +2,15 @@ package app
 
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/servers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 )
 
-type App struct {
-	appServer servers.AppServer
-}
+type App struct{}
 
 func (a App) Start() {
-	var taskRunners []taskrunner.TaskRunner
-
-	if environment.ActivateAppServer() { // Add app server
-		taskRunners = append(taskRunners, a.appServer)
-	}
-
-	taskrunner.RunAndWait(taskRunners...)
+	lifecycle.RunApp()
 }
 
-func NewApp(
-	appServer servers.AppServer,
-) *App {
-	return &App{
-		appServer: appServer,
-	}
+func NewApp(_ servers.AppServer) *App {
+	return &App{}
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/uiservice/middlewares"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/commonservers"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 )
 
@@ -17,18 +19,20 @@ type AppServerImpl struct {
 	commonservers.CoreAppServer
 }
 
-//Todo: add csrf protection
-
 func NewAppServerImpl(
 	serverConf conf.ServerConf,
 	tlsConf conf.TLSConf,
 	sessionMiddleware middlewares.SessionMiddleware,
 	uiProviderMiddleware middlewares.UiProviderMiddleware,
-	userKeyMiddleware middlewares.UserKeyMiddleware,
 	authController controllers.AuthController,
 	csrfController controllers.CsrfController,
 	gatewayController controllers.GatewayController,
 ) *AppServerImpl {
+	if !environment.ActivateAppServer() {
+		// App server is deactivated, ran via the lifecycle package,
+		// and is a root-child dependency so a nil is returned
+		return nil
+	}
 	beforeControllers := func(r *gin.Engine) {
 		// Add gin engine configuration
 		uiProviderMiddleware.ProvideUI(r)
@@ -45,5 +49,7 @@ func NewAppServerImpl(
 		controllersList,
 		afterControllers,
 	)
-	return &AppServerImpl{CoreAppServer: coreAppServer}
+	a := &AppServerImpl{CoreAppServer: coreAppServer}
+	lifecycle.RegisterTaskRunner(a)
+	return a
 }

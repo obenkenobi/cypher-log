@@ -2,37 +2,41 @@ package kfka
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/segmentio/kafka-go"
-	"log"
+	"sync"
 )
 
-// This is just for testing
-func something() {
-	w := &kafka.Writer{
-		Addr:     kafka.TCP("localhost:9092", "localhost:9093", "localhost:9094"),
-		Topic:    "topic-A",
-		Balancer: &kafka.LeastBytes{},
-	}
+// KafkaSender is a thread safe sender class to send messages over kafka
+type KafkaSender[T any] struct {
+	writer    *kafka.Writer
+	rwLock    sync.RWMutex
+	keyReader func(body T) ([]byte, error)
+}
 
-	err := w.WriteMessages(context.Background(),
-		kafka.Message{
-			Key:   []byte("Key-A"),
-			Value: []byte("Hello World!"),
-		},
-		kafka.Message{
-			Key:   []byte("Key-B"),
-			Value: []byte("One!"),
-		},
-		kafka.Message{
-			Key:   []byte("Key-C"),
-			Value: []byte("Two!"),
-		},
-	)
+func (k KafkaSender[T]) Send(ctx context.Context, body T) error {
+	k.rwLock.RLock()
+	k.rwLock.RUnlock()
+	msgBytes, err := json.Marshal(body)
 	if err != nil {
-		log.Fatal("failed to write messages:", err)
+		return err
 	}
+	key, err := k.keyReader(body)
+	if err != nil {
+		return err
+	}
+	return k.writer.WriteMessages(ctx, kafka.Message{Key: key, Value: msgBytes})
+}
 
-	if err := w.Close(); err != nil {
-		log.Fatal("failed to close writer:", err)
+func (k KafkaSender[T]) Close() error {
+	k.rwLock.Lock()
+	k.rwLock.Unlock()
+	if k.writer != nil {
+		return k.writer.Close()
 	}
+	return nil
+}
+
+func NewKafkaSender[T any](writer *kafka.Writer, keyReader func(body T) ([]byte, error)) KafkaSender[T] {
+	return KafkaSender[T]{writer: writer, keyReader: keyReader}
 }

@@ -224,7 +224,7 @@ func (u UserServiceImpl) deleteUserTxn(
 }
 
 func (u UserServiceImpl) deleteUser(ctx context.Context, user models.User) (userdtos.UserChangeEventDto, error) {
-	event, err := u.sendUserChange(user, userdtos.UserDelete)
+	event, err := u.sendUserChange(ctx, user, userdtos.UserDelete)
 	if err != nil {
 		return event, err
 	}
@@ -257,7 +257,7 @@ func (u UserServiceImpl) distributeUserChange(
 	ctx context.Context,
 	user models.User,
 ) (userdtos.UserChangeEventDto, error) {
-	event, err := u.sendUserChange(user, userdtos.UserSave)
+	event, err := u.sendUserChange(ctx, user, userdtos.UserSave)
 	if err != nil {
 		return event, err
 	}
@@ -272,13 +272,14 @@ func (u UserServiceImpl) distributeUserChange(
 }
 
 func (u UserServiceImpl) sendUserChange(
+	ctx context.Context,
 	user models.User,
 	action userdtos.UserChangeAction,
 ) (userdtos.UserChangeEventDto, error) {
 	eventDto := userdtos.UserChangeEventDto{}
 	mappers.UserToUserChangeEventDto(user, &eventDto)
 	eventDto.Action = action
-	err := u.userMsgSendService.SendUserSave(eventDto)
+	err := u.userMsgSendService.SendUserSave(ctx, eventDto)
 	return eventDto, err
 }
 

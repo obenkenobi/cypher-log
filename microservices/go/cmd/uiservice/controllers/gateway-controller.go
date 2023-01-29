@@ -124,6 +124,7 @@ func (g GatewayControllerImpl) proxyHandlerWithModifyResp(
 			req.URL.Scheme = remote.Scheme
 			req.URL.Host = remote.Host
 			req.URL.Path = destPath
+			req.Method = c.Request.Method
 		}
 
 		proxy.ServeHTTP(c.Writer, c.Request)

@@ -3,14 +3,14 @@ package commonservers
 import (
 	"fmt"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"google.golang.org/grpc"
 	"net"
 )
 
 // CoreGrpcServer represents an interface for a grpc server that can be run.
-type CoreGrpcServer interface{ taskrunner.TaskRunner }
+type CoreGrpcServer interface{ lifecycle.TaskRunner }
 
 type coreGrpcServerImpl struct {
 	server     *grpc.Server

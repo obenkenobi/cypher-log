@@ -5,14 +5,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/middlewares"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/web/controller"
 )
 
 // CoreAppServer represents an interface acts as a general application server that can be run as a task.
-type CoreAppServer interface{ taskrunner.TaskRunner }
+type CoreAppServer interface {
+	lifecycle.TaskRunner
+}
 
 type CoreAppServerImpl struct {
 	router     *gin.Engine

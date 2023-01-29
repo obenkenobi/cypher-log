@@ -3,44 +3,19 @@ package app
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/listeners"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/servers"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/taskrunner"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 )
 
-type App struct {
-	rabbitConsumer rmqservices.RabbitMQConsumer
-	rmqListener    listeners.RmqListener
-	appServer      servers.AppServer
-	grpcServer     servers.GrpcServer
-}
+type App struct{}
 
 func (a App) Start() {
-	defer a.rabbitConsumer.Close()
-
-	var taskRunners []taskrunner.TaskRunner
-	if environment.ActivateAppServer() { // Add app server
-		taskRunners = append(taskRunners, a.appServer)
-	}
-	if environment.ActivateGrpcServer() {
-		taskRunners = append(taskRunners, a.grpcServer)
-	}
-	if environment.ActivateRabbitMqListener() {
-		taskRunners = append(taskRunners, a.rmqListener)
-	}
-	taskrunner.RunAndWait(taskRunners...)
+	lifecycle.RunApp()
 }
 
 func NewApp(
-	rabbitConsumer rmqservices.RabbitMQConsumer,
-	appServer servers.AppServer,
-	rmqListener listeners.RmqListener,
-	grpcServer servers.GrpcServer,
+	_ servers.AppServer,
+	_ listeners.KafkaListener,
+	_ servers.GrpcServer,
 ) *App {
-	return &App{
-		grpcServer:     grpcServer,
-		rabbitConsumer: rabbitConsumer,
-		appServer:      appServer,
-		rmqListener:    rmqListener,
-	}
+	return &App{}
 }

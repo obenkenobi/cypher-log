@@ -61,17 +61,6 @@ services:
       - '6379:6379'
     volumes:
       - ./volumes/bitnami/redis:/bitnami
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - ./volumes/rabbitmq/data/:/var/lib/rabbitmq/
-      - ./volumes/rabbitmq/log/:/var/log/rabbitmq
   zoo1:
     image: confluentinc/cp-zookeeper:7.3.0
     hostname: zoo1
@@ -98,6 +87,7 @@ services:
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
     depends_on:
       - zoo1
   kafka2:
@@ -116,6 +106,7 @@ services:
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
     depends_on:
       - zoo1
   kafka3:
@@ -134,6 +125,7 @@ services:
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
     depends_on:
       - zoo1
   kafka-ui:

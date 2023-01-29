@@ -5,6 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/grpc/userkeypb"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/grpcserveropts"
 	"google.golang.org/grpc"
 )
@@ -25,6 +26,11 @@ func NewGrpcServerImpl(
 	credentialsOptionCreator grpcserveropts.CredentialsOptionCreator,
 	userKeyServiceServer userkeypb.UserKeyServiceServer,
 ) *GrpcServerImpl {
+	if !environment.ActivateGrpcServer() {
+		// Server is deactivated, ran via the lifecycle package,
+		// and is a root-child dependency so a nil is returned
+		return nil
+	}
 	var grpcOpts []grpc.ServerOption
 	if environment.ActivateGRPCAuth() {
 		grpcOpts = append(
@@ -40,5 +46,7 @@ func NewGrpcServerImpl(
 		},
 		grpcOpts...,
 	)
-	return &GrpcServerImpl{CoreGrpcServer: coreServer}
+	g := &GrpcServerImpl{CoreGrpcServer: coreServer}
+	lifecycle.RegisterTaskRunner(g)
+	return g
 }

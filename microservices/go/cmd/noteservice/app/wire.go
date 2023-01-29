@@ -19,12 +19,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
 func InitializeApp() *App {
 	wire.Build(
+		conf.NewKafkaConfImpl,
+		wire.Bind(new(conf.KafkaConf), new(*conf.KafkaConfImpl)),
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),
 		conf.NewTlsConfImpl,
@@ -37,10 +38,6 @@ func InitializeApp() *App {
 		wire.Bind(new(conf.GrpcClientConf), new(*conf.GrpcClientConfImpl)),
 		conf.NewHttpClientConfImpl,
 		wire.Bind(new(conf.HttpClientConf), new(*conf.HttpClientConfImpl)),
-		conf.NewRabbitMQConfImpl,
-		wire.Bind(new(conf.RabbitMQConf), new(*conf.RabbitMQConfImpl)),
-		rmqservices.NewRabbitMQConsumerImpl,
-		wire.Bind(new(rmqservices.RabbitMQConsumer), new(*rmqservices.RabbitMQConsumerImpl)),
 		externalservices.NewSysAccessTokenClientAuth0Impl,
 		wire.Bind(new(externalservices.SysAccessTokenClient), new(*externalservices.Auth0SysAccessTokenClient)),
 		externalservices.NewHTTPClientProviderImpl,
@@ -77,8 +74,8 @@ func InitializeApp() *App {
 		wire.Bind(new(controllers.NoteController), new(*controllers.NoteControllerImpl)),
 		servers.NewAppServerImpl,
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
-		listeners.NewRmqListenerImpl,
-		wire.Bind(new(listeners.RmqListener), new(*listeners.RmqListenerImpl)),
+		listeners.NewKafkaListenerImpl,
+		wire.Bind(new(listeners.KafkaListener), new(*listeners.KafkaListenerImpl)),
 		NewApp)
 	return &App{}
 }

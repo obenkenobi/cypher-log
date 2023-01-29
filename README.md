@@ -135,7 +135,7 @@ Here is a table of all the environment variables:
 | ENVIRONMENT                     | Represents the lifecycle environment the app is supposed to run on. Could be `DEVELOPMENT`, `STAGING`, or `PRODUCTION`.                     | DEVELOPMENT   |
 | ACTIVATE_APP_SERVER             | Boolean flag that activates your HTTP app server (used for REST, static web pages, etc)                                                     | true          |
 | ACTIVATE_GRPC_SERVER            | Boolean flag that activates your GRPC server                                                                                                | true          |
-| ACTIVATE_RABBITMQ_LISTENER      | Boolean flag that activates your RabbitMQ listener                                                                                          | true          |
+| ACTIVATE_KAFKA_LISTENER         | Boolean flag that activates your Kafka listener                                                                                             | true          |
 | ACTIVATE_APP_SERVER_TLS         | Boolean flag that activates TLS protection is added to your HTTP app server                                                                 | true          |
 | ACTIVATE_GRPC_AUTH              | Boolean flag that activates authentication for your GRPC server and client                                                                  | true          |
 | ACTIVATE_CRON_RUNNER            | Boolean flag that activates a background task designed to run cron jobs                                                                     | true          |

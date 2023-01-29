@@ -8,8 +8,8 @@ func ActivateGrpcServer() bool {
 	return GetEnvVarAsBoolOrDefault(EnvVarKeyActivateGrpcServer, true)
 }
 
-func ActivateRabbitMqListener() bool {
-	return GetEnvVarAsBoolOrDefault(EnvVarActivateRabbitMQListener, true)
+func ActivateKafkaListener() bool {
+	return GetEnvVarAsBoolOrDefault(EnvVarActivateKafkaListener, true)
 }
 
 func ActivateGRPCAuth() bool {

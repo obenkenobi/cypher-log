@@ -1,27 +1,42 @@
 package services
 
 import (
-	msg "github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/rmq/exchanges"
+	"context"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/kfka"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
+	"github.com/segmentio/kafka-go"
 )
 
 type UserMsgSendService interface {
-	SendUserSave(dto userdtos.UserChangeEventDto) error
+	SendUserSave(ctx context.Context, dto userdtos.UserChangeEventDto) error
+	lifecycle.Closable
 }
 
 type UserMessageServiceImpl struct {
-	userSaveSender msg.Sender[userdtos.UserChangeEventDto]
+	userSaveSender kfka.KafkaSender[userdtos.UserChangeEventDto]
 }
 
-func (u UserMessageServiceImpl) SendUserSave(dto userdtos.UserChangeEventDto) error {
-	return u.userSaveSender.Send(dto)
+func (u *UserMessageServiceImpl) SendUserSave(ctx context.Context, dto userdtos.UserChangeEventDto) error {
+	return u.userSaveSender.Send(ctx, dto)
 }
 
-func NewUserMessageServiceImpl(publisher rmqservices.RabbitMQPublisher) *UserMessageServiceImpl {
-	return &UserMessageServiceImpl{
-		userSaveSender: rmq.NewSender(publisher.GetPublisher(), exchanges.UserChangeExchange, rmq.RoutingKeysDefault),
-	}
+func (u *UserMessageServiceImpl) Close() error {
+	return u.userSaveSender.Close()
+}
+
+func NewUserMessageServiceImpl(kafkaConf conf.KafkaConf) *UserMessageServiceImpl {
+	userSaveSender := kfka.NewKafkaSender(
+		&kafka.Writer{
+			Addr:     kafka.TCP(kafkaConf.GetServers()...),
+			Topic:    "user-0",
+			Balancer: &kafka.Murmur2Balancer{},
+		},
+		func(dto userdtos.UserChangeEventDto) ([]byte, error) {
+			return []byte(dto.Id), nil
+		})
+	u := &UserMessageServiceImpl{userSaveSender: userSaveSender}
+	lifecycle.RegisterClosable(u)
+	return u
 }

@@ -1,5 +1,8 @@
 package messaging
 
+import "context"
+
 type Sender[T any] interface {
-	Send(body T) error
+	Send(ctx context.Context, body T) error
+	Close() error
 }

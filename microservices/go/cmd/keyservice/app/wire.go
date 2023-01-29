@@ -23,12 +23,13 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/externalservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/ginservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/grpcserveropts"
-	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/rmqservices"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/sharedservices/securityservices"
 )
 
 func InitializeApp() *App {
 	wire.Build(
+		conf.NewKafkaConfImpl,
+		wire.Bind(new(conf.KafkaConf), new(*conf.KafkaConfImpl)),
 		conf.NewServerConfImpl,
 		wire.Bind(new(conf.ServerConf), new(*conf.ServerConfImpl)),
 		conf.NewTlsConfImpl,
@@ -41,10 +42,6 @@ func InitializeApp() *App {
 		wire.Bind(new(authconf.Auth0SecurityConf), new(*authconf.Auth0RouteSecurityConfImpl)),
 		conf.NewMongoConfImpl,
 		wire.Bind(new(conf.MongoConf), new(*conf.MongoConfImpl)),
-		conf.NewRabbitMQConfImpl,
-		wire.Bind(new(conf.RabbitMQConf), new(*conf.RabbitMQConfImpl)),
-		rmqservices.NewRabbitMQConsumerImpl,
-		wire.Bind(new(rmqservices.RabbitMQConsumer), new(*rmqservices.RabbitMQConsumerImpl)),
 		appConf.NewKeyConfImpl,
 		wire.Bind(new(appConf.KeyConf), new(*appConf.KeyConfImpl)),
 		externalservices.NewHTTPClientProviderImpl,
@@ -92,8 +89,8 @@ func InitializeApp() *App {
 		wire.Bind(new(controllers.UserKeyController), new(*controllers.UserKeyControllerImpl)),
 		servers.NewAppServerImpl,
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
-		listeners.NewRmqListenerImpl,
-		wire.Bind(new(listeners.RmqListener), new(*listeners.RmqListenerImpl)),
+		listeners.NewKafkaListenerImpl,
+		wire.Bind(new(listeners.KafkaListener), new(*listeners.KafkaListenerImpl)),
 		securityservices.NewJwtValidateGrpcServiceImpl,
 		wire.Bind(new(securityservices.JwtValidateGrpcService), new(*securityservices.JwtValidateGrpcServiceImpl)),
 		grpcserveropts.NewAuthInterceptorCreatorImpl,
