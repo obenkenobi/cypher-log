@@ -130,35 +130,48 @@ and which ones to fill out.
 
 Here is a table of all the environment variables:
 
-| Variable                        | Description                                                                                                                                 | Default value |
-|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| ENVIRONMENT                     | Represents the lifecycle environment the app is supposed to run on. Could be `DEVELOPMENT`, `STAGING`, or `PRODUCTION`.                     | DEVELOPMENT   |
-| ACTIVATE_APP_SERVER             | Boolean flag that activates your HTTP app server (used for REST, static web pages, etc)                                                     | true          |
-| ACTIVATE_GRPC_SERVER            | Boolean flag that activates your GRPC server                                                                                                | true          |
-| ACTIVATE_KAFKA_LISTENER         | Boolean flag that activates your Kafka listener                                                                                             | true          |
-| ACTIVATE_APP_SERVER_TLS         | Boolean flag that activates TLS protection is added to your HTTP app server                                                                 | true          |
-| ACTIVATE_GRPC_AUTH              | Boolean flag that activates authentication for your GRPC server and client                                                                  | true          |
-| ACTIVATE_CRON_RUNNER            | Boolean flag that activates a background task designed to run cron jobs                                                                     | true          |
-| SERVER_CERT_PATH                | Path to your TLS certificate file for your servers                                                                                          |               |
-| SERVER_KEY_PATH                 | Path to your TLS private key file for your servers                                                                                          |               |
-| CA_CERT_PATH                    | Path to your certificate authority file. This is used for self signed certificates.                                                         |               |
-| LOAD_CA_CERT                    | Boolean flag where if true, a certificate authority will be loaded from the `CA_CERT_PATH` flag. This is used for self signed certificates. | false         |
-| GRPC_USER_SERVICE_ADDRESS       | URI to the GRPC server running within the user service                                                                                      |               |
-| GRPC_KEY_SERVICE_ADDRESS        | URI to the GRPC server running within the key service                                                                                       |               |
-| APP_SERVER_PORT                 | The port your HTTP app server is running on                                                                                                 | 8080          |
-| GRPC_SERVER_PORT                | The port your GRPC app server is running on                                                                                                 | 50051         |
-| AUTH0_API_AUDIENCE              | The OATH2.0 audience provided by Auth0 for REST API endpoints that use client credentials                                                   |               |
-| AUTH0_GRPC_AUDIENCE             | The OATH2.0 audience provided by Auth0 for GRPC endpoints that use client credentials                                                       |               |
-| AUTH0_DOMAIN                    | Your Auth0 domain                                                                                                                           |               |
-| AUTH0_CLIENT_CREDENTIALS_ID     | Your Auth0 client credentials id                                                                                                            |               |
-| AUTH0_CLIENT_CREDENTIALS_SECRET | Your Auth0 client credentials secret                                                                                                        |               |
-| MONGO_URI                       | The connection string to your mongodb instance/cluster.                                                                                     |               |
-| MONGO_DB_NAME                   | MongoDB database                                                                                                                            |               |
-| MONGO_CONNECTION_TIMEOUT_MS     | The duration in milliseconds for a MongoDB connection to time out                                                                           |               |
-| RABBITMQ_URI                    | The URI to connect to RabbitMQ                                                                                                              |               |
-| REDIS_ADDRESS                   | Your Redis `host:port` address                                                                                                              |               |
-| REDIS_PASSWORD                  | Your Redis password                                                                                                                         |               |
-| REDIS_DB                        | Your Redis database (use a number)                                                                                                          | 0             |
+| Variable                        | Description                                                                                                                                 | Default value                  |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|
+| ENVIRONMENT                     | Represents the lifecycle environment the app is supposed to run on. Could be `DEVELOPMENT`, `STAGING`, or `PRODUCTION`.                     | DEVELOPMENT                    |
+| ACTIVATE_APP_SERVER             | Boolean flag that activates your HTTP app server (used for REST, static web pages, etc)                                                     | true                           |
+| ACTIVATE_GRPC_SERVER            | Boolean flag that activates your GRPC server                                                                                                | true                           |
+| ACTIVATE_KAFKA_LISTENER         | Boolean flag that activates your Kafka listener                                                                                             | true                           |
+| ACTIVATE_APP_SERVER_TLS         | Boolean flag that activates TLS protection is added to your HTTP app server                                                                 | true                           |
+| ACTIVATE_GRPC_AUTH              | Boolean flag that activates authentication for your GRPC server and client                                                                  | true                           |
+| ACTIVATE_CRON_RUNNER            | Boolean flag that activates a background task designed to run cron jobs                                                                     | true                           |
+| SERVER_CERT_PATH                | Path to your TLS certificate file for your servers                                                                                          |                                |
+| SERVER_KEY_PATH                 | Path to your TLS private key file for your servers                                                                                          |                                |
+| CA_CERT_PATH                    | Path to your certificate authority file. This is used for self signed certificates.                                                         |                                |
+| LOAD_CA_CERT                    | Boolean flag where if true, a certificate authority will be loaded from the `CA_CERT_PATH` flag. This is used for self signed certificates. | false                          |
+| GRPC_USER_SERVICE_ADDRESS       | URI to the GRPC server running within the user service                                                                                      |                                |
+| GRPC_KEY_SERVICE_ADDRESS        | URI to the GRPC server running within the key service                                                                                       |                                |
+| APPSERVER_USER_SERVICE_ADDRESS  | URI to the user service address                                                                                                             |                                |
+| APPSERVER_KEY_SERVICE_ADDRESS   | URI to the key service address                                                                                                              |                                |
+| APPSERVER_NOTE_SERVICE_ADDRESS  | URI to the note service address                                                                                                             |                                |
+| APP_SERVER_PORT                 | The port your HTTP app server is running on                                                                                                 | 8080                           |
+| GRPC_SERVER_PORT                | The port your GRPC app server is running on                                                                                                 | 50051                          |
+| AUTH0_API_AUDIENCE              | The OATH2.0 audience provided by Auth0 for REST API endpoints                                                                               |                                |
+| AUTH0_GRPC_AUDIENCE             | The OATH2.0 audience provided by Auth0 for GRPC endpoints that use client credentials                                                       |                                |
+| AUTH0_DOMAIN                    | Your Auth0 domain                                                                                                                           |                                |
+| AUTH0_CLIENT_CREDENTIALS_ID     | Your Auth0 client credentials client id                                                                                                     |                                |
+| AUTH0_CLIENT_CREDENTIALS_SECRET | Your Auth0 client credentials secret                                                                                                        |                                |
+| AUTH0_WEBAPP_CLIENT_ID          | Your Auth0 webapp client id                                                                                                                 |                                |
+| AUTH0_WEBAPP_CLIENT_SECRET      | Your Auth0 webapp secret                                                                                                                    |                                |
+| AUTH0_WEBAPP_CALLBACK_URL       | Your auth0 webapp callback url for signing in                                                                                               |                                |
+| MONGO_URI                       | The connection string to your mongodb instance/cluster.                                                                                     |                                |
+| MONGO_DB_NAME                   | MongoDB database                                                                                                                            |                                |
+| MONGO_CONNECTION_TIMEOUT_MS     | The duration in milliseconds for a MongoDB connection to time out                                                                           |                                |
+| RABBITMQ_URI                    | The URI to connect to RabbitMQ                                                                                                              |                                |
+| KAFKA_SERVERS                   | A comma seperated list of your kafka bootstrap server addresses/URIs                                                                        |                                |
+| KAFKA_USERNAME                  | Your kafka username                                                                                                                         |                                |
+| KAFKA_PASSWORD                  | Your kafka password                                                                                                                         |                                |
+| REDIS_ADDRESS                   | Your Redis `host:port` address                                                                                                              |                                |
+| REDIS_PASSWORD                  | Your Redis password                                                                                                                         |                                |
+| REDIS_DB                        | Your Redis database (use a number)                                                                                                          | 0                              |
+| STATIC_FILES_PATH               | Path to your static files                                                                                                                   | cmd/uiservice/ClientApp/public |
+| SESSION_STORE_SECRET            | Your session store secret for encrypting your cookies (must be a random string)                                                             | (Generated Randomly)           |
+| CSRF_SECRET                     | Your CSRF secret needed to enable CSRF protection (must be a random string)                                                                 | (Generated Randomly)           |
+| ACCESS_TOKEN_SECRET             | Your access token secret so it is securely stored (must be a random string)                                                                 | (Generated Randomly)           |
 
 #### Building and Running your Go app
 We have 2 ways of building a Go app, Makefile and the IDE Goland. Go does offer commands to build and run your app 
