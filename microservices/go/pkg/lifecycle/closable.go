@@ -14,7 +14,7 @@ type Closable interface {
 var closableList []Closable
 var closableMutex sync.Mutex
 
-// RegisterClosable registers a closable in your app lifecycle to be closed gracefully
+// RegisterClosable registers a Closable in your app lifecycle to be closed gracefully
 func RegisterClosable(closable Closable) {
 	closableMutex.Lock()
 	closableMutex.Unlock()
