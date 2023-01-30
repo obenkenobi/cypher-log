@@ -2,6 +2,7 @@ package listeners
 
 import (
 	"context"
+	"github.com/akrennmair/slice"
 	"github.com/obenkenobi/cypher-log/microservices/go/cmd/keyservice/services"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/environment"
@@ -114,16 +115,20 @@ func (k UserListenerImpl) ListenUserChange() {
 }
 
 func (k UserListenerImpl) Close() error {
-	err := k.user1Receiver.Close()
-	err = utils.ConcatErrors(err, k.user1Retry1Receiver.Close())
-	err = utils.ConcatErrors(err, k.user1Retry2Receiver.Close())
-	err = utils.ConcatErrors(err, k.user1Retry3Receiver.Close())
-	err = utils.ConcatErrors(err, k.user1Retry4Receiver.Close())
-	err = utils.ConcatErrors(err, k.user1Retry1Sender.Close())
-	err = utils.ConcatErrors(err, k.user1Retry2Sender.Close())
-	err = utils.ConcatErrors(err, k.user1Retry3Sender.Close())
-	err = utils.ConcatErrors(err, k.user1Retry4Sender.Close())
-	err = utils.ConcatErrors(err, k.user1DeadLetterSender.Close())
+	closableList := []lifecycle.Closable{
+		k.user1Receiver,
+		k.user1Retry1Receiver,
+		k.user1Retry2Receiver,
+		k.user1Retry3Receiver,
+		k.user1Retry4Receiver,
+		k.user1Retry1Sender,
+		k.user1Retry2Sender,
+		k.user1Retry3Sender,
+		k.user1Retry4Sender,
+		k.user1DeadLetterSender,
+	}
+	errs := slice.MapConcurrent(closableList, lifecycle.Closable.Close)
+	err := utils.ConcatErrors(errs...)
 	if err != nil {
 		logger.Log.WithError(err).Error("Errors closing listener")
 	}

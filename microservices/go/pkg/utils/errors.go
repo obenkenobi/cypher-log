@@ -1,15 +1,16 @@
 package utils
 
-import "fmt"
+import (
+	"errors"
+	"github.com/akrennmair/slice"
+	"strings"
+)
 
-func ConcatErrors(err1 error, err2 error) error {
-	if err1 == nil && err2 == nil {
+func ConcatErrors(errs ...error) error {
+	errs = slice.Filter(errs, func(err error) bool { return err != nil })
+	if len(errs) <= 0 {
 		return nil
-	} else if err1 == nil {
-		return err2
-	} else if err2 == nil {
-		return err1
-	} else {
-		return fmt.Errorf("%v:%v", err1.Error(), err2.Error())
 	}
+	errStrings := slice.Map(errs, error.Error)
+	return errors.New(strings.Join(errStrings, " : "))
 }
