@@ -167,7 +167,7 @@ func NewUserListenerImpl(
 	user1Retry1Receiver := kfka.NewKafkaReceiver[kfka.RetryDto[userdtos.UserChangeEventDto]](
 		kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        kafkaConf.GetBootstrapServers(),
-			GroupID:        user1Retry1Topic + serviceAppend,
+			GroupID:        user1Retry1Topic,
 			Topic:          user1Retry1Topic,
 			MinBytes:       10e3, // 10KB
 			MaxBytes:       10e6, // 10MB,
@@ -178,7 +178,7 @@ func NewUserListenerImpl(
 	user1Retry2Receiver := kfka.NewKafkaReceiver[kfka.RetryDto[userdtos.UserChangeEventDto]](
 		kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        kafkaConf.GetBootstrapServers(),
-			GroupID:        user1Retry2Topic + serviceAppend,
+			GroupID:        user1Retry2Topic,
 			Topic:          user1Retry2Topic,
 			MinBytes:       10e3, // 10KB
 			MaxBytes:       10e6, // 10MB
@@ -189,7 +189,7 @@ func NewUserListenerImpl(
 	user1Retry3Receiver := kfka.NewKafkaReceiver[kfka.RetryDto[userdtos.UserChangeEventDto]](
 		kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        kafkaConf.GetBootstrapServers(),
-			GroupID:        user1Retry3Topic + serviceAppend,
+			GroupID:        user1Retry3Topic,
 			Topic:          user1Retry3Topic,
 			MinBytes:       10e3, // 10KB
 			MaxBytes:       10e6, // 10MB
@@ -200,7 +200,7 @@ func NewUserListenerImpl(
 	user1Retry4Receiver := kfka.NewKafkaReceiver[kfka.RetryDto[userdtos.UserChangeEventDto]](
 		kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        kafkaConf.GetBootstrapServers(),
-			GroupID:        user1Retry4Topic + serviceAppend,
+			GroupID:        user1Retry4Topic,
 			Topic:          user1Retry4Topic,
 			MinBytes:       10e3, // 10KB
 			MaxBytes:       10e6, // 10MB
