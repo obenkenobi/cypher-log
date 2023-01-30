@@ -28,6 +28,10 @@ type UserChangeEventDto struct {
 	Action UserChangeAction `json:"action"`
 }
 
+func (u UserChangeEventDto) MessageKey() ([]byte, error) {
+	return []byte(u.Id), nil
+}
+
 type UserChangeEventResponseDto struct {
 	Discarded bool
 }

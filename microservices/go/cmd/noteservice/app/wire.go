@@ -74,6 +74,8 @@ func InitializeApp() *App {
 		wire.Bind(new(controllers.NoteController), new(*controllers.NoteControllerImpl)),
 		servers.NewAppServerImpl,
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
+		listeners.NewUserListenerImpl,
+		wire.Bind(new(listeners.UserListener), new(*listeners.UserListenerImpl)),
 		listeners.NewKafkaListenerImpl,
 		wire.Bind(new(listeners.KafkaListener), new(*listeners.KafkaListenerImpl)),
 		NewApp)

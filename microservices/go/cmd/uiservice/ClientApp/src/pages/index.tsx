@@ -15,18 +15,22 @@ const IndexPage: React.FC<PageProps> = () => {
   })
   const [ cookies, , removeCookie] = useCookies(["XSRF-TOKEN", "session"]);
 
-  React.useEffect(() => {
-    const getDataTask = (async () => {
+  const getDataTask = (async () => {
+    try {
       const res = await fetch("/api/userservice/v1/user/me")
       const body = await res.json()
       console.log(body)
       if (res.status == 200) {
         setProfile(body)
       }
+    } catch (e) {
+      console.log(e)
+    }
+  })
 
-    })()
+  React.useEffect(() => {
+    getDataTask().then()
 
-    getDataTask.catch(e => console.log(e))
 
     const csrfTask = (async () => {
       const res = await fetch("/csrf")
@@ -51,6 +55,7 @@ const IndexPage: React.FC<PageProps> = () => {
       })
       const body = await res.json()
       console.log(body)
+      await getDataTask()
     } catch (e) {
       console.log(e)
     }

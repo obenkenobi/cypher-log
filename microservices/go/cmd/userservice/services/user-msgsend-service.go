@@ -16,7 +16,7 @@ type UserMsgSendService interface {
 }
 
 type UserMessageServiceImpl struct {
-	userSaveSender kfka.KafkaSender[userdtos.UserChangeEventDto]
+	userSaveSender *kfka.KafkaSender[userdtos.UserChangeEventDto]
 }
 
 func (u *UserMessageServiceImpl) SendUserSave(ctx context.Context, dto userdtos.UserChangeEventDto) error {
@@ -34,9 +34,8 @@ func NewUserMessageServiceImpl(kafkaConf conf.KafkaConf) *UserMessageServiceImpl
 			Topic:    topics.User1Topic,
 			Balancer: &kafka.Murmur2Balancer{},
 		},
-		func(dto userdtos.UserChangeEventDto) ([]byte, error) {
-			return []byte(dto.Id), nil
-		})
+		userdtos.UserChangeEventDto.MessageKey,
+	)
 	u := &UserMessageServiceImpl{userSaveSender: userSaveSender}
 	lifecycle.RegisterClosable(u)
 	return u

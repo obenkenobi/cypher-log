@@ -37,6 +37,6 @@ func (k KafkaSender[T]) Close() error {
 	return nil
 }
 
-func NewKafkaSender[T any](writer *kafka.Writer, keyReader func(body T) ([]byte, error)) KafkaSender[T] {
-	return KafkaSender[T]{writer: writer, keyReader: keyReader}
+func NewKafkaSender[T any](writer *kafka.Writer, keyReader func(body T) ([]byte, error)) *KafkaSender[T] {
+	return &KafkaSender[T]{writer: writer, keyReader: keyReader}
 }

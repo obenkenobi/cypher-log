@@ -13,13 +13,16 @@ import (
 
 // KafkaReceiver is a thread safe solution to a kafka consumer
 type KafkaReceiver[T any] struct {
-	reader       *kafka.Reader
-	isListening  bool
-	listenMutex  sync.Mutex // using a mutex instead of a rw lock because the receiver should only listen once
-	isClosed     bool
-	closeMutex   sync.Mutex // using a mutex instead of a rw lock because the receiver should only close once
-	closedCh     chan error
-	beginCloseCh chan bool
+	reader           *kafka.Reader
+	readerClosed     bool
+	readerCloseErr   error
+	readerCloseMutex sync.Mutex
+	isListening      bool
+	listenMutex      sync.Mutex // using a mutex instead of a rw lock because the receiver should only listen once
+	isClosed         bool
+	closeMutex       sync.Mutex // using a mutex instead of a rw lock because the receiver should only close once
+	closedCh         chan error
+	beginCloseCh     chan bool
 }
 
 // ListenSyncCommit listens for messages and commits after processMsg is
@@ -60,6 +63,9 @@ func (r *KafkaReceiver[T]) Close() error {
 	go func() {
 		r.beginCloseCh <- true
 	}()
+	if !r.isCurrentlyListening() {
+		r.closeAsync()
+	}
 	err := <-r.closedCh
 	r.isClosed = true
 	return err
@@ -119,9 +125,7 @@ func (r *KafkaReceiver[T]) runListen(autoCommit bool, processMsg func(T) error) 
 			willContinue = false
 		}
 	}
-	go func() {
-		r.closedCh <- r.reader.Close()
-	}()
+	r.closeAsync()
 
 	if shutDownErr != nil {
 		r.logger().
@@ -143,6 +147,24 @@ func (r *KafkaReceiver[T]) shouldNotListen() bool {
 	return false
 }
 
+func (r *KafkaReceiver[T]) isCurrentlyListening() bool {
+	r.listenMutex.Lock()
+	defer r.listenMutex.Unlock()
+	return r.isListening
+}
+
+func (r *KafkaReceiver[T]) closeAsync() {
+	go func() {
+		r.readerCloseMutex.Lock()
+		r.readerCloseMutex.Unlock()
+		if !r.readerClosed {
+			r.readerCloseErr = r.reader.Close()
+			r.readerClosed = true
+		}
+		r.closedCh <- r.readerCloseErr
+	}()
+}
+
 func (r *KafkaReceiver[T]) readBody(msg kafka.Message) (T, error) {
 	var body T
 	err := json.Unmarshal(msg.Value, &body)
@@ -158,6 +180,7 @@ func NewKafkaReceiver[T any](reader *kafka.Reader) *KafkaReceiver[T] {
 		reader:       reader,
 		isListening:  false,
 		isClosed:     false,
+		readerClosed: false,
 		beginCloseCh: make(chan bool),
 		closedCh:     make(chan error),
 	}
