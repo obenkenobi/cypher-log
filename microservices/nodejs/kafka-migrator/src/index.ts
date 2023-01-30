@@ -21,18 +21,74 @@ const kafka = new Kafka({
 
 const migrateTask1 = async (admin: Admin) => {
   console.log("Begin migrate task 1")
-  const user0Topic = "user-0"
+  const user0Topic = "user-1"
+  const noteService = "note-service"
+  const keyService = "key-service"
+  const retry = "retry"
+  const deadLetter = "dead-letter"
   await admin.createTopics({
     validateOnly: false,
     waitForLeaders: true,
     timeout: 10000,
-    topics: [{
+    topics: [
+      {
       topic: user0Topic,
       numPartitions: 6,
       replicationFactor: 2
-    }]
+      },
+      {
+        topic: `${user0Topic}-${noteService}-${retry}-1`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${noteService}-${retry}-2`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${noteService}-${retry}-3`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${noteService}-${retry}-4`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${noteService}-${deadLetter}`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${keyService}-${retry}-1`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${keyService}-${retry}-2`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${keyService}-${retry}-3`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${keyService}-${retry}-4`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+      {
+        topic: `${user0Topic}-${keyService}-${deadLetter}`,
+        numPartitions: 6,
+        replicationFactor: 2
+      },
+    ]
   })
-  console.log(`Created topic ${user0Topic}`)
+  console.log(`Created topic ${user0Topic} and associated retry topics and dead-letters`)
   console.log("End migrate task 1")
 }
 

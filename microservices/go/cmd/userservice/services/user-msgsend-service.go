@@ -5,6 +5,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/conf"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/kfka"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/kfka/topics"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/segmentio/kafka-go"
 )
@@ -30,7 +31,7 @@ func NewUserMessageServiceImpl(kafkaConf conf.KafkaConf) *UserMessageServiceImpl
 	userSaveSender := kfka.NewKafkaSender(
 		&kafka.Writer{
 			Addr:     kafka.TCP(kafkaConf.GetBootstrapServers()...),
-			Topic:    "user-0",
+			Topic:    topics.User1Topic,
 			Balancer: &kafka.Murmur2Balancer{},
 		},
 		func(dto userdtos.UserChangeEventDto) ([]byte, error) {

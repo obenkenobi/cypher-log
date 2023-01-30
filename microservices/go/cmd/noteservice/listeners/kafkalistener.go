@@ -8,6 +8,7 @@ import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/lifecycle"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/kfka"
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/messaging/kfka/topics"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/userdtos"
 	"github.com/segmentio/kafka-go"
 )
@@ -62,8 +63,8 @@ func NewKafkaListenerImpl(
 	userChangeReceiver := kfka.NewKafkaReceiver[userdtos.UserChangeEventDto](
 		kafka.NewReader(kafka.ReaderConfig{
 			Brokers:  kafkaConf.GetBootstrapServers(),
-			GroupID:  "user-0-note-service-0",
-			Topic:    "user-0",
+			GroupID:  topics.User1Topic + "-note-service",
+			Topic:    topics.User1Topic,
 			MinBytes: 10e3, // 10KB
 			MaxBytes: 10e6, // 10MB
 		}),
