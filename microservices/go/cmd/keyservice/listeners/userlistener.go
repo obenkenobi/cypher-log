@@ -115,6 +115,7 @@ func (k UserListenerImpl) ListenUserChange() {
 }
 
 func (k UserListenerImpl) Close() error {
+	logger.Log.Info("Closing user listener")
 	closableList := []lifecycle.Closable{
 		k.user1Receiver,
 		k.user1Retry1Receiver,
@@ -132,6 +133,7 @@ func (k UserListenerImpl) Close() error {
 	if err != nil {
 		logger.Log.WithError(err).Error("Errors closing listener")
 	}
+	logger.Log.Info("Finish closing user listener")
 	return err
 }
 
