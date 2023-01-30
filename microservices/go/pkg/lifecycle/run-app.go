@@ -3,22 +3,15 @@ package lifecycle
 import (
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 // RunApp starts your application concurrently by running each task in
 // taskRunners concurrently and closes registered resources when the app ends
 func RunApp() {
 	doneCh := make(chan bool)
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-
 	runTasks()
-
 	go func() {
-		sig := <-sigCh
+		sig := waitForEndSignal()
 		logger.Log.WithField("Signal", sig).Info("Begin closing")
 		doneCh <- closeResources()
 	}()
@@ -26,5 +19,11 @@ func RunApp() {
 		logger.Log.Info("Gracefully shutting down")
 	} else {
 		logger.Log.Warn("Ungraceful shutdown")
+		os.Exit(-1)
 	}
+}
+
+// ExitApp gracefully ends your application and does necessary cleanup afterwards
+func ExitApp() {
+	sendEndSignal()
 }

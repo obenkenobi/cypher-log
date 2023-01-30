@@ -23,9 +23,13 @@ type KafkaListenerImpl struct {
 }
 
 func (k KafkaListenerImpl) ListenUserChange() {
-	k.userChangeReceiver.Listen(func(dto userdtos.UserChangeEventDto) error {
+	k.userChangeReceiver.ListenSyncCommit(func(dto userdtos.UserChangeEventDto) error {
 		ctx := context.Background()
 		_, err := k.userChangeEventService.HandleUserChangeEventTxn(ctx, dto)
+		if err != nil {
+			// Todo: send to a retry topic, for now end the consumer so there is no commit
+			logger.Log.WithError(err)
+		}
 		return err
 	})
 	logger.Log.Info("Listening for user changes")

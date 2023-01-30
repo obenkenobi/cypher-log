@@ -1,6 +1,9 @@
 package lifecycle
 
-import "sync"
+import (
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
+	"sync"
+)
 
 // TaskRunner is a general interface to run a task
 type TaskRunner interface {
@@ -20,7 +23,16 @@ func RegisterTaskRunner(taskRunner TaskRunner) {
 }
 
 func runTasks() {
-	for _, taskRunner := range taskRunners {
-		go taskRunner.Run()
+	for _, t := range taskRunners {
+		taskRunner := t
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Log.Infof("Task runner panic %v", r)
+				}
+				sendEndSignal()
+			}()
+			taskRunner.Run()
+		}()
 	}
 }
