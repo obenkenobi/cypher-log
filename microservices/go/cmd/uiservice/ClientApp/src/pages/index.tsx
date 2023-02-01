@@ -6,7 +6,7 @@ import Layout from "../components/layout";
 import { Button } from "flowbite-react/lib/esm/components/Button";
 
 const IndexPage: React.FC<PageProps> = () => {
-  const [profile, setProfile] = React.useState<any>()
+  const [profile, setProfile] = React.useState<UserIdentityDto>()
   const [userSave, setUserSave] = React.useState<UserSaveDto>({
     userName: "", displayName: ""
   })

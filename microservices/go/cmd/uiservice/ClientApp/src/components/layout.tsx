@@ -1,6 +1,7 @@
 import { Button } from "flowbite-react/lib/esm/components/Button"
 import { Navbar } from "flowbite-react/lib/esm/components/Navbar/Navbar"
 import React from "react"
+import {useCookies} from "react-cookie";
 
 interface Props {
   children: React.ReactNode
@@ -9,6 +10,7 @@ interface Props {
 // Todo: implement csrf, user sign in flow, & navbar
 const Layout: React.FunctionComponent<Props> = (props: Props) => {
   // Todo: use your own navbar links
+  const [ cookies, , removeCookie] = useCookies(["XSRF-TOKEN", "session"]);
   return <>
     <Navbar
       fluid={true}
