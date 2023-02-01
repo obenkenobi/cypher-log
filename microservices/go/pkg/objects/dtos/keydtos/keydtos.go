@@ -13,7 +13,7 @@ type PasscodeDto struct {
 }
 
 type UserKeyDto struct {
-	KeyBase64  string `json:"key"`
+	KeyBase64  string `json:"keyBase64"`
 	KeyVersion int64  `json:"keyVersion"`
 }
 
