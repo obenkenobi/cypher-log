@@ -2,12 +2,12 @@ import axios from '../axios'
 
 const prefix = "/api/userservice"
 
-export function addUser(req: UserSaveDto): Promise<UserReadDto> {
-  return axios.post<any, UserReadDto, UserSaveDto>(`${prefix}/v1/user`, req)
+export function addUser(payload: UserSaveDto): Promise<UserReadDto> {
+  return axios.post<any, UserReadDto, UserSaveDto>(`${prefix}/v1/user`, payload)
 }
 
-export function updateUser(req: UserSaveDto): Promise<UserReadDto> {
-  return axios.put<any, UserReadDto, UserSaveDto>(`${prefix}/v1/user`, req)
+export function updateUser(payload: UserSaveDto): Promise<UserReadDto> {
+  return axios.put<any, UserReadDto, UserSaveDto>(`${prefix}/v1/user`, payload)
 }
 
 export function deleteUser(): Promise<UserReadDto> {
