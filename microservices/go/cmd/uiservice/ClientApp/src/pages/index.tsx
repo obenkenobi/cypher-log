@@ -3,11 +3,6 @@ import * as React from "react"
 import {HeadFC, Link, PageProps} from "gatsby"
 import {useCookies} from "react-cookie";
 
-interface UserSaveDto {
-  userName: string,
-  displayName: string
-}
-
 const IndexPage: React.FC<PageProps> = () => {
   const [profile, setProfile] = React.useState<any>()
   const [userSave, setUserSave] = React.useState<UserSaveDto>({
