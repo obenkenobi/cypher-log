@@ -1,6 +1,7 @@
 package userdtos
 
 import (
+	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/dtos/commondtos"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded/embeddeduser"
 )
 
@@ -12,7 +13,7 @@ type UserIdentityDto struct {
 
 type UserReadDto struct {
 	embeddeduser.BaseUserPublicDto
-	Exists bool `json:"exists"`
+	commondtos.ExistsDto
 }
 
 type UserChangeAction int64
