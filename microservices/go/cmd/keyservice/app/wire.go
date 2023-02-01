@@ -90,7 +90,7 @@ func InitializeApp() *App {
 		servers.NewAppServerImpl,
 		wire.Bind(new(servers.AppServer), new(*servers.AppServerImpl)),
 		listeners.NewUserListenerImpl,
-		wire.Bind(new(listeners.UserChangeListener), new(*listeners.UserChangeListenerImpl)),
+		wire.Bind(new(listeners.UserChange1Listener), new(*listeners.UserChange1ListenerImpl)),
 		listeners.NewKafkaListenerImpl,
 		wire.Bind(new(listeners.KafkaListener), new(*listeners.KafkaListenerImpl)),
 		securityservices.NewJwtValidateGrpcServiceImpl,

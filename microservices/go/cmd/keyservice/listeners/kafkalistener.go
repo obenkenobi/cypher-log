@@ -10,24 +10,24 @@ type KafkaListener interface {
 }
 
 type KafkaListenerImpl struct {
-	userChangeListener UserChangeListener
+	userChange1Listener UserChange1Listener
 }
 
 func (k KafkaListenerImpl) Run() {
-	k.userChangeListener.ListenUserChange()
+	k.userChange1Listener.ListenUserChange()
 	forever := make(chan any)
 	<-forever
 }
 
 func NewKafkaListenerImpl(
-	userListener UserChangeListener,
+	userListener UserChange1Listener,
 ) *KafkaListenerImpl {
 	if !environment.ActivateKafkaListener() {
 		// Listener is deactivated, ran via the lifecycle package,
 		// and is a root-child dependency so a nil is returned
 		return nil
 	}
-	r := &KafkaListenerImpl{userChangeListener: userListener}
+	r := &KafkaListenerImpl{userChange1Listener: userListener}
 	lifecycle.RegisterTaskRunner(r)
 	return r
 }
