@@ -1,4 +1,1 @@
-interface UserSaveDto {
-  userName: string,
-  displayName: string
-}
+interface UserSaveDto extends BaseUserCommon {}
