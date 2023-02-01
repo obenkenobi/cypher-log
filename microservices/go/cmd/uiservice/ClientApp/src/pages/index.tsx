@@ -2,6 +2,7 @@ import * as React from "react"
 
 import {HeadFC, Link, PageProps} from "gatsby"
 import {useCookies} from "react-cookie";
+import Layout from "../components/layout";
 
 const IndexPage: React.FC<PageProps> = () => {
   const [profile, setProfile] = React.useState<any>()
@@ -59,7 +60,7 @@ const IndexPage: React.FC<PageProps> = () => {
   let authJSX: JSX.Element;
   if (!!profile) {
     authJSX = (
-      <>
+      <Layout>
         <div>
           <h1 className="my-1">profile</h1>
           <pre className="my-1">{JSON.stringify(profile, null, "\t")}</pre>
@@ -87,7 +88,7 @@ const IndexPage: React.FC<PageProps> = () => {
         }}>
           <button type="submit" className="btn btn-blue">Log out</button>
         </form>
-      </>
+      </Layout>
     );
   } else {
     authJSX = (
