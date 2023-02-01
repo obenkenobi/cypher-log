@@ -137,7 +137,7 @@ func (k UserChange1ListenerImpl) Close() error {
 	return err
 }
 
-func NewUserListenerImpl(
+func NewUserChange1ListenerImpl(
 	userChangeEventService services.UserChangeEventService,
 	kafkaConf conf.KafkaConf,
 ) *UserChange1ListenerImpl {

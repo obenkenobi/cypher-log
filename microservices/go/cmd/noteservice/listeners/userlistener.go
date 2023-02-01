@@ -16,12 +16,12 @@ import (
 	"time"
 )
 
-type UserChangeListener interface {
+type UserChange1Listener interface {
 	lifecycle.Closable
 	ListenUserChange()
 }
 
-type UserChangeListenerImpl struct {
+type UserChange1ListenerImpl struct {
 	userChangeEventService services.UserChangeEventService
 	// Retry Topics
 	user1Retry1Topic string
@@ -45,7 +45,7 @@ type UserChangeListenerImpl struct {
 	user1DeadLetterSender *kfka.KafkaSender[kfka.RetryDto[userdtos.UserChangeEventDto]]
 }
 
-func (k UserChangeListenerImpl) ListenUserChange() {
+func (k UserChange1ListenerImpl) ListenUserChange() {
 	k.user1Receiver.ListenSyncCommit(func(dto userdtos.UserChangeEventDto) error {
 		ctx := context.Background()
 		_, err := k.userChangeEventService.HandleUserChangeEventTxn(ctx, dto)
@@ -114,7 +114,7 @@ func (k UserChangeListenerImpl) ListenUserChange() {
 	logger.Log.Info("Listening for user changes")
 }
 
-func (k UserChangeListenerImpl) Close() error {
+func (k UserChange1ListenerImpl) Close() error {
 	logger.Log.Info("Closing user listener")
 	closableList := []lifecycle.Closable{
 		k.user1Receiver,
@@ -137,10 +137,10 @@ func (k UserChangeListenerImpl) Close() error {
 	return err
 }
 
-func NewUserListenerImpl(
+func NewUserChange1ListenerImpl(
 	userChangeEventService services.UserChangeEventService,
 	kafkaConf conf.KafkaConf,
-) *UserChangeListenerImpl {
+) *UserChange1ListenerImpl {
 	if !environment.ActivateKafkaListener() {
 		// Listener is deactivated, ran via the lifecycle package,
 		// and is a root-child dependency so a nil is returned
@@ -258,7 +258,7 @@ func NewUserListenerImpl(
 			return b.Value.MessageKey()
 		},
 	)
-	r := &UserChangeListenerImpl{
+	r := &UserChange1ListenerImpl{
 		userChangeEventService: userChangeEventService,
 		// Topics
 		user1Retry1Topic:     user1Retry1Topic,

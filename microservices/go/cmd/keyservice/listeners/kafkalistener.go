@@ -20,14 +20,14 @@ func (k KafkaListenerImpl) Run() {
 }
 
 func NewKafkaListenerImpl(
-	userListener UserChange1Listener,
+	userChange1Listener UserChange1Listener,
 ) *KafkaListenerImpl {
 	if !environment.ActivateKafkaListener() {
 		// Listener is deactivated, ran via the lifecycle package,
 		// and is a root-child dependency so a nil is returned
 		return nil
 	}
-	r := &KafkaListenerImpl{userChange1Listener: userListener}
+	r := &KafkaListenerImpl{userChange1Listener: userChange1Listener}
 	lifecycle.RegisterTaskRunner(r)
 	return r
 }
