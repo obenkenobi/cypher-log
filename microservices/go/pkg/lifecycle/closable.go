@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"github.com/akrennmair/slice"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/logger"
 	"github.com/obenkenobi/cypher-log/microservices/go/pkg/utils"
 	"sync"
@@ -22,12 +23,21 @@ func RegisterClosable(closable Closable) {
 }
 
 func closeResources() bool {
+	errChannels := slice.Map(closableList, func(c Closable) chan error {
+		errC := make(chan error)
+		go func(closable Closable, errCh chan error) {
+			errCh <- closable.Close()
+		}(c, errC)
+		return errC
+	})
 	isGraceful := true
-	for _, closable := range closableList {
-		logger.Log.WithField("Type", utils.GetType(closable)).Info("Closing a resource")
-		if err := closable.Close(); err != nil {
+	for i, errCh := range errChannels {
+		if err := <-errCh; err != nil {
 			logger.Log.WithError(err).Error("Error while closing")
 			isGraceful = false
+		} else {
+			closableType := utils.GetType(closableList[i])
+			logger.Log.WithField("ClosableType", closableType).Infof("Closed %v", closableType)
 		}
 	}
 	return isGraceful
