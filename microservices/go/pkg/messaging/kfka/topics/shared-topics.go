@@ -1,3 +1,3 @@
 package topics
 
-const User1Topic = "user-1"
+const UserChange1Topic = "user-change-1"

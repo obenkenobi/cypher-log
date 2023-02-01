@@ -149,17 +149,17 @@ func NewUserListenerImpl(
 
 	serviceAppend := "-note-service"
 
-	user1Retry1Topic := topics.AppendRetry(topics.User1Topic+serviceAppend, 1)
-	user1Retry2Topic := topics.AppendRetry(topics.User1Topic+serviceAppend, 2)
-	user1Retry3Topic := topics.AppendRetry(topics.User1Topic+serviceAppend, 3)
-	user1Retry4Topic := topics.AppendRetry(topics.User1Topic+serviceAppend, 4)
-	user1DeadLetterTopic := topics.AppendDeadLetter(topics.User1Topic + serviceAppend)
+	user1Retry1Topic := topics.AppendRetry(topics.UserChange1Topic+serviceAppend, 1)
+	user1Retry2Topic := topics.AppendRetry(topics.UserChange1Topic+serviceAppend, 2)
+	user1Retry3Topic := topics.AppendRetry(topics.UserChange1Topic+serviceAppend, 3)
+	user1Retry4Topic := topics.AppendRetry(topics.UserChange1Topic+serviceAppend, 4)
+	user1DeadLetterTopic := topics.AppendDeadLetter(topics.UserChange1Topic + serviceAppend)
 
 	user1Receiver := kfka.NewKafkaReceiver[userdtos.UserChangeEventDto](
 		kafka.NewReader(kafka.ReaderConfig{
 			Brokers:  kafkaConf.GetBootstrapServers(),
-			GroupID:  topics.User1Topic + serviceAppend,
-			Topic:    topics.User1Topic,
+			GroupID:  topics.UserChange1Topic + serviceAppend,
+			Topic:    topics.UserChange1Topic,
 			MinBytes: 10e3, // 10KB
 			MaxBytes: 10e6, // 10MB
 		}),

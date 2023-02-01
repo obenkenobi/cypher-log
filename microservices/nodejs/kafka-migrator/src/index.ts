@@ -21,7 +21,7 @@ const kafka = new Kafka({
 
 const migrateTask1 = async (admin: Admin) => {
   console.log("Begin migrate task 1")
-  const user0Topic = "user-1"
+  const userChange1Topic = "user-change-1"
   const noteService = "note-service"
   const keyService = "key-service"
   const retry = "retry"
@@ -32,63 +32,63 @@ const migrateTask1 = async (admin: Admin) => {
     timeout: 10000,
     topics: [
       {
-      topic: user0Topic,
+      topic: userChange1Topic,
       numPartitions: 6,
       replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${noteService}-${retry}-1`,
+        topic: `${userChange1Topic}-${noteService}-${retry}-1`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${noteService}-${retry}-2`,
+        topic: `${userChange1Topic}-${noteService}-${retry}-2`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${noteService}-${retry}-3`,
+        topic: `${userChange1Topic}-${noteService}-${retry}-3`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${noteService}-${retry}-4`,
+        topic: `${userChange1Topic}-${noteService}-${retry}-4`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${noteService}-${deadLetter}`,
+        topic: `${userChange1Topic}-${noteService}-${deadLetter}`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${keyService}-${retry}-1`,
+        topic: `${userChange1Topic}-${keyService}-${retry}-1`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${keyService}-${retry}-2`,
+        topic: `${userChange1Topic}-${keyService}-${retry}-2`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${keyService}-${retry}-3`,
+        topic: `${userChange1Topic}-${keyService}-${retry}-3`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${keyService}-${retry}-4`,
+        topic: `${userChange1Topic}-${keyService}-${retry}-4`,
         numPartitions: 6,
         replicationFactor: 2
       },
       {
-        topic: `${user0Topic}-${keyService}-${deadLetter}`,
+        topic: `${userChange1Topic}-${keyService}-${deadLetter}`,
         numPartitions: 6,
         replicationFactor: 2
       },
     ]
   })
-  console.log(`Created topic ${user0Topic} and associated retry topics and dead-letters`)
+  console.log(`Created topic ${userChange1Topic} and associated retry topics and dead-letters`)
   console.log("End migrate task 1")
 }
 

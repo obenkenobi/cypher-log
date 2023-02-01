@@ -31,7 +31,7 @@ func NewUserMessageServiceImpl(kafkaConf conf.KafkaConf) *UserMessageServiceImpl
 	userSaveSender := kfka.NewKafkaSender(
 		&kafka.Writer{
 			Addr:     kafka.TCP(kafkaConf.GetBootstrapServers()...),
-			Topic:    topics.User1Topic,
+			Topic:    topics.UserChange1Topic,
 			Balancer: &kafka.Murmur2Balancer{},
 		},
 		userdtos.UserChangeEventDto.MessageKey,
