@@ -2,6 +2,7 @@ import * as React from "react"
 
 import {HeadFC, Link, PageProps} from "gatsby"
 import Layout from "../components/layout";
+import { Button } from "flowbite-react/lib/esm/components/Button";
 
 const CounterPage: React.FC<PageProps> = () => {
   const [count, setCount] = React.useState(0)
@@ -10,18 +11,18 @@ const CounterPage: React.FC<PageProps> = () => {
     <Layout>
       <main>
         <Link to={"/"}>
-          <button className="btn btn-green">Main Page</button>
+          <Button className="btn btn-green">Main Page</Button>
         </Link>
         <h1>Count</h1>
         <div>{count}</div>
         <div>
-          <button className="btn btn-blue my-2" onClick={() => setCount(count + 1)}>
+          <Button className="btn btn-blue my-2" onClick={() => setCount(count + 1)}>
             Count Up
-          </button>
+          </Button>
           <br></br>
-          <button className="btn btn-green my-2" onClick={() => setCount(count - 1)}>
+          <Button className="btn btn-green my-2" onClick={() => setCount(count - 1)}>
             Count Down
-          </button>
+          </Button>
         </div>
       </main>
     </Layout>

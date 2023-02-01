@@ -3,6 +3,7 @@ import * as React from "react"
 import {HeadFC, Link, PageProps} from "gatsby"
 import {useCookies} from "react-cookie";
 import Layout from "../components/layout";
+import { Button } from "flowbite-react/lib/esm/components/Button";
 
 const IndexPage: React.FC<PageProps> = () => {
   const [profile, setProfile] = React.useState<any>()
@@ -60,7 +61,7 @@ const IndexPage: React.FC<PageProps> = () => {
   let authJSX: JSX.Element;
   if (!!profile) {
     authJSX = (
-      <Layout>
+      <>
         <div>
           <h1 className="my-1">profile</h1>
           <pre className="my-1">{JSON.stringify(profile, null, "\t")}</pre>
@@ -80,41 +81,43 @@ const IndexPage: React.FC<PageProps> = () => {
                  onChange={e => setUserSave({...userSave, displayName: e.target.value})}/>
           </label>
           <br/>
-          <button type="submit" className="btn btn-blue">Submit</button>
+          <Button type="submit" className="btn btn-blue">Submit</Button>
         </form>
         <div>--------------------------------------</div>
         <form className="my-3" action="/auth/logout" method="GET" onSubmit={() => {
           removeCookie("session", {path: "/", domain: window.location.hostname});
         }}>
-          <button type="submit" className="btn btn-blue">Log out</button>
+          <Button type="submit" className="btn btn-blue">Log out</Button>
         </form>
-      </Layout>
+      </>
     );
   } else {
     authJSX = (
       <>
         <a href="/auth/login">
-          <button className="btn btn-green">SignIn</button>
+          <Button className="btn btn-green">SignIn</Button>
         </a>
       </>
     );
   }
 
   return (
-    <main>
-      <div>
-        <h3 className="my-1">Auth0 Example</h3>
-        <p className="my-1">Zero friction identity infrastructure, built for developers</p>
-        <div className="my-4">
-          <Link to={"/counter"}>
-            <button className="btn btn-green">Counter</button>
-          </Link>
+    <Layout>
+      <main>
+        <div>
+          <h3 className="my-1">Auth0 Example</h3>
+          <p className="my-1">Zero friction identity infrastructure, built for developers</p>
+          <div className="my-4">
+            <Link to={"/counter"}>
+              <Button className="btn btn-green">Counter</Button>
+            </Link>
+          </div>
+          <div className="my-4">
+            {authJSX}
+          </div>
         </div>
-        <div className="my-4">
-          {authJSX}
-        </div>
-      </div>
-    </main>
+      </main>
+    </Layout>
   )
 }
 
