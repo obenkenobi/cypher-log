@@ -1,52 +1,19 @@
-/*
-Todo: create interfaces based on the following Go structs
- package notedtos
-
-import "github.com/obenkenobi/cypher-log/microservices/go/pkg/objects/embedded"
-
-type CoreNoteDto struct {
-	Title string `json:"title" binding:"required,min=4,max=1000"`
+interface CoreNoteDto {
+  title: string
 }
 
-func NewCoreNoteDto(title string) CoreNoteDto {
-	return CoreNoteDto{Title: title}
+interface CoreNoteDetailsDto extends CoreNoteDto {
+  text: string
 }
 
-type CoreNoteDetailsDto struct {
-	CoreNoteDto
-	Text string `json:"text" binding:"max=40000"`
-}
+interface NoteCreateDto extends CoreNoteDetailsDto {}
 
-func NewCoreNoteDetailsDto(title string, text string) CoreNoteDetailsDto {
-	return CoreNoteDetailsDto{
-		CoreNoteDto: NewCoreNoteDto(title),
-		Text:        text,
-	}
-}
+interface NoteUpdateDto extends BaseId, CoreNoteDetailsDto {}
 
-type NoteCreateDto struct {
-	CoreNoteDetailsDto
+interface NotePreviewDto extends BaseCRUDObject, CoreNoteDto {
+  textPreview: string
 }
+interface NoteReadDto extends BaseCRUDObject, CoreNoteDetailsDto {}
 
-type NoteUpdateDto struct {
-	embedded.BaseId
-	CoreNoteDetailsDto
-}
-
-type NotePreviewDto struct {
-	embedded.BaseCRUDObject
-	CoreNoteDto
-	TextPreview string
-}
-
-type NoteReadDto struct {
-	embedded.BaseCRUDObject
-	CoreNoteDetailsDto
-}
-
-type NoteIdDto struct {
-	embedded.BaseRequiredId
-}
-
- */
+interface NoteIdDto extends BaseRequiredId {}
 

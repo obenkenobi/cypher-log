@@ -34,7 +34,7 @@ type NoteUpdateDto struct {
 type NotePreviewDto struct {
 	embedded.BaseCRUDObject
 	CoreNoteDto
-	TextPreview string
+	TextPreview string `json:"textPreview"`
 }
 
 type NoteReadDto struct {
