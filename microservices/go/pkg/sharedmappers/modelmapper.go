@@ -11,7 +11,7 @@ func MapMongoModelToBaseId[M datasource.MongoModel](source M, dest *embedded.Bas
 
 func MapMongoModelToBaseTimestamp[M datasource.MongoModel](source M, dest *embedded.BaseTimestamp) {
 	dest.CreatedAt = source.GetCreatedAt().UnixMilli()
-	dest.UpdatedAt = source.GetCreatedAt().UnixMilli()
+	dest.UpdatedAt = source.GetUpdatedAt().UnixMilli()
 }
 
 func MapMongoModelToBaseCrudObject[M datasource.MongoModel](source M, dest *embedded.BaseCRUDObject) {
