@@ -121,7 +121,7 @@ func (u UserServiceImpl) saveUserDataAndGetModel(
 		return cModels.User{}, err
 	}
 	user, isPresent := userMaybe.Get()
-	if !isPresent {
+	if !isPresent || userPublicDto.UpdatedAt <= user.UserUpdatedAt {
 		user = cModels.User{}
 	}
 	sharedmappers.AuthIdAndUserPublicDtoToUserModel(authId, userPublicDto, &user)
