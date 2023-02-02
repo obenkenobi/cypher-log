@@ -6,12 +6,12 @@ interface SortField {
 }
 
 interface PageRequest {
-  page: bigint
-  size: bigint
+  page: number
+  size: number
   sort: SortField[]
 }
 
 interface Page<T> {
   contents: T[],
-  total: bigint
+  total: number
 }

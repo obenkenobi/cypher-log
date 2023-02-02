@@ -4,6 +4,8 @@ import {HeadFC, Link, PageProps} from "gatsby"
 import {useCookies} from "react-cookie";
 import Layout from "../components/layout";
 import { Button } from "flowbite-react/lib/esm/components/Button";
+import {addUser, getIdentity, updateUser} from "../api/user";
+import {getCsrfToken} from "../api/csrf";
 
 const IndexPage: React.FC<PageProps> = () => {
   const [profile, setProfile] = React.useState<UserIdentityDto>()
@@ -14,8 +16,8 @@ const IndexPage: React.FC<PageProps> = () => {
 
   const getDataTask = (async () => {
     try {
-      const res = await fetch("/api/userservice/v1/user/me")
-      const body = await res.json()
+      const res = await getIdentity()
+      const body = res.data
       console.log(body)
       if (res.status == 200) {
         setProfile(body)
@@ -30,8 +32,8 @@ const IndexPage: React.FC<PageProps> = () => {
 
 
     const csrfTask = (async () => {
-      const res = await fetch("/csrf")
-      const body = await res.json()
+      const res = await getCsrfToken()
+      const body = res.data
       console.log(body)
       console.log(cookies["XSRF-TOKEN"])
     })()
@@ -42,15 +44,9 @@ const IndexPage: React.FC<PageProps> = () => {
   const handleSubmit = async (e:  React.FormEvent<HTMLFormElement>): Promise<void> => {
     try {
       e.preventDefault()
-      const res = await fetch("/api/userservice/v1/user", {
-        method: "PUT",
-        body: JSON.stringify(userSave),
-        headers: {
-          'Content-Type': 'application/json',
-          "X-XSRF-TOKEN": cookies["XSRF-TOKEN"]
-        }
-      })
-      const body = await res.json()
+
+      const res = await (!!profile?.exists ? updateUser(userSave) : addUser(userSave))
+      const body = res.data
       console.log(body)
       await getDataTask()
     } catch (e) {
